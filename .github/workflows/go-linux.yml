@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+#        token: ${{ secrets.ACCESS_TOKEN }}
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -26,7 +29,11 @@ jobs:
 
     - name: Check Go sources formatting
       working-directory: ./
-      run: diff=`gofmt -s -d .`; echo "$diff"; test -z "$diff"
+      run: diff=`gofmt -s -d driver/.`; echo "$diff"; test -z "$diff"
+
+    - name: Build Docker Image
+      working-directory: ./
+      run: docker build . -t opera
 
     - name: Build
       working-directory: ./
