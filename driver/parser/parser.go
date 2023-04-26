@@ -11,9 +11,10 @@ import (
 // Scenario is the root element of a scenario description. It defines basic
 // scenario properties and lists a set of nodes and transaction source.
 type Scenario struct {
-	Name    string
-	Nodes   []Node   `yaml:",omitempty"`
-	Sources []Source `yaml:",omitempty"`
+	Name     string
+	Duration float32
+	Nodes    []Node   `yaml:",omitempty"`
+	Sources  []Source `yaml:",omitempty"`
 }
 
 // Node is a configuration for a group of nodes with similar properties.
@@ -48,16 +49,16 @@ type Source struct {
 // Only one of those options can be set for a single source.
 type Rate struct {
 	// Only one of the next fields may be set.
-	Constant *int  `yaml:",omitempty"`
-	Slope    *int  `yaml:",omitempty"`
-	Wave     *Wave `yaml:",omitempty"`
+	Constant *float32 `yaml:",omitempty"`
+	Slope    *float32 `yaml:",omitempty"`
+	Wave     *Wave    `yaml:",omitempty"`
 }
 
 // Wave defines the parameters of a sin-wave traffic pattern.
 type Wave struct {
-	Min    *int    `yaml:",omitempty"` // Tx/s, nil = 0
-	Max    int     // Tx/s
-	Period float32 // seconds
+	Min    *float32 `yaml:",omitempty"` // Tx/s, nil = 0
+	Max    float32  // Tx/s
+	Period float32  // seconds
 }
 
 // Parse parses a YAML based scenario description from the given reader.
