@@ -3,6 +3,14 @@ Norma project
 
 Project of integrating Carmen Storage and Tosca VM into the go-opera.
 
+## Requirements
+
+Before you run `go generate ./...`, make sure you have installed:
+* GoMock: `go install github.com/golang/mock/mockgen@v1.6.0`
+* Solidity Compiler (solc) - see [Installing the Solidity Compiler](https://docs.soliditylang.org/en/latest/installing-solidity.html)
+* go-ethereum's abigen - you need to compile [go-ethereum](https://github.com/ethereum/go-ethereum/)
+  and copy it from `build/bin/abigen` into your PATH
+
 ## Using Docker
 
 Some experiments simulate network using Docker. For a local development the Docker must be installed:
