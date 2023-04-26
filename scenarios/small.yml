@@ -7,56 +7,17 @@ name: Small Network
 # The duration of the scenario's runtime, in seconds.
 duration: 60
 
-# Network parameters.
-block_interval_time: 1 # seconds
-gas_price: 40
-
 # The network scenario to exercise. 
 nodes:
-  - A:
-      feature: validator
-      feature: archive
-      start: 20
-      end: 40
-      
-  - B:
-      instances: 10            # this node is 10x replicated
-      feature: validator
-      
-  - C:
-      feature: archive
-      feature: RPC Server
-      rpc_port: 12345
+  # We include three validator nodes for the full duration.
+  - name: A
+    instances: 3
+    features: [ validator ]
 
-
-# Transaction traffic sources.
-- source:
-    application: lottery
-    instances: 10
+# In the network there is a single application producing constant load.
+applications:
+  - name: counter
+    start: 10          # start time
+    end: 50            # termination time
     rate:
-      constant: 200
-      start: 10
-      end: 50
-
-
-- source:
-    application: lottery
-    instances: 10
-    rate:
-      slope: 5  # tx/s^2 increase
-      start: 10
-      end: 50
-
-
-
-- source:
-    application: lottery
-    instances: 10
-    rate:
-      wave:
-        min: 100    # tx/s
-        max: 200    # tx/s
-        period: 60  # in seconds
-        start: 10
-        end: 50
-
+      constant: 10     # Tx/s
