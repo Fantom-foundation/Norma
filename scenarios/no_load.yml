@@ -1,0 +1,9 @@
+# This scenario creates a small network of 3 nodes without any transactions.
+
+name: No Load
+duration: 60    # seconds
+
+nodes:
+  - name: A
+    features: [validator]
+    instances: 3
