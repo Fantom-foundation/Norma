@@ -173,57 +173,57 @@ func TestRateCheck_InvalidWaveIsDetected(t *testing.T) {
 	}
 }
 
-func TestScource_MissingNameIsDetected(t *testing.T) {
+func TestApplication_MissingNameIsDetected(t *testing.T) {
 	scenario := Scenario{}
-	source := Source{}
-	if err := source.Check(&scenario); err == nil || !strings.Contains(err.Error(), "must name an application") {
+	app := Application{}
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
 		t.Errorf("missing name was not detected")
 	}
-	source.Application = "  "
-	if err := source.Check(&scenario); err == nil || !strings.Contains(err.Error(), "must name an application") {
+	app.Name = "  "
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
 		t.Errorf("missing name was not detected")
 	}
 }
 
-func TestScource_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
+func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
-	source := Source{Application: "test", Instances: new(int), Rate: Rate{Constant: new(float32)}}
-	if err := source.Check(&scenario); err != nil {
+	app := Application{Name: "test", Instances: new(int), Rate: Rate{Constant: new(float32)}}
+	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
-	*source.Instances = -1
-	if err := source.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of instances must be >= 0") {
+	*app.Instances = -1
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of instances must be >= 0") {
 		t.Errorf("negative instance counter was not detected")
 	}
 }
 
-func TestScource_DetectsTimingIssue(t *testing.T) {
+func TestApplication_DetectsTimingIssue(t *testing.T) {
 	scenario := Scenario{}
-	source := Source{
-		Application: "test",
-		Rate:        Rate{Constant: new(float32)},
-		Start:       new(float32),
+	app := Application{
+		Name:  "test",
+		Rate:  Rate{Constant: new(float32)},
+		Start: new(float32),
 	}
-	if err := source.Check(&scenario); err != nil {
+	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default start value should be valid, but got error: %v", err)
 	}
-	*source.Start = 10
-	if err := source.Check(&scenario); err == nil || !strings.Contains(err.Error(), "end time must be >= start time") {
+	*app.Start = 10
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "end time must be >= start time") {
 		t.Errorf("invalid start time was not detected")
 	}
 }
 
-func TestScource_DetectsShapeIssue(t *testing.T) {
+func TestApplication_DetectsShapeIssue(t *testing.T) {
 	scenario := Scenario{}
-	source := Source{
-		Application: "test",
-		Rate:        Rate{Constant: new(float32)},
+	app := Application{
+		Name: "test",
+		Rate: Rate{Constant: new(float32)},
 	}
-	if err := source.Check(&scenario); err != nil {
+	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default start value should be valid, but got error: %v", err)
 	}
-	*source.Rate.Constant = -10
-	if err := source.Check(&scenario); err == nil || !strings.Contains(err.Error(), "transaction rate must be >= 0") {
+	*app.Rate.Constant = -10
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "transaction rate must be >= 0") {
 		t.Errorf("invalid rate was not detected")
 	}
 }
@@ -297,13 +297,13 @@ func TestScenario_NodeIssuesAreDetected(t *testing.T) {
 	}
 }
 
-func TestScenario_SourceIssuesAreDetected(t *testing.T) {
+func TestScenario_ApplicationIssuesAreDetected(t *testing.T) {
 	scenario := Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Sources:  []Source{{}},
+		Name:         "Test",
+		Duration:     60,
+		Applications: []Application{{}},
 	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "must name an application") {
-		t.Errorf("source issue was not detected")
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
+		t.Errorf("application issue was not detected")
 	}
 }

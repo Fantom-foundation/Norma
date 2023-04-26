@@ -11,10 +11,10 @@ import (
 // Scenario is the root element of a scenario description. It defines basic
 // scenario properties and lists a set of nodes and transaction source.
 type Scenario struct {
-	Name     string
-	Duration float32
-	Nodes    []Node   `yaml:",omitempty"`
-	Sources  []Source `yaml:",omitempty"`
+	Name         string
+	Duration     float32
+	Nodes        []Node        `yaml:",omitempty"`
+	Applications []Application `yaml:",omitempty"`
 }
 
 // Node is a configuration for a group of nodes with similar properties.
@@ -29,15 +29,15 @@ type Node struct {
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
 }
 
-// Source is a load generator in the simulated network. Each source defines
+// Application is a load generator in the simulated network. Each application defines
 // a type application load is generated for, a start and end time, a traffic
 // shape (see Rate below), and a number of instances.
-type Source struct {
-	Application string
-	Instances   *int     `yaml:",omitempty"` // nil is interpreted as 1
-	Start       *float32 `yaml:",omitempty"` // nil is interpreted as 0
-	End         *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
-	Rate        Rate
+type Application struct {
+	Name      string
+	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
+	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
+	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
+	Rate      Rate
 }
 
 // Rate defines the shape of traffic to be generated. There are three types
