@@ -38,7 +38,8 @@ jobs:
 
     - name: Build Docker Image
       working-directory: ./
-      run: docker buildx build . --tag opera --cache-to type=ghascope=$GITHUB_REF_NAME-opera --cache-from type=ghascope=$GITHUB_REF_NAME-opera
+      run: docker buildx build --help
+     # run: docker buildx build . --tag opera --cache-to type=ghascope=$GITHUB_REF_NAME-opera --cache-from type=ghascope=$GITHUB_REF_NAME-opera
       
     - name: Build
       working-directory: ./
