@@ -29,7 +29,7 @@ jobs:
 
     - name: Set up Docker
       working-directory: ./
-        run: brew install docker && colima start
+      run: brew install docker && colima start
 
     - name: Check Go sources formatting
       working-directory: ./
