@@ -18,16 +18,28 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+#        token: ${{ secrets.ACCESS_TOKEN }}
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
 
+    - name: Set up Docker
+      uses: crazy-max/ghaction-setup-docker@v1
+      with:
+        version: v23.0.4
+
     - name: Check Go sources formatting
       working-directory: ./
-      run: diff=`gofmt -s -d .`; echo "$diff"; test -z "$diff"
+      run: diff=`gofmt -s -d driver/.`; echo "$diff"; test -z "$diff"
 
+    - name: Build Docker Image
+      working-directory: ./
+      run: docker build . -t opera
+      
     - name: Build
       working-directory: ./
       run: go build -v ./...
