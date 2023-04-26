@@ -8,5 +8,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli/v2 v2.25.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
