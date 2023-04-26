@@ -28,8 +28,9 @@ jobs:
         go-version: '1.20'
 
     - name: Set up Docker
-      working-directory: ./
-      run: brew install docker && colima start
+      uses: crazy-max/ghaction-setup-docker@v1
+      with:
+        version: v23.0.4
 
     - name: Check Go sources formatting
       working-directory: ./
@@ -37,7 +38,7 @@ jobs:
 
     - name: Build Docker Image
       working-directory: ./
-      run: docker build . -t opera
+      run: docker buildx build . -t opera --cache-to type=gha --cache-from type=gha
       
     - name: Build
       working-directory: ./
