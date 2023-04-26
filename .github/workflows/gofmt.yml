@@ -1,0 +1,25 @@
+name: Go-Formatting
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/gofmt.yml'
+      - '**.go'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/gofmt.yml'
+      - '**.go'
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check Go sources formatting
+      working-directory: ./
+      run: diff=`gofmt -s -d .`; echo "$diff"; test -z "$diff"
+

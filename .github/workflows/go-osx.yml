@@ -32,10 +32,6 @@ jobs:
       with:
         version: v23.0.4
 
-    - name: Check Go sources formatting
-      working-directory: ./
-      run: diff=`gofmt -s -d driver/.`; echo "$diff"; test -z "$diff"
-
     - name: Build Docker Image
       working-directory: ./
       run: docker build . -t opera
