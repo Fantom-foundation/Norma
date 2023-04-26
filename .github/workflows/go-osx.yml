@@ -28,9 +28,8 @@ jobs:
         go-version: '1.20'
 
     - name: Set up Docker
-      uses: crazy-max/ghaction-setup-docker@v1
-      with:
-        version: v23.0.4
+      working-directory: ./
+        run: brew install docker && colima start
 
     - name: Check Go sources formatting
       working-directory: ./
