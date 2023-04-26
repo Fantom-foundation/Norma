@@ -20,8 +20,8 @@ func (s *Scenario) Check() error {
 			errs = append(errs, err)
 		}
 	}
-	for _, source := range s.Sources {
-		if err := source.Check(s); err != nil {
+	for _, application := range s.Applications {
+		if err := application.Check(s); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -45,12 +45,12 @@ func (n *Node) Check(scenario *Scenario) error {
 	return errors.Join(errs...)
 }
 
-// Check tests semantic constraints on the source configuration of a scenario.
-func (s *Source) Check(scenario *Scenario) error {
+// Check tests semantic constraints on the application configuration of a scenario.
+func (s *Application) Check(scenario *Scenario) error {
 	errs := []error{}
 
-	if strings.TrimSpace(s.Application) == "" {
-		errs = append(errs, fmt.Errorf("sources must name an application"))
+	if strings.TrimSpace(s.Name) == "" {
+		errs = append(errs, fmt.Errorf("applications must have a name"))
 	}
 
 	if s.Instances != nil && *s.Instances < 0 {

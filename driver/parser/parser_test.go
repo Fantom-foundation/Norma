@@ -50,19 +50,19 @@ nodes:
     start: 5
     end: 7.5
 
-sources:
-  - application: lottery
+applications:
+  - name: lottery
     instances: 10
     start: 7
     end: 10
     rate:
       constant: 8
 
-  - application: my_coin
+  - name: my_coin
     rate:
       slope: 10
 
-  - application: game
+  - name: game
     rate:
       wave:
         min: 10
