@@ -23,7 +23,7 @@ type Clock interface {
 type Time time.Duration
 
 func (t Time) String() string {
-	return fmt.Sprintf("%.2f", float64(time.Duration(t).Nanoseconds())/1e9)
+	return fmt.Sprintf("%.1f", float64(time.Duration(t).Nanoseconds())/1e9)
 }
 
 func Nanoseconds(nanos int64) Time {
