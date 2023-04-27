@@ -21,7 +21,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 
 	// Schedule end of simulation as a dummy event.
 	endTime := Seconds(scenario.Duration)
-	queue.add(toSingleEvent(endTime, func() error {
+	queue.add(toSingleEvent(endTime, "shutdown", func() error {
 		return nil
 	}))
 
@@ -45,7 +45,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 			return err
 		}
 
-		log.Printf("processing event at time %v ...\n", event.time())
+		log.Printf("processing '%s' at time %v ...\n", event.name(), event.time())
 
 		// Execute the event and schedule successors.
 		successors, err := event.run()
@@ -62,6 +62,8 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 type event interface {
 	// The time at which the event is to be processed.
 	time() Time
+	// A short name describing the event for logging.
+	name() string
 	// Executes the event's action, potentially triggering successor events.
 	run() ([]event, error)
 }
@@ -103,6 +105,7 @@ func (q *eventQueue) getNext() event {
 // lambda with a time stamp determining its execution time.
 type genericEvent struct {
 	eventTime Time
+	eventName string
 	action    func() ([]event, error)
 }
 
@@ -110,17 +113,21 @@ func (e *genericEvent) time() Time {
 	return e.eventTime
 }
 
+func (e *genericEvent) name() string {
+	return e.eventName
+}
+
 func (e *genericEvent) run() ([]event, error) {
 	return e.action()
 }
 
-func toEvent(time Time, operation func() ([]event, error)) event {
-	return &genericEvent{time, operation}
+func toEvent(time Time, name string, action func() ([]event, error)) event {
+	return &genericEvent{time, name, action}
 }
 
-func toSingleEvent(time Time, operation func() error) event {
-	return toEvent(time, func() ([]event, error) {
-		return nil, operation()
+func toSingleEvent(time Time, name string, action func() error) event {
+	return toEvent(time, name, func() ([]event, error) {
+		return nil, action()
 	})
 }
 
@@ -141,15 +148,16 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		endTime = Seconds(*node.End)
 	}
 	for i := 0; i < instances; i++ {
+		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
-		queue.add(toSingleEvent(startTime, func() error {
+		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting node %s", name), func() error {
 			newNode, err := net.CreateNode(&driver.NodeConfig{
-				Name: fmt.Sprintf("%s-%d", node.Name, i),
+				Name: name,
 			})
 			*instance = newNode
 			return err
 		}))
-		queue.add(toSingleEvent(endTime, func() error {
+		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping node %s", name), func() error {
 			if instance == nil {
 				return nil
 			}
@@ -182,10 +190,11 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 		rate = *source.Rate.Constant
 	}
 	for i := 0; i < instances; i++ {
+		name := fmt.Sprintf("%s-%d", source.Name, i)
 		var instance = new(driver.Application)
-		queue.add(toSingleEvent(startTime, func() error {
+		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
 			newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-				Name: fmt.Sprintf("%s-%d", source.Name, i),
+				Name: name,
 				Rate: rate,
 			})
 			if err != nil {
@@ -197,7 +206,7 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 			*instance = newApp
 			return nil
 		}))
-		queue.add(toSingleEvent(endTime, func() error {
+		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping app %s", name), func() error {
 			if instance == nil {
 				return nil
 			}
