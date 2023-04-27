@@ -2,23 +2,28 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"io"
 	"os"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
-const imageName = "opera"
+const OperaImageName = "opera"
+
+type Port uint16
 
 // Container represents a running instance of the client application such as go-opera
 type Container struct {
-	id     string
-	client *Client
-	config *ClientConfig
+	id      string
+	client  *Client
+	config  *ContainerConfig
+	running bool
 }
 
 // Client is an initialized application that can run containers
@@ -27,9 +32,11 @@ type Client struct {
 }
 
 // ClientConfig configures common parameters for running containers.
-type ClientConfig struct {
-	imageName       string
-	shutdownTimeout *time.Duration
+type ContainerConfig struct {
+	ImageName       string
+	ShutdownTimeout *time.Duration
+	PortForwarding  map[Port]Port // Inner Port => public Port
+	Environment     map[string]string
 }
 
 // NewClient creates the docker environment
@@ -47,11 +54,28 @@ func (c *Client) Close() error {
 }
 
 // Start creates and runs one Container
-func (c *Client) Start(config *ClientConfig) (*Container, error) {
+func (c *Client) Start(config *ContainerConfig) (*Container, error) {
+
+	envVars := []string{}
+	for key, value := range config.Environment {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	portMapping := nat.PortMap{}
+	for inner, outer := range config.PortForwarding {
+		portMapping[nat.Port(fmt.Sprintf("%d/tcp", inner))] = []nat.PortBinding{{
+			HostIP:   "localhost",
+			HostPort: fmt.Sprintf("%d/tcp", outer),
+		}}
+	}
+
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
-		Image: config.imageName,
+		Image: config.ImageName,
 		Tty:   false,
-	}, nil, nil, nil, "")
+		Env:   envVars,
+	}, &container.HostConfig{
+		PortBindings: portMapping,
+	}, nil, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +84,17 @@ func (c *Client) Start(config *ClientConfig) (*Container, error) {
 		return nil, err
 	}
 
-	return &Container{resp.ID, c, config}, nil
+	return &Container{resp.ID, c, config, true}, nil
+}
+
+func (c *Container) IsRunning() bool {
+	return c.running
 }
 
 // Stop terminates the running container.
 func (c *Container) Stop() error {
-	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.shutdownTimeout)
+	c.running = false
+	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
 }
 
 func (c *Container) Cleanup() error {
@@ -75,31 +104,20 @@ func (c *Container) Cleanup() error {
 	return c.client.cli.ContainerRemove(context.Background(), c.id, types.ContainerRemoveOptions{})
 }
 
-func (c *Container) GetAddress() (string, error) {
-	containers, err := c.client.listContainers()
-	if err != nil {
-		return "", err
-	}
+func (c *Container) GetIP() driver.IP {
+	return "localhost"
+}
 
-	var existingCont *types.Container
-	for _, cont := range containers {
-		if cont.ID == c.id {
-			existingCont = &cont
-			break
-		}
+func (n *Container) GetAddressForService(service driver.ServiceID) driver.AddressPort {
+	info := driver.GetServiceInfo(service)
+	if info == nil {
+		return ""
 	}
-
-	if existingCont == nil {
-		return "", errors.New(fmt.Sprintf("container %s does not run", c.id))
+	port, ok := n.config.PortForwarding[Port(info.Port)]
+	if !ok {
+		return ""
 	}
-
-	var ip string
-	for _, v := range existingCont.NetworkSettings.Networks {
-		ip = v.IPAddress
-		break // we expect only one IP address is assigned.
-	}
-
-	return ip, nil
+	return driver.AddressPort(fmt.Sprintf("%s:%d", n.GetIP(), port))
 }
 
 func (c *Container) SaveLogTo(directory string) error {
@@ -115,7 +133,7 @@ func (c *Container) SaveLogTo(directory string) error {
 		return err
 	}
 
-	file, err := os.Create(fmt.Sprintf("%s/%s_%s.log", directory, c.config.imageName, c.id))
+	file, err := os.Create(fmt.Sprintf("%s/%s_%s.log", directory, c.config.ImageName, c.id))
 	if err != nil {
 		return err
 	}

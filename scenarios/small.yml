@@ -18,6 +18,5 @@ nodes:
 applications:
   - name: counter
     start: 10          # start time
-    end: 50            # termination time
     rate:
-      constant: 10     # Tx/s
+      constant: 20     # Tx/s

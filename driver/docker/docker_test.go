@@ -1,17 +1,18 @@
 package docker
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
 	"log"
 	"net"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
 )
 
 func TestImplements(t *testing.T) {
 	var inst Container
-	var _ driver.Node = &inst
+	var _ driver.Host = &inst
 
 }
 
@@ -41,12 +42,12 @@ func TestContainer_Cleanup(t *testing.T) {
 
 func TestContainer_GetAddress(t *testing.T) {
 	_, cont := startContainer(t)
-	ip, err := cont.GetAddress()
+	ip, err := cont.GetIP()
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
-	if net.ParseIP(ip) == nil {
+	if net.ParseIP(string(ip)) == nil {
 		t.Errorf("IP address is not valid: %s", ip)
 	}
 }
@@ -101,7 +102,7 @@ func startContainer(t *testing.T) (*Client, *Container) {
 	}
 
 	timeout := time.Second
-	cont, err := cli.Start(&ClientConfig{imageName, &timeout})
+	cont, err := cli.Start(&ClientConfig{OperaImageName, &timeout})
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
