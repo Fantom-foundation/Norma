@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Fantom-foundation/Norma/driver/executor"
-	"github.com/Fantom-foundation/Norma/driver/network"
+	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/urfave/cli/v2"
 )
@@ -33,7 +33,7 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	clock := executor.NewWallTimeClock()
-	net, err := network.NewLocalNetwork()
+	net, err := local.NewLocalNetwork()
 	if err != nil {
 		return err
 	}

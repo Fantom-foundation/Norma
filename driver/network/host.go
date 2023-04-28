@@ -1,6 +1,6 @@
-package driver
+package network
 
-//go:generate mockgen -source host.go -destination host_mock.go -package driver
+//go:generate mockgen -source host.go -destination host_mock.go -package network
 
 // AddressPort is a string addressing an IP port in the format <IP>:<port>.
 type AddressPort string

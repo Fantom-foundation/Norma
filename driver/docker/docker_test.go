@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/network"
 )
 
 func TestImplements(t *testing.T) {
 	var inst Container
-	var _ driver.Host = &inst
+	var _ network.Host = &inst
 
 }
 

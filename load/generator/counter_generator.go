@@ -37,7 +37,6 @@ func (cg *CounterTransactionGenerator) Init(rpcClient *ethclient.Client) (err er
 
 	// deploy testing contract
 	cg.contractAddress, _, cg.counterContract, err = abi.DeployCounter(cg.auth, rpcClient)
-	fmt.Printf("Code is going to be deployed to %v\n", cg.contractAddress)
 	if err != nil {
 		return fmt.Errorf("failed to deploy Counter contract; %v", err)
 	}
@@ -53,7 +52,6 @@ func waitUntilContractStartExisting(contractAddress common.Address, rpcClient *e
 		if err != nil {
 			return fmt.Errorf("failed to check contract existence; %v", err)
 		}
-		fmt.Printf("Fetched code, got response of length %d\n", len(code))
 		if len(code) != 0 {
 			return nil
 		}

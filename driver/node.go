@@ -13,8 +13,14 @@ type Node interface {
 	// represented node. May be nil if no such service is offered.
 	GetRpcServiceUrl() *URL
 
-	// GetHost retrieves the host this node is running on.
-	GetHost() Host
+	// Stop shuts down the this node gracefully, using their regular shutdown
+	// procedure (not killed). After stopping the service, no more interactions
+	// are expected to succeed.
+	Stop() error
+
+	// Cleanup releases all underlying resources. After the cleanup no more
+	// operations on this node are expected to succeed.
+	Cleanup() error
 }
 
 // NodeID is a unique ID identifying each node. This identifier is used, for

@@ -33,18 +33,18 @@ func (m *MockNode) EXPECT() *MockNodeMockRecorder {
 	return m.recorder
 }
 
-// GetHost mocks base method.
-func (m *MockNode) GetHost() Host {
+// Cleanup mocks base method.
+func (m *MockNode) Cleanup() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHost")
-	ret0, _ := ret[0].(Host)
+	ret := m.ctrl.Call(m, "Cleanup")
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// GetHost indicates an expected call of GetHost.
-func (mr *MockNodeMockRecorder) GetHost() *gomock.Call {
+// Cleanup indicates an expected call of Cleanup.
+func (mr *MockNodeMockRecorder) Cleanup() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHost", reflect.TypeOf((*MockNode)(nil).GetHost))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockNode)(nil).Cleanup))
 }
 
 // GetNodeID mocks base method.
@@ -74,4 +74,18 @@ func (m *MockNode) GetRpcServiceUrl() *URL {
 func (mr *MockNodeMockRecorder) GetRpcServiceUrl() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRpcServiceUrl", reflect.TypeOf((*MockNode)(nil).GetRpcServiceUrl))
+}
+
+// Stop mocks base method.
+func (m *MockNode) Stop() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stop")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Stop indicates an expected call of Stop.
+func (mr *MockNodeMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockNode)(nil).Stop))
 }

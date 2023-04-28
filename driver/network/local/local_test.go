@@ -1,4 +1,4 @@
-package network
+package local
 
 import (
 	"fmt"
@@ -29,18 +29,18 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 				if err != nil {
 					t.Errorf("failed to create node: %v", err)
 				}
-				defer node.GetHost().Cleanup()
+				defer node.Cleanup()
 				nodes = append(nodes, node)
 			}
 
 			for _, node := range nodes {
-				if err := node.GetHost().Stop(); err != nil {
+				if err := node.Stop(); err != nil {
 					t.Errorf("failed to stop node: %v", err)
 				}
 			}
 
 			for _, node := range nodes {
-				if err := node.GetHost().Cleanup(); err != nil {
+				if err := node.Cleanup(); err != nil {
 					t.Errorf("failed to cleanup node: %v", err)
 				}
 			}
@@ -62,7 +62,7 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create node in network: %v", err)
 			}
-			defer node.GetHost().Cleanup()
+			defer node.Cleanup()
 
 			apps := []driver.Application{}
 			for i := 0; i < N; i++ {

@@ -7,12 +7,13 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const OperaRPCPort = 18545
 
-var OperaRpcService = driver.ServiceDescription{
+var OperaRpcService = network.ServiceDescription{
 	Name: "OperaPRC",
 	Port: OperaRPCPort,
 }
@@ -20,7 +21,7 @@ var OperaRpcService = driver.ServiceDescription{
 const operaDockerImageName = "opera"
 
 type OperaNode struct {
-	host driver.Host
+	host network.Host
 }
 
 func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, error) {
@@ -31,14 +32,14 @@ func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, 
 		validatorFlag = "1"
 	}
 
-	operaServicePort, err := driver.GetFreePort()
+	operaServicePort, err := network.GetFreePort()
 	if err != nil {
 		return nil, err
 	}
 	host, err := client.Start(&docker.ContainerConfig{
 		ImageName:       operaDockerImageName,
 		ShutdownTimeout: &timeout,
-		PortForwarding: map[driver.Port]driver.Port{
+		PortForwarding: map[network.Port]network.Port{
 			OperaRPCPort: operaServicePort,
 		},
 		Environment: map[string]string{
@@ -64,10 +65,6 @@ func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, 
 	// The node did not show up in time, so we consider the start to have failed.
 	node.host.Cleanup()
 	return nil, fmt.Errorf("failed to get node online")
-}
-
-func (n *OperaNode) GetHost() driver.Host {
-	return n.host
 }
 
 func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
@@ -96,6 +93,14 @@ func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 		return "", err
 	}
 	return driver.NodeID(result.Enode), nil
+}
+
+func (n *OperaNode) Stop() error {
+	return n.host.Stop()
+}
+
+func (n *OperaNode) Cleanup() error {
+	return n.host.Cleanup()
 }
 
 func (n *OperaNode) AddPeer(id driver.NodeID) error {

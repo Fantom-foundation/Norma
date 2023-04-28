@@ -1,4 +1,4 @@
-package network
+package local
 
 import (
 	"context"
@@ -44,8 +44,7 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 	}
 
 	id, err := node.GetNodeID()
-	for otherId, other := range n.nodes {
-		log.Printf("Introducing %s to %s", id, otherId)
+	for _, other := range n.nodes {
 		if err := other.AddPeer(id); err != nil {
 			return nil, err
 		}

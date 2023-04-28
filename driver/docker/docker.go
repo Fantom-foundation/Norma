@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -34,7 +34,7 @@ type Container struct {
 type ContainerConfig struct {
 	ImageName       string
 	ShutdownTimeout *time.Duration
-	PortForwarding  map[driver.Port]driver.Port // Inner Port => public Port
+	PortForwarding  map[network.Port]network.Port // Inner Port => public Port
 	Environment     map[string]string
 }
 
@@ -119,14 +119,14 @@ func (c *Container) Cleanup() error {
 // Container and being exported to the Docker's host environment. If there is
 // no such service (e.g., because it was not marked as to be exported during
 // the Start of the Container), nil will be returned.
-func (n *Container) GetAddressForService(service *driver.ServiceDescription) *driver.AddressPort {
+func (n *Container) GetAddressForService(service *network.ServiceDescription) *network.AddressPort {
 	// All services inside the container are reached through port-forwarding
 	// on the localhost. Non-forwarded services are not supported.
 	port, ok := n.config.PortForwarding[service.Port]
 	if !ok {
 		return nil
 	}
-	res := driver.AddressPort(fmt.Sprintf("%s:%d", "localhost", port))
+	res := network.AddressPort(fmt.Sprintf("%s:%d", "localhost", port))
 	return &res
 }
 
