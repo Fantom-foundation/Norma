@@ -59,6 +59,9 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 
 			// We need at last one node running.
 			node, err := net.CreateNode(&driver.NodeConfig{})
+			if err != nil {
+				t.Fatalf("failed to create node in network: %v", err)
+			}
 			defer node.GetHost().Cleanup()
 
 			apps := []driver.Application{}
