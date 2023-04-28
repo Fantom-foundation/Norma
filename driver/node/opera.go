@@ -12,7 +12,10 @@ import (
 
 const OperaRPCPort = 18545
 
-var OperaRPCPortService = driver.RegisterService("OperaRPC", OperaRPCPort)
+var OperaRpcService = driver.ServiceDescription{
+	Name: "OperaPRC",
+	Port: OperaRPCPort,
+}
 
 type OperaNode struct {
 	*docker.Container
@@ -49,6 +52,10 @@ func StartOperaDockerNode(client *docker.Client, portManager PortManager, isVali
 	return node, nil
 }
 
+func (n *OperaNode) GetHost() driver.Host {
+	return n.Container
+}
+
 func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 	url := n.GetRpcServiceUrl()
 	rpcClient, err := rpc.DialContext(context.Background(), url)
@@ -75,5 +82,5 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 }
 
 func (n *OperaNode) GetRpcServiceUrl() string {
-	return fmt.Sprintf("http://%s", n.GetAddressForService(OperaRPCPortService))
+	return fmt.Sprintf("http://%s", n.GetAddressForService(&OperaRpcService))
 }

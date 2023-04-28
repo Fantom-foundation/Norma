@@ -2,7 +2,6 @@ package docker
 
 import (
 	"log"
-	"net"
 	"os"
 	"testing"
 	"time"
@@ -42,13 +41,9 @@ func TestContainer_Cleanup(t *testing.T) {
 
 func TestContainer_GetAddress(t *testing.T) {
 	_, cont := startContainer(t)
-	ip, err := cont.GetIP()
-	if err != nil {
-		t.Fatalf("error: %v", err)
-	}
-
-	if net.ParseIP(string(ip)) == nil {
-		t.Errorf("IP address is not valid: %s", ip)
+	ip := cont.GetIP()
+	if ip != "localhost" {
+		t.Errorf("docker containers should always be reachable through localhost")
 	}
 }
 
@@ -102,7 +97,10 @@ func startContainer(t *testing.T) (*Client, *Container) {
 	}
 
 	timeout := time.Second
-	cont, err := cli.Start(&ClientConfig{OperaImageName, &timeout})
+	cont, err := cli.Start(&ContainerConfig{
+		ImageName:       OperaImageName,
+		ShutdownTimeout: &timeout,
+	})
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}

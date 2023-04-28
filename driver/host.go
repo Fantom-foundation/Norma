@@ -1,5 +1,7 @@
 package driver
 
+//go:generate mockgen -source host.go -destination host_mock.go -package driver
+
 type IP string
 
 // TODO: document
@@ -9,6 +11,9 @@ type Host interface {
 	IsRunning() bool
 	// GetIP returns this node's IP address.
 	GetIP() IP
+
+	GetAddressForService(*ServiceDescription) AddressPort
+
 	// Stop shuts down the services running on the node gracefully, using
 	// their regular shutdown procedure (not killed). After stopping the
 	// service, no more interactions are expected to succeed.

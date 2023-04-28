@@ -1,6 +1,6 @@
 package driver
 
-//go:generate mockgen -source node.go,host.go -destination node_mock.go -package driver
+//go:generate mockgen -source node.go -destination node_mock.go -package driver
 
 type AddressPort string
 
@@ -11,9 +11,8 @@ type NodeID string
 // interact with the node, and shut it down.
 type Node interface {
 	// TODO: document
-	Host
+	GetHost() Host
+
 	// GetNodeID returns a enode identifying this node within the Norma network.
 	GetNodeID() (NodeID, error)
-
-	GetAddressForService(ServiceID) AddressPort
 }

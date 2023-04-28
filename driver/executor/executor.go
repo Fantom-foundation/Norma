@@ -161,10 +161,10 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			if instance == nil {
 				return nil
 			}
-			if err := (*instance).Stop(); err != nil {
+			if err := (*instance).GetHost().Stop(); err != nil {
 				return err
 			}
-			return (*instance).Cleanup()
+			return (*instance).GetHost().Cleanup()
 		}))
 	}
 }

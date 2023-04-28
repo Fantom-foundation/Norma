@@ -108,12 +108,8 @@ func (c *Container) GetIP() driver.IP {
 	return "localhost"
 }
 
-func (n *Container) GetAddressForService(service driver.ServiceID) driver.AddressPort {
-	info := driver.GetServiceInfo(service)
-	if info == nil {
-		return ""
-	}
-	port, ok := n.config.PortForwarding[Port(info.Port)]
+func (n *Container) GetAddressForService(service *driver.ServiceDescription) driver.AddressPort {
+	port, ok := n.config.PortForwarding[Port(service.Port)]
 	if !ok {
 		return ""
 	}

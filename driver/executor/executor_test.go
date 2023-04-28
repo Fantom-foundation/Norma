@@ -42,11 +42,13 @@ func TestExecutor_RunSingleNodeScenario(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 	node := driver.NewMockNode(ctrl)
+	host := driver.NewMockHost(ctrl)
 
 	// In this scenario, a node is expected to be created and shut down.
 	net.EXPECT().CreateNode(gomock.Any()).Return(node, nil)
-	node.EXPECT().Stop()
-	node.EXPECT().Cleanup()
+	node.EXPECT().GetHost().AnyTimes().Return(host)
+	host.EXPECT().Stop()
+	host.EXPECT().Cleanup()
 
 	if err := Run(clock, net, &scenario); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
@@ -73,16 +75,20 @@ func TestExecutor_RunMultipleNodeScenario(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
+	host1 := driver.NewMockHost(ctrl)
+	host2 := driver.NewMockHost(ctrl)
 	node1 := driver.NewMockNode(ctrl)
 	node2 := driver.NewMockNode(ctrl)
 
 	// In this scenario, two nodes are created and stopped.
 	net.EXPECT().CreateNode(gomock.Any()).Return(node1, nil)
 	net.EXPECT().CreateNode(gomock.Any()).Return(node2, nil)
-	node1.EXPECT().Stop()
-	node1.EXPECT().Cleanup()
-	node2.EXPECT().Stop()
-	node2.EXPECT().Cleanup()
+	node1.EXPECT().GetHost().AnyTimes().Return(host1)
+	node2.EXPECT().GetHost().AnyTimes().Return(host2)
+	host1.EXPECT().Stop()
+	host1.EXPECT().Cleanup()
+	host2.EXPECT().Stop()
+	host2.EXPECT().Cleanup()
 
 	if err := Run(clock, net, &scenario); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
