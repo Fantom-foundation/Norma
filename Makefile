@@ -1,2 +1,2 @@
-build-docker-image:
+build-opera-docker-image:
 	docker build . -t opera

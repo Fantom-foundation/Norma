@@ -14,11 +14,15 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
-const OperaImageName = "opera"
+// Client provides means to spawn Docker containers capable of hosting
+// services like the go-opera client.
+type Client struct {
+	cli *client.Client
+}
 
-type Port uint16
-
-// Container represents a running instance of the client application such as go-opera
+// Container represents a Docker Container, typically used for running a
+// Fantom network Node, thus an instance of the go-opera client.
+// *Container implement the driver.Host interface.
 type Container struct {
 	id      string
 	client  *Client
@@ -26,26 +30,22 @@ type Container struct {
 	running bool
 }
 
-// Client is an initialized application that can run containers
-type Client struct {
-	cli *client.Client
-}
-
-// ClientConfig configures common parameters for running containers.
+// ClientConfig define parameter for starting Docker Containers.
 type ContainerConfig struct {
 	ImageName       string
 	ShutdownTimeout *time.Duration
-	PortForwarding  map[Port]Port // Inner Port => public Port
+	PortForwarding  map[driver.Port]driver.Port // Inner Port => public Port
 	Environment     map[string]string
 }
 
-// NewClient creates the docker environment
+// NewClient creates a new client facilitating the creation of Docker
+// Containers capable of hosting services. Clients successfully created
+// through this function should be Closed() eventually.
 func NewClient() (*Client, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Client{cli}, nil
 }
 
@@ -53,7 +53,11 @@ func (c *Client) Close() error {
 	return c.cli.Close()
 }
 
-// Start creates and runs one Container
+// Start creates and runs one Container. The provided configuration allows
+// to configure the Docker image to run inside the container -- and thus the
+// services to be offered -- and port-forwarding specifications to make those
+// services reachable from outside the Docker container (e.g. by the
+// application running this code).
 func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 
 	envVars := []string{}
@@ -87,16 +91,23 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	return &Container{resp.ID, c, config, true}, nil
 }
 
+// IsRunning returns true if the Container has not been stopped yet and
+// expected to offer its services.
 func (c *Container) IsRunning() bool {
 	return c.running
 }
 
-// Stop terminates the running container.
+// Stop terminates this container. Services within the container will be
+// signaled about the upcoming termination followed by being killed after a set
+// timeout (see ContainerConfig.ShutdownTimeout).
 func (c *Container) Stop() error {
 	c.running = false
 	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
 }
 
+// Cleanup stops the container (unless it is already stopped) and frees any
+// resources associated to it. After the operation, the Container is to be
+// considered invalid.
 func (c *Container) Cleanup() error {
 	if err := c.Stop(); err != nil {
 		return err
@@ -108,14 +119,20 @@ func (c *Container) GetIP() driver.IP {
 	return "localhost"
 }
 
-func (n *Container) GetAddressForService(service *driver.ServiceDescription) driver.AddressPort {
-	port, ok := n.config.PortForwarding[Port(service.Port)]
+// GetAddressForService retrieves the Address of a service running in this
+// Container and being exported to the Docker's host environment. If there is
+// no such service (e.g., because it was not marked as to be exported during
+// the Start of the Container), nil will be returned.
+func (n *Container) GetAddressForService(service *driver.ServiceDescription) *driver.AddressPort {
+	port, ok := n.config.PortForwarding[service.Port]
 	if !ok {
-		return ""
+		return nil
 	}
-	return driver.AddressPort(fmt.Sprintf("%s:%d", n.GetIP(), port))
+	res := driver.AddressPort(fmt.Sprintf("%s:%d", n.GetIP(), port))
+	return &res
 }
 
+// SaveLogTo fetches the log of the container and saves it to the given directory.
 func (c *Container) SaveLogTo(directory string) error {
 	opt := types.ContainerLogsOptions{
 		ShowStdout: true,

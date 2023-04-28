@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -21,7 +20,7 @@ type LocalNetwork struct {
 	docker   *docker.Client
 	nodes    map[driver.NodeID]*node.OperaNode
 	primary  *node.OperaNode // first node generated, always a validator
-	nextPort int
+	nextPort driver.Port
 }
 
 func NewLocalNetwork() (driver.Network, error) {
@@ -38,14 +37,12 @@ func NewLocalNetwork() (driver.Network, error) {
 
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
 	isValidator := len(n.nodes) == 0 // for now, only the first node is a validator
-	node, err := node.StartOperaDockerNode(n.docker, n, isValidator)
+	node, err := node.StartOperaDockerNode(n.docker, isValidator)
 	if err != nil {
 		return nil, err
 	}
 
-	time.Sleep(5 * time.Second)
 	id, err := node.GetNodeID()
-
 	for otherId, other := range n.nodes {
 		log.Printf("Introducing %s to %s", id, otherId)
 		if err := other.AddPeer(id); err != nil {
@@ -93,7 +90,11 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 
 	url := n.primary.GetRpcServiceUrl()
-	rpcClient, err := ethclient.Dial(url)
+	if url == nil {
+		return nil, fmt.Errorf("primary node is not running an RPC server")
+	}
+
+	rpcClient, err := ethclient.Dial(string(*url))
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}, nil
 }
 
-func (n *LocalNetwork) GetFreshPort() int {
+func (n *LocalNetwork) GetFreshPort() driver.Port {
 	res := n.nextPort
 	n.nextPort++
 	return res

@@ -17,15 +17,13 @@ var OperaRpcService = driver.ServiceDescription{
 	Port: OperaRPCPort,
 }
 
+const operaDockerImageName = "opera"
+
 type OperaNode struct {
-	*docker.Container
+	host driver.Host
 }
 
-type PortManager interface {
-	GetFreshPort() int
-}
-
-func StartOperaDockerNode(client *docker.Client, portManager PortManager, isValidator bool) (*OperaNode, error) {
+func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, error) {
 	timeout := 1 * time.Second
 
 	validatorFlag := "0"
@@ -33,11 +31,15 @@ func StartOperaDockerNode(client *docker.Client, portManager PortManager, isVali
 		validatorFlag = "1"
 	}
 
+	operaServicePort, err := driver.GetFreePort()
+	if err != nil {
+		return nil, err
+	}
 	host, err := client.Start(&docker.ContainerConfig{
-		ImageName:       docker.OperaImageName,
+		ImageName:       operaDockerImageName,
 		ShutdownTimeout: &timeout,
-		PortForwarding: map[docker.Port]docker.Port{
-			OperaRPCPort: docker.Port(portManager.GetFreshPort()),
+		PortForwarding: map[driver.Port]driver.Port{
+			OperaRPCPort: operaServicePort,
 		},
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorFlag,
@@ -47,18 +49,33 @@ func StartOperaDockerNode(client *docker.Client, portManager PortManager, isVali
 		return nil, err
 	}
 	node := &OperaNode{
-		Container: host,
+		host: host,
 	}
-	return node, nil
+
+	// Wait until the OperaNode inside the Container is ready.
+	for i := 0; i < 100; i++ {
+		_, err := node.GetNodeID()
+		if err == nil {
+			return node, nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// The node did not show up in time, so we consider the start to have failed.
+	node.host.Cleanup()
+	return nil, fmt.Errorf("failed to get node online")
 }
 
 func (n *OperaNode) GetHost() driver.Host {
-	return n.Container
+	return n.host
 }
 
 func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 	url := n.GetRpcServiceUrl()
-	rpcClient, err := rpc.DialContext(context.Background(), url)
+	if url == nil {
+		return "", fmt.Errorf("node does not export an RPC server")
+	}
+	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
 	if err != nil {
 		return "", err
 	}
@@ -74,13 +91,21 @@ func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 
 func (n *OperaNode) AddPeer(id driver.NodeID) error {
 	url := n.GetRpcServiceUrl()
-	rpcClient, err := rpc.DialContext(context.Background(), url)
+	if url == nil {
+		return fmt.Errorf("node does not export an RPC server")
+	}
+	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
 	if err != nil {
 		return err
 	}
 	return rpcClient.Call(nil, "admin_addPeer", id)
 }
 
-func (n *OperaNode) GetRpcServiceUrl() string {
-	return fmt.Sprintf("http://%s", n.GetAddressForService(&OperaRpcService))
+func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
+	addr := n.host.GetAddressForService(&OperaRpcService)
+	if addr == nil {
+		return nil
+	}
+	url := driver.URL(fmt.Sprintf("http://%s", *addr))
+	return &url
 }

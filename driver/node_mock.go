@@ -61,3 +61,17 @@ func (mr *MockNodeMockRecorder) GetNodeID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeID", reflect.TypeOf((*MockNode)(nil).GetNodeID))
 }
+
+// GetRpcServiceUrl mocks base method.
+func (m *MockNode) GetRpcServiceUrl() *URL {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRpcServiceUrl")
+	ret0, _ := ret[0].(*URL)
+	return ret0
+}
+
+// GetRpcServiceUrl indicates an expected call of GetRpcServiceUrl.
+func (mr *MockNodeMockRecorder) GetRpcServiceUrl() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRpcServiceUrl", reflect.TypeOf((*MockNode)(nil).GetRpcServiceUrl))
+}

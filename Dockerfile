@@ -30,6 +30,5 @@ ENV VALIDATORS_COUNT=1
 
 EXPOSE 18545
 
-
 COPY scripts/run_opera.sh .
 CMD /bin/bash run_opera.sh
