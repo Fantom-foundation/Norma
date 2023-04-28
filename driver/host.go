@@ -2,8 +2,6 @@ package driver
 
 //go:generate mockgen -source host.go -destination host_mock.go -package driver
 
-type IP string
-
 // AddressPort is a string addressing an IP port in the format <IP>:<port>.
 type AddressPort string
 
@@ -14,9 +12,6 @@ type AddressPort string
 type Host interface {
 	// IsRunning tests whether this host is running or has been stopped.
 	IsRunning() bool
-
-	// GetIP returns this host's IP address.
-	GetIP() IP
 
 	// GetAddressForService returns the address of a service running on this
 	// host, or nil if such a service is not offered.

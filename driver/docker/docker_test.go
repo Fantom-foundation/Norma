@@ -39,14 +39,6 @@ func TestContainer_Cleanup(t *testing.T) {
 	}
 }
 
-func TestContainer_GetAddress(t *testing.T) {
-	_, cont := startContainer(t)
-	ip := cont.GetIP()
-	if ip != "localhost" {
-		t.Errorf("docker containers should always be reachable through localhost")
-	}
-}
-
 func TestContainer_SaveLogTo(t *testing.T) {
 	_, cont := startContainer(t)
 

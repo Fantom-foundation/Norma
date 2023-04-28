@@ -70,6 +70,15 @@ func (n *OperaNode) GetHost() driver.Host {
 	return n.host
 }
 
+func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
+	addr := n.host.GetAddressForService(&OperaRpcService)
+	if addr == nil {
+		return nil
+	}
+	url := driver.URL(fmt.Sprintf("http://%s", *addr))
+	return &url
+}
+
 func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 	url := n.GetRpcServiceUrl()
 	if url == nil {
@@ -99,13 +108,4 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 		return err
 	}
 	return rpcClient.Call(nil, "admin_addPeer", id)
-}
-
-func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
-	addr := n.host.GetAddressForService(&OperaRpcService)
-	if addr == nil {
-		return nil
-	}
-	url := driver.URL(fmt.Sprintf("http://%s", *addr))
-	return &url
 }

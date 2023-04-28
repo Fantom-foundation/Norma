@@ -115,20 +115,18 @@ func (c *Container) Cleanup() error {
 	return c.client.cli.ContainerRemove(context.Background(), c.id, types.ContainerRemoveOptions{})
 }
 
-func (c *Container) GetIP() driver.IP {
-	return "localhost"
-}
-
 // GetAddressForService retrieves the Address of a service running in this
 // Container and being exported to the Docker's host environment. If there is
 // no such service (e.g., because it was not marked as to be exported during
 // the Start of the Container), nil will be returned.
 func (n *Container) GetAddressForService(service *driver.ServiceDescription) *driver.AddressPort {
+	// All services inside the container are reached through port-forwarding
+	// on the localhost. Non-forwarded services are not supported.
 	port, ok := n.config.PortForwarding[service.Port]
 	if !ok {
 		return nil
 	}
-	res := driver.AddressPort(fmt.Sprintf("%s:%d", n.GetIP(), port))
+	res := driver.AddressPort(fmt.Sprintf("%s:%d", "localhost", port))
 	return &res
 }
 

@@ -21,11 +21,11 @@ func run(ctx *cli.Context) (err error) {
 
 	args := ctx.Args()
 	if args.Len() < 1 {
-		return fmt.Errorf("requires target file name as argument")
+		return fmt.Errorf("requires scenario file as an argument")
 	}
 
 	path := args.First()
-	fmt.Printf("Trying to parse '%s' ...\n", path)
+	fmt.Printf("Running '%s' ...\n", path)
 
 	scenario, err := parser.ParseFile(path)
 	if err != nil {

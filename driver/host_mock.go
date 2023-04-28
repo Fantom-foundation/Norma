@@ -61,20 +61,6 @@ func (mr *MockHostMockRecorder) GetAddressForService(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddressForService", reflect.TypeOf((*MockHost)(nil).GetAddressForService), arg0)
 }
 
-// GetIP mocks base method.
-func (m *MockHost) GetIP() IP {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIP")
-	ret0, _ := ret[0].(IP)
-	return ret0
-}
-
-// GetIP indicates an expected call of GetIP.
-func (mr *MockHostMockRecorder) GetIP() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIP", reflect.TypeOf((*MockHost)(nil).GetIP))
-}
-
 // IsRunning mocks base method.
 func (m *MockHost) IsRunning() bool {
 	m.ctrl.T.Helper()

@@ -16,11 +16,12 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// LocalNetwork is a Docker based network running each individual node
+// within its own, dedicated Docker Container.
 type LocalNetwork struct {
-	docker   *docker.Client
-	nodes    map[driver.NodeID]*node.OperaNode
-	primary  *node.OperaNode // first node generated, always a validator
-	nextPort driver.Port
+	docker  *docker.Client
+	nodes   map[driver.NodeID]*node.OperaNode
+	primary *node.OperaNode // first node generated, always the only validator for now
 }
 
 func NewLocalNetwork() (driver.Network, error) {
@@ -29,13 +30,13 @@ func NewLocalNetwork() (driver.Network, error) {
 		return nil, err
 	}
 	return &LocalNetwork{
-		docker:   client,
-		nodes:    map[driver.NodeID]*node.OperaNode{},
-		nextPort: 20000,
+		docker: client,
+		nodes:  map[driver.NodeID]*node.OperaNode{},
 	}, nil
 }
 
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
+	// TODO: support more than one validator node
 	isValidator := len(n.nodes) == 0 // for now, only the first node is a validator
 	node, err := node.StartOperaDockerNode(n.docker, isValidator)
 	if err != nil {
@@ -120,10 +121,4 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	return &localApplication{
 		controller: sourceDriver,
 	}, nil
-}
-
-func (n *LocalNetwork) GetFreshPort() driver.Port {
-	res := n.nextPort
-	n.nextPort++
-	return res
 }

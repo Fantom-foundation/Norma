@@ -9,12 +9,12 @@ type Node interface {
 	// GetNodeID returns a enode identifying this node within the Norma network.
 	GetNodeID() (NodeID, error)
 
-	// GetHost retrieves the host this node is running on.
-	GetHost() Host
-
 	// GetRpcServiceUrl returns the URL of the RPC serve rrunning on the
 	// represented node. May be nil if no such service is offered.
 	GetRpcServiceUrl() *URL
+
+	// GetHost retrieves the host this node is running on.
+	GetHost() Host
 }
 
 // NodeID is a unique ID identifying each node. This identifier is used, for

@@ -48,7 +48,7 @@ func (cg *CounterTransactionGenerator) Init(rpcClient *ethclient.Client) (err er
 
 func waitUntilContractStartExisting(contractAddress common.Address, rpcClient *ethclient.Client) error {
 	for i := 0; i < 10; i++ {
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		code, err := rpcClient.CodeAt(context.Background(), contractAddress, nil)
 		if err != nil {
 			return fmt.Errorf("failed to check contract existence; %v", err)

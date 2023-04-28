@@ -18,5 +18,6 @@ nodes:
 applications:
   - name: counter
     start: 10          # start time
+    end: 50
     rate:
       constant: 20     # Tx/s
