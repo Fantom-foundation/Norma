@@ -90,7 +90,7 @@ func startContainer(t *testing.T) (*Client, *Container) {
 
 	timeout := time.Second
 	cont, err := cli.Start(&ContainerConfig{
-		ImageName:       "opera", // <= used here, but not owned by package
+		ImageName:       "hello-world",
 		ShutdownTimeout: &timeout,
 	})
 	if err != nil {
