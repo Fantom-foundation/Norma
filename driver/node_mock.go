@@ -47,18 +47,33 @@ func (mr *MockNodeMockRecorder) Cleanup() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockNode)(nil).Cleanup))
 }
 
-// SaveLogTo mocks base method.
-func (m *MockNode) SaveLogTo(directory string) error {
+// GetNodeID mocks base method.
+func (m *MockNode) GetNodeID() (NodeID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveLogTo", directory)
-	ret0, _ := ret[0].(error)
+	ret := m.ctrl.Call(m, "GetNodeID")
+	ret0, _ := ret[0].(NodeID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodeID indicates an expected call of GetNodeID.
+func (mr *MockNodeMockRecorder) GetNodeID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeID", reflect.TypeOf((*MockNode)(nil).GetNodeID))
+}
+
+// GetRpcServiceUrl mocks base method.
+func (m *MockNode) GetRpcServiceUrl() *URL {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRpcServiceUrl")
+	ret0, _ := ret[0].(*URL)
 	return ret0
 }
 
-// SaveLogTo indicates an expected call of SaveLogTo.
-func (mr *MockNodeMockRecorder) SaveLogTo(directory interface{}) *gomock.Call {
+// GetRpcServiceUrl indicates an expected call of GetRpcServiceUrl.
+func (mr *MockNodeMockRecorder) GetRpcServiceUrl() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveLogTo", reflect.TypeOf((*MockNode)(nil).SaveLogTo), directory)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRpcServiceUrl", reflect.TypeOf((*MockNode)(nil).GetRpcServiceUrl))
 }
 
 // Stop mocks base method.

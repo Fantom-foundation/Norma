@@ -2,43 +2,50 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"io"
 	"os"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
-const imageName = "opera"
-
-// Container represents a running instance of the client application such as go-opera
-type Container struct {
-	id     string
-	client *Client
-	config *ClientConfig
-}
-
-// Client is an initialized application that can run containers
+// Client provides means to spawn Docker containers capable of hosting
+// services like the go-opera client.
 type Client struct {
 	cli *client.Client
 }
 
-// ClientConfig configures common parameters for running containers.
-type ClientConfig struct {
-	imageName       string
-	shutdownTimeout *time.Duration
+// Container represents a Docker Container, typically used for running a
+// Fantom network Node, thus an instance of the go-opera client.
+// *Container implements the driver.Host interface.
+type Container struct {
+	id      string
+	client  *Client
+	config  *ContainerConfig
+	running bool
 }
 
-// NewClient creates the docker environment
+// ContainerConfig defines parameters for running Docker Containers.
+type ContainerConfig struct {
+	ImageName       string
+	ShutdownTimeout *time.Duration
+	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
+	Environment     map[string]string
+}
+
+// NewClient creates a new client facilitating the creation of Docker
+// Containers capable of hosting services. Clients successfully created
+// through this function should be Closed() eventually.
 func NewClient() (*Client, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
-
 	return &Client{cli}, nil
 }
 
@@ -46,12 +53,33 @@ func (c *Client) Close() error {
 	return c.cli.Close()
 }
 
-// Start creates and runs one Container
-func (c *Client) Start(config *ClientConfig) (*Container, error) {
+// Start creates and runs one Container. The provided configuration allows
+// to configure the Docker image to run inside the container -- and thus the
+// services to be offered -- and port-forwarding specifications to make those
+// services reachable from outside the Docker container (e.g. by the
+// application running this code).
+func (c *Client) Start(config *ContainerConfig) (*Container, error) {
+
+	envVars := []string{}
+	for key, value := range config.Environment {
+		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	portMapping := nat.PortMap{}
+	for inner, outer := range config.PortForwarding {
+		portMapping[nat.Port(fmt.Sprintf("%d/tcp", inner))] = []nat.PortBinding{{
+			HostIP:   "localhost",
+			HostPort: fmt.Sprintf("%d/tcp", outer),
+		}}
+	}
+
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
-		Image: config.imageName,
+		Image: config.ImageName,
 		Tty:   false,
-	}, nil, nil, nil, "")
+		Env:   envVars,
+	}, &container.HostConfig{
+		PortBindings: portMapping,
+	}, nil, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -60,14 +88,26 @@ func (c *Client) Start(config *ClientConfig) (*Container, error) {
 		return nil, err
 	}
 
-	return &Container{resp.ID, c, config}, nil
+	return &Container{resp.ID, c, config, true}, nil
 }
 
-// Stop terminates the running container.
+// IsRunning returns true if the Container has not been stopped yet and is
+// expected to offer its services.
+func (c *Container) IsRunning() bool {
+	return c.running
+}
+
+// Stop terminates this container. Services within the container will be
+// signaled about the upcoming termination followed by being killed after a set
+// timeout (see ContainerConfig.ShutdownTimeout).
 func (c *Container) Stop() error {
-	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.shutdownTimeout)
+	c.running = false
+	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
 }
 
+// Cleanup stops the container (unless it is already stopped) and frees any
+// resources associated to it. After the operation, the Container is to be
+// considered invalid.
 func (c *Container) Cleanup() error {
 	if err := c.Stop(); err != nil {
 		return err
@@ -75,33 +115,22 @@ func (c *Container) Cleanup() error {
 	return c.client.cli.ContainerRemove(context.Background(), c.id, types.ContainerRemoveOptions{})
 }
 
-func (c *Container) GetAddress() (string, error) {
-	containers, err := c.client.listContainers()
-	if err != nil {
-		return "", err
+// GetAddressForService retrieves the Address of a service running in this
+// Container and being exported to the Docker's host environment. If there is
+// no such service (e.g., because it was not marked as to be exported during
+// the Start of the Container), nil will be returned.
+func (n *Container) GetAddressForService(service *network.ServiceDescription) *network.AddressPort {
+	// All services inside the container are reached through port-forwarding
+	// on the localhost. Non-forwarded services are not supported.
+	port, ok := n.config.PortForwarding[service.Port]
+	if !ok {
+		return nil
 	}
-
-	var existingCont *types.Container
-	for _, cont := range containers {
-		if cont.ID == c.id {
-			existingCont = &cont
-			break
-		}
-	}
-
-	if existingCont == nil {
-		return "", errors.New(fmt.Sprintf("container %s does not run", c.id))
-	}
-
-	var ip string
-	for _, v := range existingCont.NetworkSettings.Networks {
-		ip = v.IPAddress
-		break // we expect only one IP address is assigned.
-	}
-
-	return ip, nil
+	res := network.AddressPort(fmt.Sprintf("%s:%d", "localhost", port))
+	return &res
 }
 
+// SaveLogTo fetches the log of the container and saves it to the given directory.
 func (c *Container) SaveLogTo(directory string) error {
 	opt := types.ContainerLogsOptions{
 		ShowStdout: true,
@@ -115,7 +144,7 @@ func (c *Container) SaveLogTo(directory string) error {
 		return err
 	}
 
-	file, err := os.Create(fmt.Sprintf("%s/%s_%s.log", directory, c.config.imageName, c.id))
+	file, err := os.Create(fmt.Sprintf("%s/%s_%s.log", directory, c.config.ImageName, c.id))
 	if err != nil {
 		return err
 	}

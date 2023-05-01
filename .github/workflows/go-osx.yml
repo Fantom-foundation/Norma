@@ -27,10 +27,13 @@ jobs:
       with:
         version: v23.0.4
 
+    - name: Fetch Docker test-image
+      run: docker image pull hello-world
+
     - name: Build Docker Image
       working-directory: ./
       run: docker build . -t opera
-      
+  
     - name: Build
       working-directory: ./
       run: go build -v ./...
