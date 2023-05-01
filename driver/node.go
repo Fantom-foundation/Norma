@@ -7,6 +7,7 @@ package driver
 // interact with the node, and shut it down.
 type Node interface {
 	// GetNodeID returns an enode identifying this node within the Norma network.
+	// An error shall be produced if no valid node ID could be obtained.
 	GetNodeID() (NodeID, error)
 
 	// GetRpcServiceUrl returns the URL of the RPC server running on the
