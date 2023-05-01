@@ -28,4 +28,7 @@ COPY --from=build /client/build/opera .
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
 
-CMD ./opera --fakenet ${VALIDATOR_NUMBER}/${VALIDATORS_COUNT}
+EXPOSE 18545
+
+COPY scripts/run_opera.sh .
+CMD /bin/bash run_opera.sh
