@@ -18,6 +18,7 @@ func main() {
 		Flags:     []cli.Flag{},
 		Commands: []*cli.Command{
 			&checkCommand,
+			&runCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
