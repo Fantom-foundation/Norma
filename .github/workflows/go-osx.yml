@@ -23,12 +23,16 @@ jobs:
         go-version: '1.20'
 
     - name: Set up Docker
-      uses: crazy-max/ghaction-setup-docker@v1
-      with:
-        version: v23.0.4
+      run: |
+        brew install docker
+        colima start --memory 4
 
     - name: Fetch Docker test-image
       run: docker image pull hello-world
+
+      # Cache of docker layers
+    - uses: satackey/action-docker-layer-caching@v0.0.11
+      continue-on-error: true
 
     - name: Build Docker Image
       working-directory: ./
@@ -41,3 +45,5 @@ jobs:
     - name: Test
       working-directory: ./
       run: go test -v ./...
+      env:
+        DOCKER_HOST: "unix:///Users/runner/.colima/default/docker.sock"
