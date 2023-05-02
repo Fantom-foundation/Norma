@@ -12,9 +12,6 @@ import (
 	"time"
 )
 
-//go:generate solc -o ../contracts/abi --overwrite --pretty-json --optimize --abi --bin ../contracts/Counter.sol
-//go:generate abigen --type Counter --pkg abi --abi ../contracts/abi/Counter.abi --bin ../contracts/abi/Counter.bin --out ../contracts/abi/Counter.go
-
 // CounterTransactionGenerator is a txs generator incrementing trivial Counter contract
 type CounterTransactionGenerator struct {
 	auth            *bind.TransactOpts

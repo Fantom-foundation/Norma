@@ -10,12 +10,14 @@ Project of integrating Carmen Storage and Tosca VM into go-opera.
 For building the project, the following tools are required:
 * Go: version 1.20 or later; we recommend to use your system's package manager; alternatively, you can follow Go's [installation manual](https://go.dev/doc/install) or; if you need to maintain multiple versions, [this tutorial](https://go.dev/doc/manage-install) describes how to do so
 * Docker: we recommend to use your system's package manager or the installation manuals listed in the [Using Docker](#using-docker) section below
-* GNU make, or comatible
+* GNU make, or compatible
 
-Optinally, before running `go generate ./...`, make sure you installed:
+Optionally, before running `make generate-mocks`, make sure you installed:
 * GoMock: `go install github.com/golang/mock/mockgen@v1.6.0`
   * Make sure `$GOPATH/bin` is in your `$PATH`. `$GOPATH` defaults to `$HOME/go` if not set, i.e. configure `$PATH` 
   * either to `PATH=$GOPATH/bin:$PATH` or `PATH=$HOME/go/bin:$PATH` 
+
+Optionally, before running `make generate-abi`, make sure you have installed:
 * Solidity Compiler (solc) - see [Installing the Solidity Compiler](https://docs.soliditylang.org/en/latest/installing-solidity.html)
   * Install version [0.8.19](https://github.com/ethereum/solidity/releases/tag/v0.8.19)
 * go-ethereum's abigen: 
