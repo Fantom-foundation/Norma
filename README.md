@@ -12,11 +12,17 @@ For building the project, the following tools are required:
 * Docker: we recommend to use your system's package manager or the installation manuals listed in the [Using Docker](#using-docker) section below
 * GNU make, or comatible
 
-Optinally, before running `go generate ./...`, make sure you have installed:
+Optinally, before running `go generate ./...`, make sure you installed:
 * GoMock: `go install github.com/golang/mock/mockgen@v1.6.0`
+  * Make sure `$GOPATH/bin` is in your `$PATH`. `$GOPATH` defaults to `$HOME/go` if not set, i.e. configure `$PATH` 
+  * either to `PATH=$GOPATH/bin:$PATH` or `PATH=$HOME/go/bin:$PATH` 
 * Solidity Compiler (solc) - see [Installing the Solidity Compiler](https://docs.soliditylang.org/en/latest/installing-solidity.html)
-* go-ethereum's abigen - you need to compile [go-ethereum](https://github.com/ethereum/go-ethereum/)
-  and copy it from `build/bin/abigen` into your PATH
+  * Install version [0.8.19](https://github.com/ethereum/solidity/releases/tag/v0.8.19)
+* go-ethereum's abigen: 
+  * Checkout [go-ethereum](https://github.com/ethereum/go-ethereum/) `git clone https://github.com/ethereum/go-ethereum/`
+  * Checkout the right version `git checkout v1.10.8`
+  * Build Geth will all tools: `cd go-ethereum` and `make all`
+  * Copy `abigen` from `build/bin/abigen` into your PATH, e.g.: `cp build/bin/abigen /usr/local/bin`
 
 
 ## Building
