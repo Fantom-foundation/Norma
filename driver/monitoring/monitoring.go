@@ -45,6 +45,6 @@ type Opera interface {
 	// GetTransactionPoolSize return current number of transactions in the transaction pool
 	GetTransactionPoolSize() int
 
-	// GetTransactionDropRate returns percentage of dropped transactions from the pool 
+	// GetTransactionDropRate returns percentage of dropped transactions from the pool
 	GetTransactionDropRate() int
 }
