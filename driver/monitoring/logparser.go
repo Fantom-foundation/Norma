@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -125,6 +126,9 @@ func (p *LogParserThroughput) readFile() error {
 		// example line: "INFO [05-04|09:34:15.537] New block index=3 id=3:1:3d6fb6 gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms
 		line := scanner.Text()
 		if strings.Contains(line, "New block") {
+
+			fmt.Printf("%s\n", line)
+
 			timestampStr := timestampReg.FindString(line)
 			blockNumberStr := strings.Split(blockReg.FindString(line), "=")[1]
 			gasUsedStr := strings.ReplaceAll(strings.Split(gasReg.FindString(line), "=")[1], ",", "")

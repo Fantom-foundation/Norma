@@ -131,6 +131,8 @@ func TestLogAppended(t *testing.T) {
 
 	_ = f.Close()
 
+	fmt.Printf("*****\n")
+
 	if val, err := parser.GetTransactions(7); val != 666 || err != nil {
 		t.Errorf("wrong value: %d, err: %s", val, err)
 	}
