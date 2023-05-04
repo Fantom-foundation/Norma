@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -15,7 +14,7 @@ type LogParserThroughput struct {
 	file string // a file with the logs
 
 	data     map[int]block // map block number -> block, for now it stores all data in-memory
-	lastRead time.Time     // time whe the file was last read
+	lastSize int64         // size of the file when it  was last read
 }
 
 // block contains data of one block
@@ -29,7 +28,7 @@ type block struct {
 func NewLogParserThroughput(file string) *LogParserThroughput {
 	return &LogParserThroughput{
 		file:     file,
-		lastRead: time.UnixMilli(0),
+		lastSize: -1,
 		data:     make(map[int]block, 10000),
 	}
 }
@@ -110,13 +109,12 @@ func (p *LogParserThroughput) readFile() error {
 		return err
 	}
 
-	fmt.Printf("checking mod-time: %s, %s, %d\n", p.lastRead, stat.ModTime(), p.lastRead.Sub(stat.ModTime()))
-	if p.lastRead.Sub(stat.ModTime()) > 0 {
-		fmt.Printf("not changed\n")
+	size := stat.Size()
+	if p.lastSize == size {
 		return ErrNotFound // block not found, file was already read before
 	}
 
-	p.lastRead = time.Now()
+	p.lastSize = size
 
 	timestampReg := regexp.MustCompile(`\[\S*\]`)
 	blockReg := regexp.MustCompile(`index=\d*`)
@@ -128,9 +126,6 @@ func (p *LogParserThroughput) readFile() error {
 		// example line: "INFO [05-04|09:34:15.537] New block index=3 id=3:1:3d6fb6 gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms
 		line := scanner.Text()
 		if strings.Contains(line, "New block") {
-
-			fmt.Printf("%s\n", line)
-
 			timestampStr := timestampReg.FindString(line)
 			blockNumberStr := strings.Split(blockReg.FindString(line), "=")[1]
 			gasUsedStr := strings.ReplaceAll(strings.Split(gasReg.FindString(line), "=")[1], ",", "")
