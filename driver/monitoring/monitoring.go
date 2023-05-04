@@ -1,22 +1,31 @@
 package monitoring
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var ErrNotFound = errors.New("not found")
 
 // Throughput is a monitoring interface to analyze speed related properties of nodes
 type Throughput interface {
 
 	// GetTransactions returns the number of transactions processed in the input block
-	GetTransactions(block int) int
+	// ErrNotFound is returned when the block does not exist
+	GetTransactions(block int) (int, error)
 
 	// GetGas returns the amount of Gas consumed in the input block
-	GetGas(block int) int
+	// ErrNotFound is returned when the block does not exist
+	GetGas(block int) (int, error)
 
-	// GetBlockTime returns total time to process the input block
-	GetBlockTime(block int) time.Duration
+	// GetBlockTime returns timestamp of the input block
+	// ErrNotFound is returned when the block does not exist
+	GetBlockTime(block int) (time.Time, error)
 
 	// GetBlockDelay returns time that passed between start of this block and end of previous block,
 	// i.e. delay between blocks
-	GetBlockDelay(block int) time.Duration
+	// ErrNotFound is returned when the block does not exist
+	GetBlockDelay(block int) (time.Duration, error)
 }
 
 // System is a monitoring interface to analyze system utilization
