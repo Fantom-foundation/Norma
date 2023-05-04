@@ -110,7 +110,9 @@ func (p *LogParserThroughput) readFile() error {
 		return err
 	}
 
+	fmt.Printf("checking mod-time: %s, %s, %d\n", p.lastRead, stat.ModTime(), p.lastRead.Sub(stat.ModTime()))
 	if p.lastRead.Sub(stat.ModTime()) > 0 {
+		fmt.Printf("not changed\n")
 		return ErrNotFound // block not found, file was already read before
 	}
 
