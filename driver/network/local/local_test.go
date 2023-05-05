@@ -90,3 +90,34 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 		})
 	}
 }
+
+func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
+	N := 2
+
+	net, err := NewLocalNetwork()
+	if err != nil {
+		t.Fatalf("failed to create new local network: %v", err)
+	}
+
+	for i := 0; i < N; i++ {
+		_, err := net.CreateNode(&driver.NodeConfig{
+			Name: fmt.Sprintf("T-%d", i),
+		})
+		if err != nil {
+			t.Errorf("failed to create node: %v", err)
+		}
+	}
+
+	for i := 0; i < N; i++ {
+		_, err := net.CreateApplication(&driver.ApplicationConfig{
+			Name: fmt.Sprintf("T-%d", i),
+		})
+		if err != nil {
+			t.Errorf("failed to create app: %v", err)
+		}
+	}
+
+	if err := net.Shutdown(); err != nil {
+		t.Errorf("failed to shut down network: %v", err)
+	}
+}

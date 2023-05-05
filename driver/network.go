@@ -15,6 +15,10 @@ type Network interface {
 	// CreateApplication creates a new application in this network, ready to
 	// produce load as defined by its configuration.
 	CreateApplication(config *ApplicationConfig) (Application, error)
+
+	// Shutdown stops all applications and nodes in the network and frees
+	// any potential other resources.
+	Shutdown() error
 }
 
 type NodeConfig struct {

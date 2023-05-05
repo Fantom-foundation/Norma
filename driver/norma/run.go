@@ -25,23 +25,32 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	path := args.First()
-	fmt.Printf("Running '%s' ...\n", path)
-
+	fmt.Printf("Reading '%s' ...\n", path)
 	scenario, err := parser.ParseFile(path)
 	if err != nil {
 		return err
 	}
 
 	clock := executor.NewWallTimeClock()
+
+	fmt.Printf("Createing network ...\n")
 	net, err := local.NewLocalNetwork()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		fmt.Printf("Shutting down network ...\n")
+		if err := net.Shutdown(); err != nil {
+			fmt.Printf("error during network shutdown:\n%v", err)
+		}
+	}()
 
+	fmt.Printf("Running '%s' ...\n", path)
 	err = executor.Run(clock, net, &scenario)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Execution completed successfully!\n")
+
 	return nil
 }
