@@ -14,6 +14,9 @@ type Clock interface {
 
 	// Suspends execution until the given time (+/- a few milliseconds).
 	SleepUntil(Time) error
+
+	// NotifyAt creates a channel sending a message when the given time is reached.
+	NotifyAt(Time) <-chan Time
 }
 
 // Time is used to model time in a scenario, relative to the start time. Thus,
@@ -63,6 +66,15 @@ func (c *SimClock) SleepUntil(time Time) error {
 	return nil
 }
 
+func (c *SimClock) NotifyAt(time Time) <-chan Time {
+	if c.now < time {
+		c.now = time
+	}
+	ch := make(chan Time, 1)
+	ch <- c.now
+	return ch
+}
+
 // WallTimeClock is a clock aiming to follow real wall-clock time. It is
 // intended to be used when running scenarios for actual evaluations.
 type WallTimeClock struct {
@@ -78,8 +90,22 @@ func (c *WallTimeClock) Now() Time {
 }
 
 func (c *WallTimeClock) SleepUntil(deadline Time) error {
-	if time.Since(c.startTime) < time.Duration(deadline) {
-		time.Sleep(time.Until(c.startTime.Add(time.Duration(deadline))))
-	}
+	<-c.NotifyAt(deadline)
 	return nil
+}
+
+func (c *WallTimeClock) NotifyAt(deadline Time) <-chan Time {
+	res := make(chan Time, 1)
+	if time.Since(c.startTime) < time.Duration(deadline) {
+		// Wait for the required amount of time asynchroniously and then send
+		// the notification.
+		go func() {
+			<-time.After(time.Until(c.startTime.Add(time.Duration(deadline))))
+			res <- c.Now()
+		}()
+	} else {
+		// The deadline has passed, no need to wait.
+		res <- c.Now()
+	}
+	return res
 }

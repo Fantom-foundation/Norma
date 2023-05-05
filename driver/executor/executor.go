@@ -3,6 +3,8 @@ package executor
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/parser"
@@ -33,6 +35,11 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 		scheduleApplicationEvents(&app, queue, network, endTime)
 	}
 
+	// Register a handler for Ctrl+C events.
+	abort := make(chan os.Signal, 1)
+	signal.Notify(abort, os.Interrupt)
+	defer signal.Stop(abort)
+
 	// Run all events.
 	for !queue.empty() {
 		event := queue.getNext()
@@ -41,8 +48,13 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 		}
 
 		// Wait until the event is going to occure ...
-		if err := clock.SleepUntil(event.time()); err != nil {
-			return err
+		select {
+		case <-clock.NotifyAt(event.time()):
+			// continue processing
+		case <-abort:
+			// abort processing
+			log.Printf("Received user abort, ending execution ...")
+			return fmt.Errorf("aborted by user")
 		}
 
 		log.Printf("processing '%s' at time %v ...\n", event.name(), event.time())

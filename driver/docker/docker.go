@@ -27,7 +27,8 @@ type Container struct {
 	id      string
 	client  *Client
 	config  *ContainerConfig
-	running bool
+	stopped bool
+	cleaned bool
 }
 
 // ContainerConfig defines parameters for running Docker Containers.
@@ -88,20 +89,23 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		return nil, err
 	}
 
-	return &Container{resp.ID, c, config, true}, nil
+	return &Container{resp.ID, c, config, false, false}, nil
 }
 
 // IsRunning returns true if the Container has not been stopped yet and is
 // expected to offer its services.
 func (c *Container) IsRunning() bool {
-	return c.running
+	return !c.stopped
 }
 
 // Stop terminates this container. Services within the container will be
 // signaled about the upcoming termination followed by being killed after a set
 // timeout (see ContainerConfig.ShutdownTimeout).
 func (c *Container) Stop() error {
-	c.running = false
+	if c.stopped {
+		return nil
+	}
+	c.stopped = true
 	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
 }
 
@@ -109,9 +113,13 @@ func (c *Container) Stop() error {
 // resources associated to it. After the operation, the Container is to be
 // considered invalid.
 func (c *Container) Cleanup() error {
+	if c.cleaned {
+		return nil
+	}
 	if err := c.Stop(); err != nil {
 		return err
 	}
+	c.cleaned = true
 	return c.client.cli.ContainerRemove(context.Background(), c.id, types.ContainerRemoveOptions{})
 }
 
