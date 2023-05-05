@@ -26,16 +26,22 @@ type Throughput interface {
 	// i.e. delay between blocks
 	// ErrNotFound is returned when the block does not exist
 	GetBlockDelay(block int) (time.Duration, error)
+
+	// GetBlockHeight returns number of already processed blocks
+	GetBlockHeight() (int, error)
 }
 
 // System is a monitoring interface to analyze system utilization
 type System interface {
 
-	// GetCPULoad returns current cpu load in percentage
-	GetCPULoad() int
+	// GetCPULoad returns current cpu load range [0,1]
+	GetCPULoad() float32
 
 	// GetMemoryLoad returns memory utilization in MB
 	GetMemoryLoad() int
+
+	// GetMemoryCapacity returns available memory
+	GetMemoryCapacity() int
 
 	// GetStorageLoad returns storage space utilization in MB
 	GetStorageLoad() int
@@ -53,7 +59,4 @@ type Opera interface {
 
 	// GetTransactionPoolSize return current number of transactions in the transaction pool
 	GetTransactionPoolSize() int
-
-	// GetTransactionDropRate returns percentage of dropped transactions from the pool
-	GetTransactionDropRate() int
 }
