@@ -27,6 +27,26 @@ func TestRunAndStopOneContainer(t *testing.T) {
 	}
 }
 
+func TestContainer_StopCanBeCalledMoreThanOnce(t *testing.T) {
+	_, cont := startContainer(t)
+
+	if !cont.IsRunning() {
+		t.Errorf("started container is not running")
+	}
+
+	if err := cont.Stop(); err != nil {
+		t.Fatalf("error stopping container: %v", err)
+	}
+
+	if cont.IsRunning() {
+		t.Errorf("stopped container is still running")
+	}
+
+	if err := cont.Stop(); err != nil {
+		t.Fatalf("error calling Stop() on stopped container: %v", err)
+	}
+}
+
 func TestContainer_Cleanup(t *testing.T) {
 	cli, cont := startContainer(t)
 
@@ -36,6 +56,26 @@ func TestContainer_Cleanup(t *testing.T) {
 
 	if containerExists(t, cli, cont.id) {
 		t.Errorf("container should not exist: %s", cont.id)
+	}
+}
+
+func TestContainer_CleanupCanBeCalledMoreThanOnce(t *testing.T) {
+	_, cont := startContainer(t)
+
+	if !cont.IsRunning() {
+		t.Errorf("started container is not running")
+	}
+
+	if err := cont.Cleanup(); err != nil {
+		t.Fatalf("error cleaning up container: %v", err)
+	}
+
+	if cont.IsRunning() {
+		t.Errorf("cleaned up container is still running")
+	}
+
+	if err := cont.Cleanup(); err != nil {
+		t.Fatalf("error calling Cleanup() on cleared container: %v", err)
 	}
 }
 

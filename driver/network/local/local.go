@@ -2,6 +2,7 @@ package local
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -21,6 +22,7 @@ import (
 type LocalNetwork struct {
 	docker  *docker.Client
 	nodes   map[driver.NodeID]*node.OperaNode
+	apps    []driver.Application
 	primary *node.OperaNode // first node generated, always the only validator for now
 }
 
@@ -32,6 +34,7 @@ func NewLocalNetwork() (driver.Network, error) {
 	return &LocalNetwork{
 		docker: client,
 		nodes:  map[driver.NodeID]*node.OperaNode{},
+		apps:   []driver.Application{},
 	}, nil
 }
 
@@ -82,7 +85,10 @@ func (a *localApplication) Start() error {
 }
 
 func (a *localApplication) Stop() error {
-	a.cancel()
+	if a.cancel != nil {
+		a.cancel()
+	}
+	a.cancel = nil
 	return nil
 }
 
@@ -120,7 +126,36 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	return &localApplication{
+	app := &localApplication{
 		controller: sourceDriver,
-	}, nil
+	}
+
+	n.apps = append(n.apps, app)
+	return app, nil
+}
+
+func (n *LocalNetwork) Shutdown() error {
+	var errs []error
+	// First stop all generators.
+	for _, app := range n.apps {
+		// TODO: shutdown apps in parallel.
+		if err := app.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	n.apps = n.apps[:0]
+
+	// Second, shut down the nodes.
+	for _, node := range n.nodes {
+		// TODO: shutdown nodes in parallel.
+		if err := node.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := node.Cleanup(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	n.nodes = map[driver.NodeID]*node.OperaNode{}
+
+	return errors.Join(errs...)
 }

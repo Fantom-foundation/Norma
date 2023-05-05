@@ -1,6 +1,8 @@
 package executor
 
 import (
+	"fmt"
+	"syscall"
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -165,6 +167,38 @@ func TestExecutor_RunMultipleApplicationScenario(t *testing.T) {
 	want := Seconds(10)
 	if got := clock.Now(); got < want {
 		t.Errorf("scenario execution did not complete all steps, expected end time %v, got %v", want, got)
+	}
+}
+
+func TestExecutor_TestUserAbort(t *testing.T) {
+
+	clock := NewWallTimeClock()
+	scenario := parser.Scenario{
+		Name:     "Test",
+		Duration: 5,
+		Nodes: []parser.Node{{
+			Name:  "A",
+			Start: New[float32](1),
+			End:   New[float32](3),
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+	node := driver.NewMockNode(ctrl)
+
+	// In this scenario, a node is created, after which a user interrupt is send.
+	net.EXPECT().CreateNode(gomock.Any()).Do(func(_ any) {
+		fmt.Printf("Sending interrupt signal to local process ..\n")
+		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	}).Return(node, nil)
+
+	if err := Run(clock, net, &scenario); err == nil {
+		t.Errorf("a user interrupt error should be reported")
+	}
+	want := Seconds(1)
+	if got := clock.Now(); got < want || got > want+Seconds(1) {
+		t.Errorf("scenario execution did not complete on user interrupt, expected end time %v, got %v", want, got)
 	}
 }
 
