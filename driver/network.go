@@ -16,6 +16,9 @@ type Network interface {
 	// produce load as defined by its configuration.
 	CreateApplication(config *ApplicationConfig) (Application, error)
 
+	// GetActiveNodes retrieves a list of all active nodes in the network.
+	GetActiveNodes() []Node
+
 	// Shutdown stops all applications and nodes in the network and frees
 	// any potential other resources.
 	Shutdown() error

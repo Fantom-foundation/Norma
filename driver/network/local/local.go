@@ -134,6 +134,16 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	return app, nil
 }
 
+func (n *LocalNetwork) GetActiveNodes() []driver.Node {
+	res := make([]driver.Node, 0, len(n.nodes))
+	for _, node := range n.nodes {
+		if node.IsRunning() {
+			res = append(res, node)
+		}
+	}
+	return res
+}
+
 func (n *LocalNetwork) Shutdown() error {
 	var errs []error
 	// First stop all generators.

@@ -63,6 +63,20 @@ func (mr *MockNetworkMockRecorder) CreateNode(config interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNode", reflect.TypeOf((*MockNetwork)(nil).CreateNode), config)
 }
 
+// GetActiveNodes mocks base method.
+func (m *MockNetwork) GetActiveNodes() []Node {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveNodes")
+	ret0, _ := ret[0].([]Node)
+	return ret0
+}
+
+// GetActiveNodes indicates an expected call of GetActiveNodes.
+func (mr *MockNetworkMockRecorder) GetActiveNodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveNodes", reflect.TypeOf((*MockNetwork)(nil).GetActiveNodes))
+}
+
 // Shutdown mocks base method.
 func (m *MockNetwork) Shutdown() error {
 	m.ctrl.T.Helper()
