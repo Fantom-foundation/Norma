@@ -21,6 +21,13 @@ type Network interface {
 	Shutdown() error
 }
 
+// NetworkConfig is a collection of network parameters to be used by factories
+// creating network instances.
+type NetworkConfig struct {
+	// NumberOfValidators is the (static) number of validators in the network.
+	NumberOfValidators int
+}
+
 type NodeConfig struct {
 	Name string
 	// TODO: add other parameters as needed

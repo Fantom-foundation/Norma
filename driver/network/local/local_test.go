@@ -13,13 +13,15 @@ func TestLocalNetworkIsNetwork(t *testing.T) {
 }
 
 func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
+	config := driver.NetworkConfig{NumberOfValidators: 1}
 	for N := 1; N <= 3; N++ {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork()
+			net, err := NewLocalNetwork(&config)
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
+			t.Cleanup(func() { net.Shutdown() })
 
 			nodes := []driver.Node{}
 			for i := 0; i < N; i++ {
@@ -49,20 +51,15 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 }
 
 func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
+	config := driver.NetworkConfig{NumberOfValidators: 1}
 	for N := 1; N <= 3; N++ {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork()
+			net, err := NewLocalNetwork(&config)
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
-
-			// We need at last one node running.
-			node, err := net.CreateNode(&driver.NodeConfig{})
-			if err != nil {
-				t.Fatalf("failed to create node in network: %v", err)
-			}
-			defer node.Cleanup()
+			t.Cleanup(func() { net.Shutdown() })
 
 			apps := []driver.Application{}
 			for i := 0; i < N; i++ {
@@ -93,11 +90,13 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 
 func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
 	N := 2
+	config := driver.NetworkConfig{NumberOfValidators: 1}
 
-	net, err := NewLocalNetwork()
+	net, err := NewLocalNetwork(&config)
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
+	t.Cleanup(func() { net.Shutdown() })
 
 	for i := 0; i < N; i++ {
 		_, err := net.CreateNode(&driver.NodeConfig{
@@ -119,5 +118,35 @@ func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
 
 	if err := net.Shutdown(); err != nil {
 		t.Errorf("failed to shut down network: %v", err)
+	}
+}
+
+func TestLocalNetwork_CanRunWithMultipleValidators(t *testing.T) {
+	for N := 1; N <= 3; N++ {
+		config := driver.NetworkConfig{NumberOfValidators: N}
+		t.Run(fmt.Sprintf("num_validators=%d", N), func(t *testing.T) {
+
+			net, err := NewLocalNetwork(&config)
+			if err != nil {
+				t.Fatalf("failed to create new local network: %v", err)
+			}
+			t.Cleanup(func() { net.Shutdown() })
+
+			app, err := net.CreateApplication(&driver.ApplicationConfig{
+				Name: "TestApp",
+			})
+			if err != nil {
+				t.Fatalf("failed to create app: %v", err)
+			}
+			defer app.Stop()
+
+			if err := app.Start(); err != nil {
+				t.Errorf("failed to start app: %v", err)
+			}
+
+			if err := app.Stop(); err != nil {
+				t.Errorf("failed to stop app: %v", err)
+			}
+		})
 	}
 }

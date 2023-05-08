@@ -11,10 +11,11 @@ import (
 // Scenario is the root element of a scenario description. It defines basic
 // scenario properties and lists a set of nodes and transaction source.
 type Scenario struct {
-	Name         string
-	Duration     float32
-	Nodes        []Node        `yaml:",omitempty"`
-	Applications []Application `yaml:",omitempty"`
+	Name          string
+	Duration      float32
+	NumValidators *int          `yaml:"num_validators,omitempty"` // nil == 1
+	Nodes         []Node        `yaml:",omitempty"`
+	Applications  []Application `yaml:",omitempty"`
 }
 
 // Node is a configuration for a group of nodes with similar properties.

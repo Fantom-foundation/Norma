@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"math/big"
-	"time"
 )
 
 // CounterTransactionGenerator is a txs generator incrementing trivial Counter contract
@@ -42,7 +43,7 @@ func (cg *CounterTransactionGenerator) Init(rpcClient *ethclient.Client) (err er
 }
 
 func waitUntilContractStartExisting(contractAddress common.Address, rpcClient *ethclient.Client) error {
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 150; i++ {
 		time.Sleep(100 * time.Millisecond)
 		code, err := rpcClient.CodeAt(context.Background(), contractAddress, nil)
 		if err != nil {

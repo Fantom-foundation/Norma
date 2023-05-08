@@ -41,6 +41,7 @@ func TestParseFailsOnUnknownKey(t *testing.T) {
 // configuration options.
 var smallExample = `
 name: Small Test
+num_validators: 5
 nodes:
   - name: A
     instances: 10
