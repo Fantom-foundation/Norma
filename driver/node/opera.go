@@ -26,13 +26,20 @@ type OperaNode struct {
 	host network.Host
 }
 
+type OperaNodeConfig struct {
+	// The ID of the validator, nil if the node should node be a validator.
+	ValidatorId *int
+	// The configuration of the network the configured node should be part of.
+	NetworkConfig *driver.NetworkConfig
+}
+
 // StartOperaDockerNode creates a new OperaNode running in a Docker container.
-func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, error) {
+func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*OperaNode, error) {
 	timeout := 1 * time.Second
 
-	validatorFlag := "0"
-	if isValidator {
-		validatorFlag = "1"
+	validatorId := "0"
+	if config.ValidatorId != nil {
+		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
 	operaServicePort, err := network.GetFreePort()
@@ -46,7 +53,8 @@ func StartOperaDockerNode(client *docker.Client, isValidator bool) (*OperaNode, 
 			OperaRPCPort: operaServicePort,
 		},
 		Environment: map[string]string{
-			"VALIDATOR_NUMBER": validatorFlag,
+			"VALIDATOR_NUMBER": validatorId,
+			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 		},
 	})
 	if err != nil {

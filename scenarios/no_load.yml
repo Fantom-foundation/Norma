@@ -5,5 +5,4 @@ duration: 60    # seconds
 
 nodes:
   - name: A
-    features: [validator]
     instances: 3

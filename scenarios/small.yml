@@ -7,12 +7,14 @@ name: Small Network
 # The duration of the scenario's runtime, in seconds.
 duration: 60
 
+# The number of validator nodes in the network.
+num_validators: 1
+
 # The network scenario to exercise. 
 nodes:
-  # We include three validator nodes for the full duration.
+  # We include three additional non-validator nodes for the full duration.
   - name: A
     instances: 3
-    features: [ validator ]
 
 # In the network there is a single application producing constant load.
 applications:

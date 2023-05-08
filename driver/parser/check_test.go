@@ -286,6 +286,15 @@ func TestScenario_NegativeDurationIsDetected(t *testing.T) {
 	}
 }
 
+func TestScenario_NegativeNumberOfValidatorsIsDetected(t *testing.T) {
+	scenario := Scenario{Name: "Test"}
+	scenario.NumValidators = new(int)
+	*scenario.NumValidators = -5
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "invalid number of validators: -5 <= 0") {
+		t.Errorf("neagative number of validators was not detected")
+	}
+}
+
 func TestScenario_NodeIssuesAreDetected(t *testing.T) {
 	scenario := Scenario{
 		Name:     "Test",

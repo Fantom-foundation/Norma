@@ -15,6 +15,9 @@ func (s *Scenario) Check() error {
 	if s.Duration <= 0 {
 		errs = append(errs, fmt.Errorf("scenario duration must be > 0"))
 	}
+	if s.NumValidators != nil && *s.NumValidators <= 0 {
+		errs = append(errs, fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators))
+	}
 	for _, node := range s.Nodes {
 		if err := node.Check(s); err != nil {
 			errs = append(errs, err)

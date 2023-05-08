@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
@@ -33,8 +34,14 @@ func run(ctx *cli.Context) (err error) {
 
 	clock := executor.NewWallTimeClock()
 
-	fmt.Printf("Createing network ...\n")
-	net, err := local.NewLocalNetwork()
+	netConfig := driver.NetworkConfig{
+		NumberOfValidators: 1,
+	}
+	if scenario.NumValidators != nil {
+		netConfig.NumberOfValidators = *scenario.NumValidators
+	}
+	fmt.Printf("Createing network with %d validator(s) ...\n", netConfig.NumberOfValidators)
+	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
 	}

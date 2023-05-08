@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"math/rand"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -20,28 +21,71 @@ import (
 // LocalNetwork is a Docker based network running each individual node
 // within its own, dedicated Docker Container.
 type LocalNetwork struct {
-	docker  *docker.Client
-	nodes   map[driver.NodeID]*node.OperaNode
-	apps    []driver.Application
-	primary *node.OperaNode // first node generated, always the only validator for now
+	docker *docker.Client
+	config driver.NetworkConfig
+
+	// validators lists the validator nodes in the network. Validators
+	// are created during network startup and run for the full duration
+	// of the network.
+	validators []*node.OperaNode
+
+	// nodes provide a register for all nodes in the network, including
+	// validator nodes created during startup.
+	nodes map[driver.NodeID]*node.OperaNode
+
+	// apps maintains a list of all applications created on the network.
+	apps []driver.Application
 }
 
-func NewLocalNetwork() (driver.Network, error) {
+func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, err
 	}
-	return &LocalNetwork{
+
+	// Create the empty network.
+	net := &LocalNetwork{
 		docker: client,
+		config: *config,
 		nodes:  map[driver.NodeID]*node.OperaNode{},
 		apps:   []driver.Application{},
-	}, nil
+	}
+
+	// Start all validators.
+	nodeConfig := node.OperaNodeConfig{
+		ValidatorId:   new(int),
+		NetworkConfig: config,
+	}
+	var errs []error
+	for i := 0; i < config.NumberOfValidators; i++ {
+		// TODO: create nodes in parallel
+		*nodeConfig.ValidatorId = i + 1
+		validator, err := net.createNode(&driver.NodeConfig{
+			Name: fmt.Sprintf("Validator-%d", i+1),
+		}, &nodeConfig)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			net.validators = append(net.validators, validator)
+		}
+	}
+
+	// If starting the validators failed, the network statup should fail.
+	if len(errs) > 0 {
+		err := net.Shutdown()
+		if err != nil {
+			errs = append(errs, err)
+		}
+		return nil, errors.Join(errs...)
+	}
+
+	return net, nil
 }
 
-func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
-	// TODO: support more than one validator node
-	isValidator := len(n.nodes) == 0 // for now, only the first node is a validator
-	node, err := node.StartOperaDockerNode(n.docker, isValidator)
+// createNode is an internal version of CreateNode enabling the creation
+// of validator and non-validator nodes in the network.
+func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
+	node, err := node.StartOperaDockerNode(n.docker, nodeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +97,15 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 		}
 	}
 
-	if len(n.nodes) == 0 {
-		n.primary = node
-	}
-
 	n.nodes[id] = node
 	return node, err
+}
+
+// CreateNode creates non-validator nodes in the network.
+func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
+	return n.createNode(config, &node.OperaNodeConfig{
+		NetworkConfig: &n.config,
+	})
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to
@@ -94,11 +141,12 @@ func (a *localApplication) Stop() error {
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
 
-	if n.primary == nil {
-		return nil, fmt.Errorf("network is empty")
+	node, err := n.getRandomValidator()
+	if err != nil {
+		return nil, err
 	}
 
-	url := n.primary.GetRpcServiceUrl()
+	url := node.GetRpcServiceUrl()
 	if url == nil {
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
@@ -158,4 +206,11 @@ func (n *LocalNetwork) Shutdown() error {
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
 	return errors.Join(errs...)
+}
+
+func (n *LocalNetwork) getRandomValidator() (driver.Node, error) {
+	if len(n.validators) == 0 {
+		return nil, fmt.Errorf("network is empty")
+	}
+	return n.validators[rand.Intn(len(n.validators))], nil
 }
