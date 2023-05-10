@@ -69,13 +69,13 @@ func TestTestSource_ListsCorrectSubjects(t *testing.T) {
 	if got := source.GetSubjects(); !slices.Equal(got, want) {
 		t.Errorf("invalid subject list, wanted %v, got %v", want, got)
 	}
-	source.setData(Node(1), &TestBlockSeries{[]int{1, 2, 3}})
-	want = []Node{Node(1)}
+	source.setData(Node("A"), &TestBlockSeries{[]int{1, 2, 3}})
+	want = []Node{Node("A")}
 	if got := source.GetSubjects(); !slices.Equal(got, want) {
 		t.Errorf("invalid subject list, wanted %v, got %v", want, got)
 	}
-	source.setData(Node(2), &TestBlockSeries{[]int{1}})
-	want = []Node{Node(1), Node(2)}
+	source.setData(Node("B"), &TestBlockSeries{[]int{1}})
+	want = []Node{Node("A"), Node("B")}
 	if got := source.GetSubjects(); !slices.Equal(got, want) {
 		t.Errorf("invalid subject list, wanted %v, got %v", want, got)
 	}
@@ -86,16 +86,16 @@ func TestTestSource_RetrievesCorrectDataSeries(t *testing.T) {
 	seriesB := &TestBlockSeries{[]int{3, 4, 5}}
 
 	source := TestSource{}
-	source.setData(Node(1), seriesA)
-	source.setData(Node(2), seriesB)
+	source.setData(Node("A"), seriesA)
+	source.setData(Node("B"), seriesB)
 
-	if *source.GetData(Node(1)) != seriesA {
+	if *source.GetData(Node("A")) != seriesA {
 		t.Errorf("test source returned wrong series")
 	}
-	if *source.GetData(Node(2)) != seriesB {
+	if *source.GetData(Node("B")) != seriesB {
 		t.Errorf("test source returned wrong series")
 	}
-	if source.GetData(Node(3)) != nil {
+	if source.GetData(Node("C")) != nil {
 		t.Errorf("test source returned wrong series")
 	}
 }

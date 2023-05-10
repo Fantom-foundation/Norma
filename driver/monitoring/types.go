@@ -1,9 +1,13 @@
 package monitoring
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/Fantom-foundation/Norma/driver"
+)
 
 // Node identifies a node in the network.
-type Node int
+type Node driver.NodeID
 
 // BlockNumber is the type used to identify a block.
 type BlockNumber int
