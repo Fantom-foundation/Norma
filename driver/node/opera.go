@@ -78,6 +78,10 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 	return nil, fmt.Errorf("failed to get node online")
 }
 
+func (n *OperaNode) IsRunning() bool {
+	return n.host.IsRunning()
+}
+
 func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
 	addr := n.host.GetAddressForService(&OperaRpcService)
 	if addr == nil {

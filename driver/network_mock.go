@@ -63,6 +63,32 @@ func (mr *MockNetworkMockRecorder) CreateNode(config interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNode", reflect.TypeOf((*MockNetwork)(nil).CreateNode), config)
 }
 
+// GetActiveNodes mocks base method.
+func (m *MockNetwork) GetActiveNodes() []Node {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveNodes")
+	ret0, _ := ret[0].([]Node)
+	return ret0
+}
+
+// GetActiveNodes indicates an expected call of GetActiveNodes.
+func (mr *MockNetworkMockRecorder) GetActiveNodes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveNodes", reflect.TypeOf((*MockNetwork)(nil).GetActiveNodes))
+}
+
+// RegisterListener mocks base method.
+func (m *MockNetwork) RegisterListener(arg0 NetworkListener) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterListener", arg0)
+}
+
+// RegisterListener indicates an expected call of RegisterListener.
+func (mr *MockNetworkMockRecorder) RegisterListener(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterListener", reflect.TypeOf((*MockNetwork)(nil).RegisterListener), arg0)
+}
+
 // Shutdown mocks base method.
 func (m *MockNetwork) Shutdown() error {
 	m.ctrl.T.Helper()
@@ -75,4 +101,63 @@ func (m *MockNetwork) Shutdown() error {
 func (mr *MockNetworkMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockNetwork)(nil).Shutdown))
+}
+
+// UnregisterListener mocks base method.
+func (m *MockNetwork) UnregisterListener(arg0 NetworkListener) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UnregisterListener", arg0)
+}
+
+// UnregisterListener indicates an expected call of UnregisterListener.
+func (mr *MockNetworkMockRecorder) UnregisterListener(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterListener", reflect.TypeOf((*MockNetwork)(nil).UnregisterListener), arg0)
+}
+
+// MockNetworkListener is a mock of NetworkListener interface.
+type MockNetworkListener struct {
+	ctrl     *gomock.Controller
+	recorder *MockNetworkListenerMockRecorder
+}
+
+// MockNetworkListenerMockRecorder is the mock recorder for MockNetworkListener.
+type MockNetworkListenerMockRecorder struct {
+	mock *MockNetworkListener
+}
+
+// NewMockNetworkListener creates a new mock instance.
+func NewMockNetworkListener(ctrl *gomock.Controller) *MockNetworkListener {
+	mock := &MockNetworkListener{ctrl: ctrl}
+	mock.recorder = &MockNetworkListenerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNetworkListener) EXPECT() *MockNetworkListenerMockRecorder {
+	return m.recorder
+}
+
+// AfterApplicationCreation mocks base method.
+func (m *MockNetworkListener) AfterApplicationCreation(arg0 Application) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AfterApplicationCreation", arg0)
+}
+
+// AfterApplicationCreation indicates an expected call of AfterApplicationCreation.
+func (mr *MockNetworkListenerMockRecorder) AfterApplicationCreation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AfterApplicationCreation", reflect.TypeOf((*MockNetworkListener)(nil).AfterApplicationCreation), arg0)
+}
+
+// AfterNodeCreation mocks base method.
+func (m *MockNetworkListener) AfterNodeCreation(arg0 Node) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AfterNodeCreation", arg0)
+}
+
+// AfterNodeCreation indicates an expected call of AfterNodeCreation.
+func (mr *MockNetworkListenerMockRecorder) AfterNodeCreation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AfterNodeCreation", reflect.TypeOf((*MockNetworkListener)(nil).AfterNodeCreation), arg0)
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 )
 
 func TestLocalNetworkIsNetwork(t *testing.T) {
@@ -148,5 +149,57 @@ func TestLocalNetwork_CanRunWithMultipleValidators(t *testing.T) {
 				t.Errorf("failed to stop app: %v", err)
 			}
 		})
+	}
+}
+
+func TestLocalNetwork_NotifiesListenersOnNodeStartup(t *testing.T) {
+	config := driver.NetworkConfig{NumberOfValidators: 2}
+	ctrl := gomock.NewController(t)
+	listener := driver.NewMockNetworkListener(ctrl)
+
+	net, err := NewLocalNetwork(&config)
+	if err != nil {
+		t.Fatalf("failed to create new local network: %v", err)
+	}
+	t.Cleanup(func() { net.Shutdown() })
+
+	activeNodes := net.GetActiveNodes()
+	if got, want := len(activeNodes), config.NumberOfValidators; got != want {
+		t.Errorf("invalid number of active nodes, got %d, want %d", got, want)
+	}
+
+	net.RegisterListener(listener)
+	listener.EXPECT().AfterNodeCreation(gomock.Any())
+
+	net.CreateNode(&driver.NodeConfig{
+		Name: "Test",
+	})
+
+	activeNodes = net.GetActiveNodes()
+	if got, want := len(activeNodes), config.NumberOfValidators+1; got != want {
+		t.Errorf("invalid number of active nodes, got %d, want %d", got, want)
+	}
+
+}
+
+func TestLocalNetwork_NotifiesListenersOnAppStartup(t *testing.T) {
+	config := driver.NetworkConfig{NumberOfValidators: 1}
+	ctrl := gomock.NewController(t)
+	listener := driver.NewMockNetworkListener(ctrl)
+
+	net, err := NewLocalNetwork(&config)
+	if err != nil {
+		t.Fatalf("failed to create new local network: %v", err)
+	}
+	t.Cleanup(func() { net.Shutdown() })
+
+	net.RegisterListener(listener)
+	listener.EXPECT().AfterApplicationCreation(gomock.Any())
+
+	_, err = net.CreateApplication(&driver.ApplicationConfig{
+		Name: "TestApp",
+	})
+	if err != nil {
+		t.Errorf("creation of app failed: %v", err)
 	}
 }

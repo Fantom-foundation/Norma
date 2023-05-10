@@ -76,6 +76,20 @@ func (mr *MockNodeMockRecorder) GetRpcServiceUrl() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRpcServiceUrl", reflect.TypeOf((*MockNode)(nil).GetRpcServiceUrl))
 }
 
+// IsRunning mocks base method.
+func (m *MockNode) IsRunning() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRunning")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRunning indicates an expected call of IsRunning.
+func (mr *MockNodeMockRecorder) IsRunning() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockNode)(nil).IsRunning))
+}
+
 // Stop mocks base method.
 func (m *MockNode) Stop() error {
 	m.ctrl.T.Helper()

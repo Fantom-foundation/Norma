@@ -16,6 +16,17 @@ type Network interface {
 	// produce load as defined by its configuration.
 	CreateApplication(config *ApplicationConfig) (Application, error)
 
+	// GetActiveNodes obtains a list of active nodes in the network.
+	GetActiveNodes() []Node
+
+	// RegisterListener registers a listener to receive updates on network
+	// changes, for instance, to update monitoring information. Registering
+	// the same listener more than once will have no effect.
+	RegisterListener(NetworkListener)
+
+	// UnregisterListener removes the given listener from this network.
+	UnregisterListener(NetworkListener)
+
 	// Shutdown stops all applications and nodes in the network and frees
 	// any potential other resources.
 	Shutdown() error
@@ -26,6 +37,15 @@ type Network interface {
 type NetworkConfig struct {
 	// NumberOfValidators is the (static) number of validators in the network.
 	NumberOfValidators int
+}
+
+// NetworkListener can be registered to networks to get callbacks whenever there
+// are changes in the network.
+type NetworkListener interface {
+	// AfterNodeCreation is called whenever a new node has joined the network.
+	AfterNodeCreation(Node)
+	// AfterApplicationCreation is called after a new application has started.
+	AfterApplicationCreation(Application)
 }
 
 type NodeConfig struct {
