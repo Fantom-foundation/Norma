@@ -10,7 +10,7 @@ import (
 // NewMonitor() factory below and required to be shut down in the end.
 //
 // Monitor instances provide means for registering metric sources and for
-// obtaining data for respective metrics. The implementation aims on keeping
+// obtaining data for respective metrics. The implementation aims at keeping
 // metric access type save. However, it is not possible to define generic
 // methods in Go. Thus, several methods interacting with Monitor instances
 // are free functions (see implementations below).
@@ -24,7 +24,7 @@ func NewMonitor() *Monitor {
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
-// should be called before abandening a Monitor instance.
+// should be called before abandoning the Monitor instance.
 func (m *Monitor) Shutdown() error {
 	var errs = []error{}
 	for _, source := range m.sources {

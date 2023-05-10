@@ -10,16 +10,16 @@ type TestBlockSeries struct {
 	data []int
 }
 
-func (s *TestBlockSeries) GetRange(from, to Block) []DataPoint[Block, int] {
+func (s *TestBlockSeries) GetRange(from, to BlockNumber) []DataPoint[BlockNumber, int] {
 	if int(to) > len(s.data) {
-		to = Block(len(s.data))
+		to = BlockNumber(len(s.data))
 	}
 	if to <= from {
 		return nil
 	}
-	res := make([]DataPoint[Block, int], 0, to-from)
+	res := make([]DataPoint[BlockNumber, int], 0, to-from)
 	for i := from; i < to; i++ {
-		res = append(res, DataPoint[Block, int]{Block(i), s.data[i]})
+		res = append(res, DataPoint[BlockNumber, int]{BlockNumber(i), s.data[i]})
 	}
 	return res
 }
@@ -37,26 +37,26 @@ func TestTestSeries_IsABlockSeries(t *testing.T) {
 func TestTestSeries_GetRange(t *testing.T) {
 	data := []int{1, 2, 3, 4, 5}
 	tests := []struct {
-		from, to Block
-		result   []DataPoint[Block, int]
+		from, to BlockNumber
+		result   []DataPoint[BlockNumber, int]
 	}{
 		{
 			from: 0,
 			to:   5,
-			result: []DataPoint[Block, int]{
-				{Block(0), 1},
-				{Block(1), 2},
-				{Block(2), 3},
-				{Block(3), 4},
-				{Block(4), 5},
+			result: []DataPoint[BlockNumber, int]{
+				{BlockNumber(0), 1},
+				{BlockNumber(1), 2},
+				{BlockNumber(2), 3},
+				{BlockNumber(3), 4},
+				{BlockNumber(4), 5},
 			},
 		},
 		{
 			from: 3,
 			to:   5,
-			result: []DataPoint[Block, int]{
-				{Block(3), 4},
-				{Block(4), 5},
+			result: []DataPoint[BlockNumber, int]{
+				{BlockNumber(3), 4},
+				{BlockNumber(4), 5},
 			},
 		},
 		{

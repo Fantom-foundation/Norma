@@ -21,5 +21,5 @@ type TimeSeries[T any] interface {
 
 // BlockSeries is a data Series using block numbers as the index type.
 type BlockSeries[T any] interface {
-	Series[Block, T]
+	Series[BlockNumber, T]
 }
