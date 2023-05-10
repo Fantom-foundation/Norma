@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"math/rand"
+	"sync"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -33,8 +34,20 @@ type LocalNetwork struct {
 	// validator nodes created during startup.
 	nodes map[driver.NodeID]*node.OperaNode
 
+	// nodesMutex synchronizes access to the list of nodes.
+	nodesMutex sync.Mutex
+
 	// apps maintains a list of all applications created on the network.
 	apps []driver.Application
+
+	// appsMutex synchronizes access to the list of applications.
+	appsMutex sync.Mutex
+
+	// listeners is the set of registered NetworkListeners.
+	listeners map[driver.NetworkListener]bool
+
+	// listenerMutex is synching access to listeners
+	listenerMutex sync.Mutex
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
@@ -45,10 +58,11 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 
 	// Create the empty network.
 	net := &LocalNetwork{
-		docker: client,
-		config: *config,
-		nodes:  map[driver.NodeID]*node.OperaNode{},
-		apps:   []driver.Application{},
+		docker:    client,
+		config:    *config,
+		nodes:     map[driver.NodeID]*node.OperaNode{},
+		apps:      []driver.Application{},
+		listeners: map[driver.NetworkListener]bool{},
 	}
 
 	// Start all validators.
@@ -90,14 +104,21 @@ func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.Op
 		return nil, err
 	}
 
+	n.nodesMutex.Lock()
 	id, err := node.GetNodeID()
 	for _, other := range n.nodes {
 		if err := other.AddPeer(id); err != nil {
+			n.nodesMutex.Unlock()
 			return nil, err
 		}
 	}
-
 	n.nodes[id] = node
+	n.nodesMutex.Unlock()
+
+	for _, listener := range n.getListeners() {
+		listener.AfterNodeCreation(node)
+	}
+
 	return node, err
 }
 
@@ -178,8 +199,49 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		controller: sourceDriver,
 	}
 
+	n.appsMutex.Lock()
 	n.apps = append(n.apps, app)
+	n.appsMutex.Unlock()
+
+	for _, listener := range n.getListeners() {
+		listener.AfterApplicationCreation(app)
+	}
+
 	return app, nil
+}
+
+func (n *LocalNetwork) GetActiveNodes() []driver.Node {
+	n.nodesMutex.Lock()
+	defer n.nodesMutex.Unlock()
+	res := make([]driver.Node, 0, len(n.nodes))
+	for _, node := range n.nodes {
+		if node.IsRunning() {
+			res = append(res, node)
+		}
+	}
+	return res
+}
+
+func (n *LocalNetwork) RegisterListener(listener driver.NetworkListener) {
+	n.listenerMutex.Lock()
+	n.listeners[listener] = true
+	n.listenerMutex.Unlock()
+}
+
+func (n *LocalNetwork) UnregisterListener(listener driver.NetworkListener) {
+	n.listenerMutex.Lock()
+	delete(n.listeners, listener)
+	n.listenerMutex.Unlock()
+}
+
+func (n *LocalNetwork) getListeners() []driver.NetworkListener {
+	n.listenerMutex.Lock()
+	res := make([]driver.NetworkListener, 0, len(n.listeners))
+	for listener := range n.listeners {
+		res = append(res, listener)
+	}
+	n.listenerMutex.Unlock()
+	return res
 }
 
 func (n *LocalNetwork) Shutdown() error {

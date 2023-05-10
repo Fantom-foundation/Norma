@@ -6,6 +6,9 @@ package driver
 // control of a node, allowing it to be started (through an Environment),
 // interact with the node, and shut it down.
 type Node interface {
+	// Returns true if the node is still running, false if stopped.
+	IsRunning() bool
+
 	// GetNodeID returns an enode identifying this node within the Norma network.
 	// An error shall be produced if no valid node ID could be obtained.
 	GetNodeID() (NodeID, error)
