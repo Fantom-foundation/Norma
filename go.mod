@@ -3,10 +3,12 @@ module github.com/Fantom-foundation/Norma
 go 1.20
 
 require (
+	github.com/docker/go-connections v0.4.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/golang/mock v1.6.0
 	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde
 	github.com/urfave/cli/v2 v2.25.1
+	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -33,7 +35,6 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
