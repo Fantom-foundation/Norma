@@ -5,8 +5,8 @@ import "fmt"
 // Node identifies a node in the network.
 type Node int
 
-// Block is the type used to identify a block.
-type Block int
+// BlockNumber is the type used to identify a block.
+type BlockNumber int
 
 // Network is a unit type to reference the full managed network in a scenario
 // as the subject of a metric.

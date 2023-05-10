@@ -17,7 +17,9 @@ type Source[S any, T any] interface {
 	GetData(S) *T
 }
 
-// source is a type-erased base type for sources.
+// source is a type-erased base type for sources. While its methods should
+// be public, the interface itself is only intended to be used internally to
+// store multiple sources of different generic types in a common map.
 type source interface {
 	// Shutdown stops the collection of data. Already collected data shall
 	// remain available, but no new data is collected.
