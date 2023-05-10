@@ -18,8 +18,8 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 	seriesB := &TestBlockSeries{[]int{3, 4, 5}}
 
 	source := TestSource{}
-	source.setData(Node(1), seriesA)
-	source.setData(Node(2), seriesB)
+	source.setData(Node("A"), seriesA)
+	source.setData(Node("B"), seriesB)
 
 	metric := source.GetMetric()
 
@@ -38,20 +38,20 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 		t.Errorf("registered metric is not supported")
 	}
 
-	want := []Node{Node(1), Node(2)}
+	want := []Node{Node("A"), Node("B")}
 	if got := GetSubjects(monitor, metric); !slices.Equal(want, got) {
 		t.Errorf("invalid list of subjects, wanted %v, got %v", want, got)
 	}
 
-	if *GetData(monitor, Node(1), metric) != seriesA {
+	if *GetData(monitor, Node("A"), metric) != seriesA {
 		t.Errorf("obtained wrong data for node 1")
 	}
 
-	if *GetData(monitor, Node(2), metric) != seriesB {
+	if *GetData(monitor, Node("B"), metric) != seriesB {
 		t.Errorf("obtained wrong data for node 2")
 	}
 
-	if GetData(monitor, Node(3), metric) != nil {
+	if GetData(monitor, Node("C"), metric) != nil {
 		t.Errorf("should not have obtained any data for node 3")
 	}
 
