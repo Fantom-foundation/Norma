@@ -79,5 +79,4 @@ func TestTestSeries_GetRange(t *testing.T) {
 			t.Errorf("invalid result, expected %v, got %v", series.data, res)
 		}
 	}
-
 }

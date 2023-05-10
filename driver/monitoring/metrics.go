@@ -34,11 +34,3 @@ var (
 		Description: "The time the processing of the transactions of a block has finished on a node.",
 	}
 )
-
-// Full-Network metrics:
-var (
-	NumberOfNodes = Metric[Network, TimeSeries[int]]{
-		Name:        "NumberOfNodes",
-		Description: "The number of connected nodes at various times.",
-	}
-)
