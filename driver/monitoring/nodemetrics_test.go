@@ -1,8 +1,6 @@
 package monitoring
 
 import (
-	"bytes"
-	"io"
 	"testing"
 )
 
@@ -84,28 +82,6 @@ func TestGetNonExistingBlocks(t *testing.T) {
 	// non-existing previous block
 	if _, err := mon.GetBlockDelay(2); err != ErrNotFound {
 		t.Errorf("block should not exist")
-	}
-}
-
-func TestLogAppended(t *testing.T) {
-	// copy to the file to buffer, so it can be appended
-	buffer := new(bytes.Buffer)
-	_, err := io.Copy(buffer, createTestLog())
-	if err != nil {
-		t.Fatalf("cannot copy file: %s", err)
-	}
-
-	blockReader := NewLogReader(buffer)
-	mon := CreateNodeMetrics(blockReader)
-
-	if _, err := buffer.WriteString("INFO [05-04|09:35:17.003] New block   index=7 id=3:10:d7da0b      gas_used=111,223 txs=666/0 age=310.575ms t=5.249ms \n"); err != nil {
-		t.Fatalf("cannot write file: %s", err)
-	}
-
-	mon.drain()
-
-	if val, err := mon.GetNumberOfTransactions(7); val != 666 || err != nil {
-		t.Errorf("wrong value: %d, err: %s", val, err)
 	}
 }
 

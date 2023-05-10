@@ -59,7 +59,7 @@ Some experiments simulate network using Docker. For a local development the Dock
 * MacOS: https://docs.docker.com/desktop/install/mac-install/
 * Linux: https://docs.docker.com/engine/install/ubuntu/
 
-### Permissions
+### Permissions on Linux
 After installation, make sure your user has the needed permissions to run docker containers on your system. You can test this by running
 ```
 docker images
@@ -71,6 +71,16 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 If the `newgrp docker` command is not working, a `reboot` might help.
+
+### Docker Sock on MacOS
+If Norma tests produce error that Docker is not listening on  `unix:///var/run/docker.sock`, execute
+* `docker context inspect` and make note of `Host`, which should be `unix:///$HOME/.docker/run/docker.sock`
+* export system variable, i.e. add to either `/etc/zprofile` or `$HOME/.zprofile`: 
+* `export DOCKER_HOST=unix:///$HOME/.docker/run/docker.sock`
+
+alternatively
+* Open `Desktop Tool` --> `Settings` --> `Advanced` --> `Enable Default Docker socket`
+  * this will bind the docker socket to default `unix:///var/run/docker.sock`
 
 
 ### Building

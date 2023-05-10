@@ -70,7 +70,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		if err == nil {
 			return node, nil
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Second)
 	}
 
 	// The node did not show up in time, so we consider the start to have failed.
