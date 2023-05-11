@@ -14,11 +14,6 @@ type Metric[S any, T any] struct {
 
 // Per-Node metrics:
 var (
-	NodeBlockHeight = Metric[Node, TimeSeries[int]]{
-		Name:        "NodeBlockHeight",
-		Description: "The block height of nodes at various times.",
-	}
-
 	NodeCpuUsage = Metric[Node, TimeSeries[Percent]]{
 		Name:        "NodeCpuUsage",
 		Description: "The relative CPU usage of a node at various times.",
