@@ -36,6 +36,17 @@ func (s *SyncedSeries[K, T]) GetRange(from, to K) []DataPoint[K, T] {
 	return res
 }
 
+// GetLatest returns the latest collected data point in this series.
+func (s *SyncedSeries[K, T]) GetLatest() *DataPoint[K, T] {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if len(s.data) == 0 {
+		return nil
+	}
+	res := s.data[len(s.data)-1]
+	return &res
+}
+
 // Append adds new data to the end of the series. The operation fails if the
 // provided point is <= the last added point.
 func (s *SyncedSeries[K, T]) Append(point K, value T) error {

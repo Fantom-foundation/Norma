@@ -24,6 +24,14 @@ func (s *TestBlockSeries) GetRange(from, to BlockNumber) []DataPoint[BlockNumber
 	return res
 }
 
+func (s *TestBlockSeries) GetLatest() *DataPoint[BlockNumber, int] {
+	if len(s.data) == 0 {
+		return nil
+	}
+	pos := len(s.data) - 1
+	return &DataPoint[BlockNumber, int]{BlockNumber(pos), s.data[pos]}
+}
+
 func (s *TestBlockSeries) SetData(data []int) {
 	s.data = make([]int, len(data))
 	copy(s.data[:], data[:])
