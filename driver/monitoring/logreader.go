@@ -91,17 +91,17 @@ func parseBlock(line string) (block Block, err error) {
 	}
 
 	return Block{
-		height:  blockNumber,
-		txs:     txs,
-		gasUsed: gasUsed,
-		time:    timestamp,
+		Height:  blockNumber,
+		Txs:     txs,
+		GasUsed: gasUsed,
+		Time:    timestamp,
 	}, nil
 }
 
 // Block contains data of one block
 type Block struct {
-	height  int
-	time    time.Time // timestamp of the block
-	txs     int       // number of transactions in block
-	gasUsed int       // gas used in the block
+	Height  int
+	Time    time.Time // timestamp of the block
+	Txs     int       // number of transactions in block
+	GasUsed int       // gas used in the block
 }
