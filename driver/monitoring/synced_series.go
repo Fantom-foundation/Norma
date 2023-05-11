@@ -8,7 +8,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// SyncedSeries implements a time series retaining all data in memory and
+// SyncedSeries implements a generic series retaining all data in memory and
 // offering synchronized access to its content.
 type SyncedSeries[K constraints.Ordered, T any] struct {
 	data  []DataPoint[K, T]

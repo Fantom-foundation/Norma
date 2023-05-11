@@ -20,9 +20,9 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 		return make([]driver.Node, numNodes)
 	})
 
-	source := NewNumNodesSource(net)
+	source := newNumNodesSource(net, 50*time.Millisecond)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(200 * time.Millisecond)
 	source.Shutdown()
 
 	series := source.GetData(monitoring.Network{})
