@@ -26,6 +26,12 @@ type numNodesSource struct {
 // NewNumNodesSource creates a new data source periodically collecting data on
 // the number of nodes in the network.
 func NewNumNodesSource(network driver.Network) mon.Source[mon.Network, mon.TimeSeries[int]] {
+	return newNumNodesSource(network, time.Second)
+}
+
+// newNumNodesSource creates a new data source periodically collecting data on
+// the number of nodes in the network.
+func newNumNodesSource(network driver.Network, period time.Duration) mon.Source[mon.Network, mon.TimeSeries[int]] {
 	stop := make(chan bool)
 	done := make(chan bool)
 
@@ -37,7 +43,7 @@ func NewNumNodesSource(network driver.Network) mon.Source[mon.Network, mon.TimeS
 
 	go func() {
 		defer close(done)
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(period)
 		for {
 			select {
 			case now := <-ticker.C:
