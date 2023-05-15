@@ -4,33 +4,10 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
+	"io"
+	"strings"
 	"testing"
 	"time"
-)
-
-var (
-	nodeId1 = monitoring.Node("A")
-	nodeId2 = monitoring.Node("B")
-	nodeId3 = monitoring.Node("C")
-
-	time1, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.080]")
-	time2, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.537]")
-	time3, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.027]")
-	time4, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.512]")
-	time5, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:17.003]")
-
-	// TODO now the data matches the hardcoded string in the Reader, mock it in next PR
-	block1 = monitoring.Block{Height: 2, Time: time1, Txs: 2, GasUsed: 417_928}
-	block2 = monitoring.Block{Height: 3, Time: time2, Txs: 1, GasUsed: 117_867}
-	block3 = monitoring.Block{Height: 4, Time: time3, Txs: 1, GasUsed: 43426}
-	block4 = monitoring.Block{Height: 5, Time: time4, Txs: 5, GasUsed: 138_470}
-	block5 = monitoring.Block{Height: 6, Time: time5, Txs: 5, GasUsed: 105_304}
-
-	expected = map[monitoring.Node][]monitoring.Block{
-		nodeId1: {block1, block2, block3, block4, block5},
-		nodeId2: {block1, block2, block3, block4, block5},
-		nodeId3: {block1, block2, block3, block4, block5},
-	}
 )
 
 func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
@@ -52,9 +29,13 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	node2 := driver.NewMockNode(ctrl)
 	node3 := driver.NewMockNode(ctrl)
 
-	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId1), nil)
-	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId2), nil)
-	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId3), nil)
+	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node1TestId), nil)
+	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node2TestId), nil)
+	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node3TestId), nil)
+
+	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
+	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
+	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
@@ -65,20 +46,20 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	reg.RegisterLogListener(source)
 
 	// pre-existing node with some blocks
-	testNodeSubjects(t, []monitoring.Node{nodeId1}, source)
-	testNodeSeriesData(t, nodeId1, expected[nodeId1], source)
+	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId}, source)
+	testNodeSeriesData(t, monitoring.Node1TestId, monitoring.NodeBlockTestData[monitoring.Node1TestId], source)
 
 	// add second node
 	reg.AfterNodeCreation(node2)
-	testNodeSubjects(t, []monitoring.Node{nodeId1, nodeId2}, source)
-	testNodeSeriesData(t, nodeId2, expected[nodeId2], source)
+	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId, monitoring.Node2TestId}, source)
+	testNodeSeriesData(t, monitoring.Node2TestId, monitoring.NodeBlockTestData[monitoring.Node2TestId], source)
 
 	// next node will NOT be registered, since the metric is shutdown
 	_ = source.Shutdown()
 	reg.AfterNodeCreation(node3)
-	testNodeSubjects(t, []monitoring.Node{nodeId1, nodeId2}, source)
+	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId, monitoring.Node2TestId}, source)
 	// series not created at all
-	if series := source.GetData(nodeId3); series != nil {
+	if series := source.GetData(monitoring.Node3TestId); series != nil {
 		t.Errorf("series shold not exist")
 	}
 }
@@ -147,7 +128,7 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 func testNodeSource[T comparable](t *testing.T, source *BlockNodeMetricSource[T]) {
 
 	// insert data into metric
-	for node, blocks := range expected {
+	for node, blocks := range monitoring.NodeBlockTestData {
 		for _, block := range blocks {
 			source.OnBlock(node, block)
 		}
@@ -155,20 +136,20 @@ func testNodeSource[T comparable](t *testing.T, source *BlockNodeMetricSource[T]
 
 	// check no subject is missing
 	for _, node := range source.GetSubjects() {
-		if _, exists := expected[node]; !exists {
+		if _, exists := monitoring.NodeBlockTestData[node]; !exists {
 			t.Errorf("node does not exist: %v", node)
 		}
 	}
 
 	// check subject length is correct
-	if got, want := len(source.GetSubjects()), len(expected); got != want {
+	if got, want := len(source.GetSubjects()), len(monitoring.NodeBlockTestData); got != want {
 		t.Errorf("wrong number of nodes received: %d != %d", got, want)
 	}
 
 	// table check results in each series for every node
 	for _, node := range source.GetSubjects() {
 		for _, block := range source.GetData(node).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-			if got, want := block.Value, source.getBlockProperty(expected[node][block.Position-2]); got != want {
+			if got, want := block.Value, source.getBlockProperty(monitoring.NodeBlockTestData[node][block.Position-1]); got != want {
 				t.Errorf("data series contain unexpected value: %v != %v", got, want)
 			}
 		}
