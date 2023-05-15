@@ -5,6 +5,7 @@
 package network
 
 import (
+	io "io"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -101,4 +102,19 @@ func (m *MockHost) Stop() error {
 func (mr *MockHostMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHost)(nil).Stop))
+}
+
+// StreamLog mocks base method.
+func (m *MockHost) StreamLog() (io.ReadCloser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StreamLog")
+	ret0, _ := ret[0].(io.ReadCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StreamLog indicates an expected call of StreamLog.
+func (mr *MockHostMockRecorder) StreamLog() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamLog", reflect.TypeOf((*MockHost)(nil).StreamLog))
 }

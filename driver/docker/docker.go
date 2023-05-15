@@ -127,10 +127,10 @@ func (c *Container) Cleanup() error {
 // Container and being exported to the Docker's host environment. If there is
 // no such service (e.g., because it was not marked as to be exported during
 // the Start of the Container), nil will be returned.
-func (n *Container) GetAddressForService(service *network.ServiceDescription) *network.AddressPort {
+func (c *Container) GetAddressForService(service *network.ServiceDescription) *network.AddressPort {
 	// All services inside the container are reached through port-forwarding
 	// on the localhost. Non-forwarded services are not supported.
-	port, ok := n.config.PortForwarding[service.Port]
+	port, ok := c.config.PortForwarding[service.Port]
 	if !ok {
 		return nil
 	}
@@ -163,6 +163,21 @@ func (c *Container) SaveLogTo(directory string) error {
 	}
 
 	return nil
+}
+
+func (c *Container) StreamLog() (io.ReadCloser, error) {
+	opt := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+	}
+
+	reader, err := c.client.cli.ContainerLogs(context.Background(), c.id, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader, nil
 }
 
 func (c *Client) listContainers() ([]types.Container, error) {

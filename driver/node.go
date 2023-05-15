@@ -1,5 +1,7 @@
 package driver
 
+import "io"
+
 //go:generate mockgen -source node.go -destination node_mock.go -package driver
 
 // Node is controlling a single node in a Norma network. It provides abstract
@@ -16,6 +18,10 @@ type Node interface {
 	// GetRpcServiceUrl returns the URL of the RPC server running on the
 	// represented node. May be nil if no such service is offered.
 	GetRpcServiceUrl() *URL
+
+	// StreamLog provides a reader that is continuously providing the host log.
+	// It is up to the caller to close the stream.
+	StreamLog() (io.ReadCloser, error)
 
 	// Stop shuts down this node gracefully, using its regular shutdown
 	// procedure (not killed). After stopping the service, no more interactions
