@@ -28,6 +28,7 @@ COPY --from=build /client/build/opera .
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
 
+EXPOSE 6060
 EXPOSE 18545
 
 COPY scripts/run_opera.sh .

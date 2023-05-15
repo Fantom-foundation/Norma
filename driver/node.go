@@ -1,6 +1,10 @@
 package driver
 
-import "io"
+import (
+	"io"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
+)
 
 //go:generate mockgen -source node.go -destination node_mock.go -package driver
 
@@ -15,9 +19,9 @@ type Node interface {
 	// An error shall be produced if no valid node ID could be obtained.
 	GetNodeID() (NodeID, error)
 
-	// GetRpcServiceUrl returns the URL of the RPC server running on the
+	// GetHttpServiceUrl returns the URL of a HTTP service running on the
 	// represented node. May be nil if no such service is offered.
-	GetRpcServiceUrl() *URL
+	GetHttpServiceUrl(*network.ServiceDescription) *URL
 
 	// StreamLog provides a reader that is continuously providing the host log.
 	// It is up to the caller to close the stream.

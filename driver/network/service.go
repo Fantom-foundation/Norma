@@ -21,28 +21,47 @@ type Port uint16
 // this call the port is not reserved. Thus, consecutive calls may produce the
 // same free port until it is actually bound to some application.
 func GetFreePort() (Port, error) {
-	for i := 0; i < 10; i++ {
-		listener, err := net.Listen("tcp", "")
-		if err != nil {
-			log.Printf("failed to create a new listening port")
-			continue
-		}
-		defer listener.Close()
-
-		port := listener.Addr().String()
-		columnPos := strings.LastIndex(port, ":")
-		if columnPos < 0 {
-			log.Printf("invalid port format: %s", port)
-			continue
-		}
-		port = port[columnPos+1:]
-
-		res, err := strconv.ParseUint(port, 10, 16)
-		if err != nil {
-			log.Printf("invalid port format: %s, err: %v", port, err)
-			continue
-		}
-		return Port(res), nil
+	ports, err := GetFreePorts(1)
+	if err != nil {
+		return 0, err
 	}
-	return 0, fmt.Errorf("failed to allocate a free port on the system")
+	return ports[0], nil
+}
+
+// GetFreePorts obtains a list of free TCP ports on the local system.  Note
+// that after this call the ports are not reserved. Thus, consecutive calls may
+// produce the same free ports until it is actually bound to some application.
+func GetFreePorts(num int) ([]Port, error) {
+	ports := make([]Port, 0, num)
+	for len(ports) < num {
+		found := false
+		for i := 0; !found && i < 10; i++ {
+			listener, err := net.Listen("tcp", "")
+			if err != nil {
+				log.Printf("failed to create a new listening port")
+				continue
+			}
+			defer listener.Close()
+
+			port := listener.Addr().String()
+			columnPos := strings.LastIndex(port, ":")
+			if columnPos < 0 {
+				log.Printf("invalid port format: %s", port)
+				continue
+			}
+			port = port[columnPos+1:]
+
+			res, err := strconv.ParseUint(port, 10, 16)
+			if err != nil {
+				log.Printf("invalid port format: %s, err: %v", port, err)
+				continue
+			}
+			ports = append(ports, Port(res))
+			found = true
+		}
+		if !found {
+			return nil, fmt.Errorf("failed to allocate a free port on the system")
+		}
+	}
+	return ports, nil
 }

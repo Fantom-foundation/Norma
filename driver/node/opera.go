@@ -19,6 +19,13 @@ var OperaRpcService = network.ServiceDescription{
 	Port: OperaRPCPort,
 }
 
+const OperaPprofPort = 6060
+
+var OperaPprofService = network.ServiceDescription{
+	Name: "OperaPprof",
+	Port: OperaPprofPort,
+}
+
 const operaDockerImageName = "opera"
 
 // OperaNode implements the driver's Node interface by running a go-opera
@@ -43,7 +50,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	operaServicePort, err := network.GetFreePort()
+	ports, err := network.GetFreePorts(2)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +58,8 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		ImageName:       operaDockerImageName,
 		ShutdownTimeout: &timeout,
 		PortForwarding: map[network.Port]network.Port{
-			OperaRPCPort: operaServicePort,
+			OperaRPCPort:   ports[0],
+			OperaPprofPort: ports[1],
 		},
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorId,
@@ -83,8 +91,8 @@ func (n *OperaNode) IsRunning() bool {
 	return n.host.IsRunning()
 }
 
-func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
-	addr := n.host.GetAddressForService(&OperaRpcService)
+func (n *OperaNode) GetHttpServiceUrl(service *network.ServiceDescription) *driver.URL {
+	addr := n.host.GetAddressForService(service)
 	if addr == nil {
 		return nil
 	}
@@ -93,7 +101,7 @@ func (n *OperaNode) GetRpcServiceUrl() *driver.URL {
 }
 
 func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
-	url := n.GetRpcServiceUrl()
+	url := n.GetHttpServiceUrl(&OperaRpcService)
 	if url == nil {
 		return "", fmt.Errorf("node does not export an RPC server")
 	}
@@ -126,7 +134,7 @@ func (n *OperaNode) Cleanup() error {
 // AddPeer informs the client instance represented by the OperaNode about the
 // existence of another node, to which it may establish a connection.
 func (n *OperaNode) AddPeer(id driver.NodeID) error {
-	url := n.GetRpcServiceUrl()
+	url := n.GetHttpServiceUrl(&OperaRpcService)
 	if url == nil {
 		return fmt.Errorf("node does not export an RPC server")
 	}

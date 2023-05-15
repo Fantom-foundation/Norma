@@ -8,6 +8,7 @@ import (
 	io "io"
 	reflect "reflect"
 
+	network "github.com/Fantom-foundation/Norma/driver/network"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -48,6 +49,20 @@ func (mr *MockNodeMockRecorder) Cleanup() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockNode)(nil).Cleanup))
 }
 
+// GetHttpServiceUrl mocks base method.
+func (m *MockNode) GetHttpServiceUrl(arg0 *network.ServiceDescription) *URL {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHttpServiceUrl", arg0)
+	ret0, _ := ret[0].(*URL)
+	return ret0
+}
+
+// GetHttpServiceUrl indicates an expected call of GetHttpServiceUrl.
+func (mr *MockNodeMockRecorder) GetHttpServiceUrl(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHttpServiceUrl", reflect.TypeOf((*MockNode)(nil).GetHttpServiceUrl), arg0)
+}
+
 // GetNodeID mocks base method.
 func (m *MockNode) GetNodeID() (NodeID, error) {
 	m.ctrl.T.Helper()
@@ -61,20 +76,6 @@ func (m *MockNode) GetNodeID() (NodeID, error) {
 func (mr *MockNodeMockRecorder) GetNodeID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeID", reflect.TypeOf((*MockNode)(nil).GetNodeID))
-}
-
-// GetRpcServiceUrl mocks base method.
-func (m *MockNode) GetRpcServiceUrl() *URL {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRpcServiceUrl")
-	ret0, _ := ret[0].(*URL)
-	return ret0
-}
-
-// GetRpcServiceUrl indicates an expected call of GetRpcServiceUrl.
-func (mr *MockNodeMockRecorder) GetRpcServiceUrl() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRpcServiceUrl", reflect.TypeOf((*MockNode)(nil).GetRpcServiceUrl))
 }
 
 // IsRunning mocks base method.
