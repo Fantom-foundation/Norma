@@ -40,9 +40,9 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	node2.EXPECT().GetNodeID().AnyTimes().Return(node2Id, nil)
 	node3.EXPECT().GetNodeID().AnyTimes().Return(node3Id, nil)
 
-	node1.EXPECT().GetRpcServiceUrl().AnyTimes().Return(&url)
-	node2.EXPECT().GetRpcServiceUrl().AnyTimes().Return(&url)
-	node3.EXPECT().GetRpcServiceUrl().AnyTimes().Return(&url)
+	node1.EXPECT().GetHttpServiceUrl(gomock.Any()).AnyTimes().Return(&url)
+	node2.EXPECT().GetHttpServiceUrl(gomock.Any()).AnyTimes().Return(&url)
+	node3.EXPECT().GetHttpServiceUrl(gomock.Any()).AnyTimes().Return(&url)
 
 	net.EXPECT().RegisterListener(gomock.Any())
 	net.EXPECT().UnregisterListener(gomock.Any())

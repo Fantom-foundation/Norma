@@ -12,6 +12,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -68,7 +69,7 @@ func startCollector(node driver.Node, period time.Duration, stop <-chan bool, do
 			done <- err
 		}()
 
-		url := node.GetRpcServiceUrl()
+		url := node.GetHttpServiceUrl(&opera.OperaRpcService)
 		if url == nil {
 			err = fmt.Errorf("node does not export an RPC server")
 			return

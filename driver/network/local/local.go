@@ -12,6 +12,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/node"
+	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
@@ -167,7 +168,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	url := node.GetRpcServiceUrl()
+	url := node.GetHttpServiceUrl(&opera.OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
