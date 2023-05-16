@@ -3,17 +3,24 @@ package monitoring
 import (
 	"testing"
 
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 	"golang.org/x/exp/slices"
 )
 
 func TestMonitor_CreateAndShutdown(t *testing.T) {
-	monitor := NewMonitor()
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+	monitor := NewMonitor(net)
 	if err := monitor.Shutdown(); err != nil {
 		t.Errorf("shutdown of empty monitor failed: %v", err)
 	}
 }
 
 func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+
 	seriesA := &TestBlockSeries{[]int{1, 2}}
 	seriesB := &TestBlockSeries{[]int{3, 4, 5}}
 
@@ -23,7 +30,7 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 
 	metric := source.GetMetric()
 
-	monitor := NewMonitor()
+	monitor := NewMonitor(net)
 	if IsSupported(monitor, metric) {
 		t.Errorf("empty monitor should not support any metric")
 	}
@@ -32,7 +39,11 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 		t.Errorf("empty monitor should not report available subjects")
 	}
 
-	RegisterSource[Node, BlockSeries[int]](monitor, &source)
+	factory := &genericSourceFactory[Node, BlockSeries[int]]{
+		TestNodeMetric,
+		func(driver.Network) Source[Node, BlockSeries[int]] { return &source },
+	}
+	InstallSource[Node, BlockSeries[int]](monitor, factory)
 
 	if !IsSupported(monitor, metric) {
 		t.Errorf("registered metric is not supported")

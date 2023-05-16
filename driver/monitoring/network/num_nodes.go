@@ -1,6 +1,7 @@
 package netmon
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -12,6 +13,12 @@ import (
 var NumberOfNodes = mon.Metric[mon.Network, mon.TimeSeries[int]]{
 	Name:        "NumberOfNodes",
 	Description: "The number of connected nodes at various times.",
+}
+
+func init() {
+	if err := mon.RegisterSource(NumberOfNodes, NewNumNodesSource); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
 }
 
 // numNodesSource is a monitoring data source tracking the number of active

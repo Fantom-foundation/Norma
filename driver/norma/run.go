@@ -40,16 +40,6 @@ func run(ctx *cli.Context) (err error) {
 
 	clock := executor.NewWallTimeClock()
 
-	// Initialize monitoring environment.
-	monitor := monitoring.NewMonitor()
-	defer func() {
-		// TODO: dump data before shutting down monitor
-		fmt.Printf("Shutting down data monitor ...\n")
-		if err := monitor.Shutdown(); err != nil {
-			fmt.Printf("error during monitor shutdown:\n%v", err)
-		}
-	}()
-
 	// Startup network.
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators: 1,
@@ -69,8 +59,18 @@ func run(ctx *cli.Context) (err error) {
 		}
 	}()
 
+	// Initialize monitoring environment.
+	monitor := monitoring.NewMonitor(net)
+	defer func() {
+		// TODO: dump data before shutting down monitor
+		fmt.Printf("Shutting down data monitor ...\n")
+		if err := monitor.Shutdown(); err != nil {
+			fmt.Printf("error during monitor shutdown:\n%v", err)
+		}
+	}()
+
 	// Install monitoring sensory.
-	if err := setupMonitoringSources(monitor, net); err != nil {
+	if err := monitoring.InstallAllRegisteredSources(monitor); err != nil {
 		return err
 	}
 
@@ -84,13 +84,6 @@ func run(ctx *cli.Context) (err error) {
 	}
 	fmt.Printf("Execution completed successfully!\n")
 
-	return nil
-}
-
-func setupMonitoringSources(monitor *monitoring.Monitor, network driver.Network) error {
-	// TODO: create some registry for sources factories
-	monitoring.RegisterSource(monitor, netmon.NewNumNodesSource(network))
-	monitoring.RegisterSource(monitor, nodemon.NewNodeBlockHeightSource(network))
 	return nil
 }
 

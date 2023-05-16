@@ -22,6 +22,12 @@ var NodeBlockHeight = mon.Metric[mon.Node, mon.TimeSeries[int]]{
 	Description: "The block height of nodes at various times.",
 }
 
+func init() {
+	if err := mon.RegisterSource(NodeBlockHeight, NewNodeBlockHeightSource); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+}
+
 // nodeBlockHeightSource is a data source for tracking the block height of individuel
 // nodes over time.
 type nodeBlockHeightSource struct {
