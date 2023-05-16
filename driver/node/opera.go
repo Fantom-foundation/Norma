@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -108,6 +109,10 @@ func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
 		return "", err
 	}
 	return driver.NodeID(result.Enode), nil
+}
+
+func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
+	return n.host.StreamLog()
 }
 
 func (n *OperaNode) Stop() error {

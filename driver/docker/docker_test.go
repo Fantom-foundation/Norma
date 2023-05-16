@@ -1,8 +1,11 @@
 package docker
 
 import (
+	"bufio"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -105,6 +108,92 @@ func TestContainer_SaveLogTo(t *testing.T) {
 
 	if numOfFiles == 0 {
 		t.Errorf("no log files were obtained")
+	}
+}
+
+func TestContainer_StreamLog(t *testing.T) {
+	_, cont := startContainer(t)
+
+	reader, err := cont.StreamLog()
+	if err != nil {
+		t.Fatalf("cannot read logs: %e", err)
+	}
+
+	t.Cleanup(func() {
+		_ = reader.Close()
+	})
+
+	done := make(chan bool)
+
+	go func() {
+		defer close(done)
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "Hello from Docker!") {
+				done <- true
+			}
+		}
+	}()
+
+	var containerStarted bool
+	select {
+	case containerStarted = <-done:
+	case <-time.After(10 * time.Second):
+	}
+
+	if !containerStarted {
+		t.Errorf("expected log not found")
+	}
+}
+
+func TestContainer_StreamManyReaders(t *testing.T) {
+	_, cont := startContainer(t)
+
+	reader1, err := cont.StreamLog()
+	if err != nil {
+		t.Fatalf("cannot read logs: %e", err)
+	}
+	reader2, err := cont.StreamLog()
+	if err != nil {
+		t.Fatalf("cannot read logs: %e", err)
+	}
+	reader3, err := cont.StreamLog()
+	if err != nil {
+		t.Fatalf("cannot read logs: %e", err)
+	}
+
+	t.Cleanup(func() {
+		_ = reader1.Close()
+		_ = reader2.Close()
+		_ = reader3.Close()
+	})
+
+	done := make(chan int)
+
+	go func() {
+		defer close(done)
+		var count int
+		for _, reader := range []io.Reader{reader1, reader2, reader3} {
+			scanner := bufio.NewScanner(reader)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.Contains(line, "Hello from Docker!") {
+					count++
+				}
+			}
+		}
+		done <- count
+	}()
+
+	var count int
+	select {
+	case count = <-done:
+	case <-time.After(10 * time.Second):
+	}
+
+	if count != 3 {
+		t.Errorf("not all readers got data: %d", count)
 	}
 }
 
