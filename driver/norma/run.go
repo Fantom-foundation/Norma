@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/exp/constraints"
 	"log"
 	"sort"
 	"time"
@@ -125,19 +126,24 @@ func (l *progressLogger) shutdown() {
 func logState(monitor *monitoring.Monitor) {
 	numNodes := getNumNodes(monitor)
 	blockHeights := getBlockHeights(monitor)
-	log.Printf("Block height of %s nodes in the network: %v", numNodes, blockHeights)
+	txs := getNumTxs(monitor)
+	gas := getGasUsed(monitor)
+	log.Printf("Nodes: %s, block heights: %v, txs: %v, gas: %s", numNodes, blockHeights, txs, gas)
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
 	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
-	if data == nil {
-		return "N/A"
-	}
-	point := (*data).GetLatest()
-	if point == nil {
-		return "N/A"
-	}
-	return fmt.Sprintf("%d", point.Value)
+	return getLastValAsString[monitoring.Time](*data)
+}
+
+func getNumTxs(monitor *monitoring.Monitor) string {
+	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
+	return getLastValAsString[monitoring.BlockNumber](*data)
+}
+
+func getGasUsed(monitor *monitoring.Monitor) string {
+	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockGasUsed)
+	return getLastValAsString[monitoring.BlockNumber](*data)
 }
 
 func getBlockHeights(monitor *monitoring.Monitor) []string {
@@ -152,12 +158,18 @@ func getBlockHeights(monitor *monitoring.Monitor) []string {
 			res = append(res, "N/A")
 			continue
 		}
-		point := (*data).GetLatest()
-		if point == nil {
-			res = append(res, "N/A")
-			continue
-		}
-		res = append(res, fmt.Sprintf("%d", point.Value))
+		res = append(res, getLastValAsString[monitoring.Time](*data))
 	}
 	return res
+}
+
+func getLastValAsString[K constraints.Ordered](series monitoring.Series[K, int]) string {
+	if series == nil {
+		return "N/A"
+	}
+	point := series.GetLatest()
+	if point == nil {
+		return "N/A"
+	}
+	return fmt.Sprintf("%d", point.Value)
 }

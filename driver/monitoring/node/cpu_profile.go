@@ -36,13 +36,13 @@ var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[PprofData]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NodeCpuProfile, NewNodeCpuProfileSource); err != nil {
+	if err := mon.RegisterSource(NodeCpuProfile, mon.AdaptNetworkToMonitorFactory(NewNodeCpuProfileSource)); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
 
 // NewNodeCpuProfileSource creates a new data source periodically collecting
-// collecting CPU profiling data at configured sampling periods.
+// CPU profiling data at configured sampling periods.
 func NewNodeCpuProfileSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[PprofData]] {
 	return newPeriodicNodeDataSource[PprofData](
 		NodeCpuProfile,

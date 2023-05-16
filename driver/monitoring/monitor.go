@@ -17,13 +17,14 @@ import (
 // methods in Go. Thus, several methods interacting with Monitor instances
 // are free functions (see implementations below).
 type Monitor struct {
-	network driver.Network
-	sources map[string]source
+	network         driver.Network
+	nodeLogProvider NodeLogProvider
+	sources         map[string]source
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
 func NewMonitor(network driver.Network) *Monitor {
-	return &Monitor{network, map[string]source{}}
+	return &Monitor{network, NewNodeLogDispatcher(network), map[string]source{}}
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
@@ -47,7 +48,7 @@ func InstallSource[S any, T any](monitor *Monitor, factory SourceFactory[S, T]) 
 	if present {
 		return fmt.Errorf("source for metric %s already present", metric.Name)
 	}
-	monitor.sources[metric.Name] = factory.CreateSource(monitor.network)
+	monitor.sources[metric.Name] = factory.CreateSource(monitor)
 	return nil
 }
 

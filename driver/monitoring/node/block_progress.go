@@ -20,7 +20,7 @@ var NodeBlockHeight = mon.Metric[mon.Node, mon.TimeSeries[int]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NodeBlockHeight, NewNodeBlockHeightSource); err != nil {
+	if err := mon.RegisterSource(NodeBlockHeight, mon.AdaptNetworkToMonitorFactory(NewNodeBlockHeightSource)); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
