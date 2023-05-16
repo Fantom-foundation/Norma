@@ -3,6 +3,8 @@ package monitoring
 import (
 	"errors"
 	"fmt"
+
+	"github.com/Fantom-foundation/Norma/driver"
 )
 
 // Monitor instances are handling the life-cycle of sets of data sources for a
@@ -15,12 +17,13 @@ import (
 // methods in Go. Thus, several methods interacting with Monitor instances
 // are free functions (see implementations below).
 type Monitor struct {
+	network driver.Network
 	sources map[string]source
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
-func NewMonitor() *Monitor {
-	return &Monitor{map[string]source{}}
+func NewMonitor(network driver.Network) *Monitor {
+	return &Monitor{network, map[string]source{}}
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
@@ -35,16 +38,16 @@ func (m *Monitor) Shutdown() error {
 	return errors.Join(errs...)
 }
 
-// RegisterSource adds a new Metric source to the given monitor. The monitor
-// takes ownership of the source provided source and will stop it once during
-// the Shutdown of the monitor.
-func RegisterSource[S any, T any](monitor *Monitor, source Source[S, T]) error {
-	metric := source.GetMetric()
+// InstallSource installs a new source on the given monitor. The provided factory
+// is used to create a new source instance, of which the monitor takes ownership.
+// In particular, the monitor will stop it during the Shutdown of the monitor.
+func InstallSource[S any, T any](monitor *Monitor, factory SourceFactory[S, T]) error {
+	metric := factory.GetMetric()
 	_, present := monitor.sources[metric.Name]
 	if present {
-		return fmt.Errorf("source for metric %s already registered", metric.Name)
+		return fmt.Errorf("source for metric %s already present", metric.Name)
 	}
-	monitor.sources[metric.Name] = source
+	monitor.sources[metric.Name] = factory.CreateSource(monitor.network)
 	return nil
 }
 
