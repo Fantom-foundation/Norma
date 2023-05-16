@@ -57,13 +57,13 @@ func TestParseBlock(t *testing.T) {
 
 	blockToLog := make(map[int]string, len(logToBlock))
 	for k, v := range logToBlock {
-		blockToLog[v.height] = k
+		blockToLog[v.Height] = k
 	}
 
 	for b := range blockReader {
-		s, exists := blockToLog[b.height]
+		s, exists := blockToLog[b.Height]
 		if !exists {
-			t.Errorf("unknow block: %d", b.height)
+			t.Errorf("unknow block: %d", b.Height)
 		}
 
 		val, exists := logToBlock[s]
@@ -71,17 +71,17 @@ func TestParseBlock(t *testing.T) {
 			t.Errorf("unknow log: %s", s)
 		}
 
-		if val.txs != b.txs {
-			t.Errorf("values do not match: %v != %v", val.txs, b.txs)
+		if val.Txs != b.Txs {
+			t.Errorf("values do not match: %v != %v", val.Txs, b.Txs)
 		}
-		if val.gasUsed != b.gasUsed {
-			t.Errorf("values do not match: %v != %v", val.gasUsed, b.gasUsed)
+		if val.GasUsed != b.GasUsed {
+			t.Errorf("values do not match: %v != %v", val.GasUsed, b.GasUsed)
 		}
-		if val.time != b.time {
-			t.Errorf("values do not match: %v != %v", val.time, b.time)
+		if val.Time != b.Time {
+			t.Errorf("values do not match: %v != %v", val.Time, b.Time)
 		}
 
-		delete(blockToLog, b.height)
+		delete(blockToLog, b.Height)
 	}
 
 	if len(blockToLog) != 0 {
@@ -107,22 +107,22 @@ func TestParseLogStream(t *testing.T) {
 	}
 
 	for b := range blockReader {
-		val, exists := expected[b.height]
+		val, exists := expected[b.Height]
 		if !exists {
-			t.Errorf("unknow block: %d", b.height)
+			t.Errorf("unknow block: %d", b.Height)
 		}
 
-		if val.txs != b.txs {
-			t.Errorf("values do not match: %v != %v", val.txs, b.txs)
+		if val.Txs != b.Txs {
+			t.Errorf("values do not match: %v != %v", val.Txs, b.Txs)
 		}
-		if val.gasUsed != b.gasUsed {
-			t.Errorf("values do not match: %v != %v", val.gasUsed, b.gasUsed)
+		if val.GasUsed != b.GasUsed {
+			t.Errorf("values do not match: %v != %v", val.GasUsed, b.GasUsed)
 		}
-		if val.time != b.time {
-			t.Errorf("values do not match: %v != %v", val.time, b.time)
+		if val.Time != b.Time {
+			t.Errorf("values do not match: %v != %v", val.Time, b.Time)
 		}
 
-		delete(expected, b.height)
+		delete(expected, b.Height)
 	}
 
 	if len(expected) != 0 {
