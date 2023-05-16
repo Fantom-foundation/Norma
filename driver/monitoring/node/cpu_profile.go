@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 )
 
@@ -26,4 +27,45 @@ func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
 		return nil, fmt.Errorf("failed to fetch result: %v", resp)
 	}
 	return io.ReadAll(resp.Body)
+}
+
+// NodeCpuProfile periodically collects CPU profiles from individual nodes.
+var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[PprofData]]{
+	Name:        "NodeCpuProfile",
+	Description: "CpuProfile samples of a node at various times.",
+}
+
+func init() {
+	if err := mon.RegisterSource(NodeCpuProfile, NewNodeCpuProfileSource); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+}
+
+// NewNodeCpuProfileSource creates a new data source periodically collecting
+// collecting CPU profiling data at configured sampling periods.
+func NewNodeCpuProfileSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[PprofData]] {
+	return newPeriodicNodeDataSource[PprofData](
+		NodeCpuProfile,
+		network,
+		10*time.Second, // Sampling period; TODO: make customizable
+		&cpuProfileSensorFactory{},
+	)
+}
+
+type cpuProfileSensorFactory struct{}
+
+func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (Sensor[PprofData], error) {
+	return &cpuProfileSensor{
+		node,
+		5 * time.Second, // the duration of the CPU profile collection; TODO: make configurable
+	}, nil
+}
+
+type cpuProfileSensor struct {
+	node     driver.Node
+	duration time.Duration
+}
+
+func (s *cpuProfileSensor) ReadValue() (PprofData, error) {
+	return GetPprofData(s.node, s.duration)
 }
