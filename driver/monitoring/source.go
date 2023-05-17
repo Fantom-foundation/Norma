@@ -3,7 +3,6 @@ package monitoring
 import (
 	"errors"
 	"fmt"
-
 	"github.com/Fantom-foundation/Norma/driver"
 )
 
@@ -39,8 +38,8 @@ type SourceFactory[S any, T any] interface {
 	// GetMetric returns the metric the source is providing.
 	GetMetric() Metric[S, T]
 	// CreateSource creates a new source instance collecting data within
-	// the given network.
-	CreateSource(driver.Network) Source[S, T]
+	// the given monitoring.
+	CreateSource(monitor *Monitor) Source[S, T]
 }
 
 // RegisterFactory registers a new source factory in a global registry. It is
@@ -58,8 +57,24 @@ func RegisterFactory[S any, T any](factory SourceFactory[S, T]) error {
 
 // RegisterSource is a convenience variant of RegisterFactory above, accepting
 // a metric and a factory function for registering a source.
-func RegisterSource[S any, T any](metric Metric[S, T], factory func(driver.Network) Source[S, T]) error {
+func RegisterSource[S any, T any](metric Metric[S, T], factory func(*Monitor) Source[S, T]) error {
 	return RegisterFactory[S, T](&genericSourceFactory[S, T]{metric, factory})
+}
+
+// AdaptLogProviderToMonitorFactory provides an adapter between factory functions that create the Source.
+// This adapter convert the factory that takes the NodeLogProvider and returns the factory with the *Monitor
+func AdaptLogProviderToMonitorFactory[S any, T any](f func(provider NodeLogProvider) Source[S, T]) func(*Monitor) Source[S, T] {
+	return func(monitor *Monitor) Source[S, T] {
+		return f(monitor.nodeLogProvider)
+	}
+}
+
+// AdaptNetworkToMonitorFactory provides an adapter between factory functions that create the Source.
+// This adapter convert the factory that takes the Network and returns the factory with the *Monitor
+func AdaptNetworkToMonitorFactory[S any, T any](f func(network driver.Network) Source[S, T]) func(*Monitor) Source[S, T] {
+	return func(monitor *Monitor) Source[S, T] {
+		return f(monitor.network)
+	}
 }
 
 // InstallAllRegisteredSources installs one instance of every registered source
@@ -96,13 +111,13 @@ func (i *sourceAdapter[S, T]) installIn(monitor *Monitor) error {
 
 type genericSourceFactory[S any, T any] struct {
 	metric  Metric[S, T]
-	factory func(driver.Network) Source[S, T]
+	factory func(*Monitor) Source[S, T]
 }
 
 func (f *genericSourceFactory[S, T]) GetMetric() Metric[S, T] {
 	return f.metric
 }
 
-func (f *genericSourceFactory[S, T]) CreateSource(network driver.Network) Source[S, T] {
-	return f.factory(network)
+func (f *genericSourceFactory[S, T]) CreateSource(monitor *Monitor) Source[S, T] {
+	return f.factory(monitor)
 }

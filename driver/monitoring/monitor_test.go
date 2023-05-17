@@ -11,6 +11,10 @@ import (
 func TestMonitor_CreateAndShutdown(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
+
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
 	monitor := NewMonitor(net)
 	if err := monitor.Shutdown(); err != nil {
 		t.Errorf("shutdown of empty monitor failed: %v", err)
@@ -21,12 +25,15 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
 	seriesA := &TestBlockSeries{[]int{1, 2}}
 	seriesB := &TestBlockSeries{[]int{3, 4, 5}}
 
 	source := TestSource{}
-	source.setData(Node("A"), seriesA)
-	source.setData(Node("B"), seriesB)
+	source.setData("A", seriesA)
+	source.setData("B", seriesB)
 
 	metric := source.GetMetric()
 
@@ -41,7 +48,7 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 
 	factory := &genericSourceFactory[Node, BlockSeries[int]]{
 		TestNodeMetric,
-		func(driver.Network) Source[Node, BlockSeries[int]] { return &source },
+		func(*Monitor) Source[Node, BlockSeries[int]] { return &source },
 	}
 	InstallSource[Node, BlockSeries[int]](monitor, factory)
 

@@ -16,7 +16,7 @@ var NumberOfNodes = mon.Metric[mon.Network, mon.TimeSeries[int]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NumberOfNodes, NewNumNodesSource); err != nil {
+	if err := mon.RegisterSource(NumberOfNodes, mon.AdaptNetworkToMonitorFactory(NewNumNodesSource)); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }

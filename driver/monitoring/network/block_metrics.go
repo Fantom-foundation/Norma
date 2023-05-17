@@ -1,6 +1,7 @@
 package netmon
 
 import (
+	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/ethereum/go-ethereum/log"
 	"sync"
@@ -20,6 +21,16 @@ var (
 	}
 )
 
+func init() {
+	if err := monitoring.RegisterSource(BlockNumberOfTransactions, monitoring.AdaptLogProviderToMonitorFactory(newNumberOfTransactionsSource)); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+
+	if err := monitoring.RegisterSource(BlockGasUsed, monitoring.AdaptLogProviderToMonitorFactory(newGasUsedSource)); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+}
+
 // BlockNetworkMetricSource is a metric source that captures block properties where the Metric is the subject
 type BlockNetworkMetricSource[T any] struct {
 	metric           monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]]
@@ -30,7 +41,7 @@ type BlockNetworkMetricSource[T any] struct {
 	lastBlock        int // track last block added in the series not to add duplicated block heights
 }
 
-// NewNumberOfTransactionsSource creates a metric capturing number of transactions for each block of a node.
+// NewNumberOfTransactionsSource creates a metric capturing number of transactions for each block of a network
 func NewNumberOfTransactionsSource(reg monitoring.NodeLogProvider) *BlockNetworkMetricSource[int] {
 	f := func(b monitoring.Block) int {
 		return b.Txs
@@ -38,12 +49,22 @@ func NewNumberOfTransactionsSource(reg monitoring.NodeLogProvider) *BlockNetwork
 	return newBlockNetworkMetricsSource[int](reg, f, BlockNumberOfTransactions)
 }
 
-// NewGasUsedSource creates a metric capturing Gas used for each block of a node.
+// NewGasUsedSource creates a metric capturing Gas used for each block of a network.
 func NewGasUsedSource(reg monitoring.NodeLogProvider) *BlockNetworkMetricSource[int] {
 	f := func(b monitoring.Block) int {
 		return b.GasUsed
 	}
 	return newBlockNetworkMetricsSource[int](reg, f, BlockGasUsed)
+}
+
+// newNumberOfTransactionsSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
+func newNumberOfTransactionsSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+	return NewNumberOfTransactionsSource(reg)
+}
+
+// newGasUsedSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
+func newGasUsedSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+	return NewGasUsedSource(reg)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log
@@ -74,8 +95,9 @@ func (s *BlockNetworkMetricSource[T]) GetSubjects() []monitoring.Network {
 	return []monitoring.Network{item}
 }
 
-func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) monitoring.BlockSeries[T] {
-	return s.series
+func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) *monitoring.BlockSeries[T] {
+	var res monitoring.BlockSeries[T] = s.series
+	return &res
 }
 
 func (s *BlockNetworkMetricSource[T]) Shutdown() error {

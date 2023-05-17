@@ -1,6 +1,7 @@
 package nodemon
 
 import (
+	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/ethereum/go-ethereum/log"
 	"sync"
@@ -15,6 +16,12 @@ var (
 	}
 )
 
+func init() {
+	if err := monitoring.RegisterSource(BlockCompletionTime, monitoring.AdaptLogProviderToMonitorFactory(newBlockTimeSource)); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+}
+
 // BlockNodeMetricSource is a metric source that captures block properties where the Node is the subject
 type BlockNodeMetricSource[T any] struct {
 	metric           monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]]
@@ -24,12 +31,17 @@ type BlockNodeMetricSource[T any] struct {
 	seriesLock       sync.Mutex
 }
 
-// NewBlockTimeSource creates a metric capturing time of the block creation.
+// NewBlockTimeSource creates a metric capturing time of the block finalisation for each Node.
 func NewBlockTimeSource(reg monitoring.NodeLogProvider) *BlockNodeMetricSource[time.Time] {
 	f := func(b monitoring.Block) time.Time {
 		return b.Time
 	}
 	return newBlockNodeMetricsSource[time.Time](reg, f, BlockCompletionTime)
+}
+
+// newBlockTimeSource is the same as its public counterpart, it only returns the struct instead of the Source interface
+func newBlockTimeSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Time]] {
+	return NewBlockTimeSource(reg)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log
@@ -65,15 +77,16 @@ func (s *BlockNodeMetricSource[T]) GetSubjects() []monitoring.Node {
 	return res
 }
 
-func (s *BlockNodeMetricSource[T]) GetData(node monitoring.Node) monitoring.BlockSeries[T] {
+func (s *BlockNodeMetricSource[T]) GetData(node monitoring.Node) *monitoring.BlockSeries[T] {
 	s.seriesLock.Lock()
 	defer s.seriesLock.Unlock()
 
-	var res monitoring.BlockSeries[T]
 	if val, exists := s.series[node]; exists {
-		res = val
+		var res monitoring.BlockSeries[T] = val
+		return &res
 	}
-	return res
+
+	return nil
 }
 
 func (s *BlockNodeMetricSource[T]) Shutdown() error {
