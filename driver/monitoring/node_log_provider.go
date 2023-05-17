@@ -2,8 +2,8 @@ package monitoring
 
 import (
 	"github.com/Fantom-foundation/Norma/driver"
+	"io"
 	"log"
-	"strings"
 	"sync"
 )
 
@@ -85,17 +85,12 @@ func (n *NodeLogDispatcher) AfterNodeCreation(node driver.Node) {
 
 	// open new log stream only when the node has not been in the map yet
 	if _, exists := n.nodes[Node(nodeId)]; !exists {
-		//TODO open stream here:  stream := node.GetLogStream()
-		testLog :=
-			"INFO [05-04|09:34:15.080] New block                                index=2 id=2:1:247c79       gas_used=417,928 txs=2/0 age=7.392s t=3.686ms \n" +
-				"INFO [05-04|09:34:15.537] New block                                index=3 id=3:1:3d6fb6       gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms \n" +
-				"INFO [05-04|09:34:16.027] New block                                index=4 id=3:4:9bb789       gas_used=43426   txs=1/0 age=380.470ms t=1.540ms \n" +
-				"INFO [05-04|09:34:16.512] New block                                index=5 id=3:7:a780ce       gas_used=138,470 txs=5/0 age=374.251ms t=3.796ms \n" +
-				"INFO [05-04|09:34:17.003] New block                                index=6 id=3:10:d7da0b      gas_used=105,304 txs=4/0 age=381.575ms t=3.249ms \n"
-
-		stream := strings.NewReader(testLog)
-		ch := NewLogReader(stream)
-		n.startDispatcher(Node(nodeId), ch)
+		logStream, err := node.StreamLog()
+		if err != nil {
+			log.Printf("failed to obtain logs of node, will not be able to track blocks: %v", err)
+			return // do not start dispatch on error
+		}
+		n.startDispatcher(Node(nodeId), logStream)
 
 		n.nodes[Node(nodeId)] = true
 	}
@@ -125,8 +120,12 @@ func (n *NodeLogDispatcher) getNumNodes() int {
 	return len(n.nodes)
 }
 
-func (n *NodeLogDispatcher) startDispatcher(node Node, ch <-chan Block) {
+func (n *NodeLogDispatcher) startDispatcher(node Node, reader io.ReadCloser) {
 	go func() {
+		defer func() {
+			_ = reader.Close()
+		}()
+		ch := NewLogReader(reader)
 		for b := range ch {
 			n.listenersLock.Lock()
 			for k := range n.listeners {

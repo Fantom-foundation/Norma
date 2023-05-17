@@ -4,35 +4,10 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
+	"io"
+	"strings"
 	"testing"
 	"time"
-)
-
-var (
-	nodeId1 = monitoring.Node("A")
-	nodeId2 = monitoring.Node("B")
-	nodeId3 = monitoring.Node("C")
-
-	time1, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.080]")
-	time2, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.537]")
-	time3, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.027]")
-	time4, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.512]")
-	time5, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:17.003]")
-
-	// TODO now the data matches the hardcoded string in the Reader, mock it in next PR
-	block1 = monitoring.Block{Height: 2, Time: time1, Txs: 2, GasUsed: 417_928}
-	block2 = monitoring.Block{Height: 3, Time: time2, Txs: 1, GasUsed: 117_867}
-	block3 = monitoring.Block{Height: 4, Time: time3, Txs: 1, GasUsed: 43426}
-	block4 = monitoring.Block{Height: 5, Time: time4, Txs: 5, GasUsed: 138_470}
-	block5 = monitoring.Block{Height: 6, Time: time5, Txs: 5, GasUsed: 105_304}
-
-	expected = map[monitoring.Node][]monitoring.Block{
-		nodeId1: {block1, block2, block3, block4, block5},
-		nodeId2: {block1, block2, block3, block4, block5},
-		nodeId3: {block1, block2, block3, block4, block5},
-	}
-
-	blockchain = []monitoring.Block{block1, block2, block3, block4, block5}
 )
 
 func TestCaptureSeriesFromNodeBlocks(t *testing.T) {
@@ -56,9 +31,13 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	node2 := driver.NewMockNode(ctrl)
 	node3 := driver.NewMockNode(ctrl)
 
-	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId1), nil)
-	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId2), nil)
-	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(nodeId3), nil)
+	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node1TestId), nil)
+	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node2TestId), nil)
+	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node3TestId), nil)
+
+	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
+	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
+	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil)
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
@@ -69,17 +48,17 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	reg.RegisterLogListener(source)
 
 	// pre-existing node with some blocks
-	testNetworkSeriesData(t, blockchain, source)
+	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// add second node - but we got still the same blockchain
 	reg.AfterNodeCreation(node2)
-	testNetworkSeriesData(t, blockchain, source)
+	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// next node will NOT be registered, since the metric is shutdown,
 	// but we got the same blockchain as before, i.e. no new blocks
 	_ = source.Shutdown()
 	reg.AfterNodeCreation(node3)
-	testNetworkSeriesData(t, blockchain, source)
+	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	testNetworkSubjects(t, source)
 }
@@ -133,7 +112,7 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 
 	// check the size of the series matches the expected blocks
 	if got, want := len(source.GetData(network).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))), len(expectedBlocks); got != want {
-		t.Errorf("block series do not match")
+		t.Errorf("block series lengths do not match")
 	}
 }
 
@@ -141,7 +120,7 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 func testNetworkSource[T comparable](t *testing.T, source *BlockNetworkMetricSource[T]) {
 
 	// insert data into metric
-	for node, blocks := range expected {
+	for node, blocks := range monitoring.NodeBlockTestData {
 		for _, block := range blocks {
 			source.OnBlock(node, block)
 		}
@@ -161,7 +140,7 @@ func testNetworkSource[T comparable](t *testing.T, source *BlockNetworkMetricSou
 	// table check results
 	for _, network := range source.GetSubjects() {
 		for _, block := range source.GetData(network).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-			if got, want := block.Value, source.getBlockProperty(blockchain[block.Position-2]); got != want {
+			if got, want := block.Value, source.getBlockProperty(monitoring.BlockchainTestData[block.Position-1]); got != want {
 				t.Errorf("data series contain unexpected value: %v != %v", got, want)
 			}
 		}
