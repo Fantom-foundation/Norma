@@ -17,9 +17,11 @@ func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
 	producer.EXPECT().RegisterLogListener(gomock.Any()).AnyTimes()
 
 	source1 := NewBlockTimeSource(producer)
+	source2 := NewBlockProcessingTimeSource(producer)
 
 	// simulate data received to metric
 	testNodeSource(t, source1)
+	testNodeSource(t, source2)
 }
 
 func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {

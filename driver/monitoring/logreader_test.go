@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"io"
 	"strings"
 	"testing"
 )
@@ -33,110 +32,63 @@ func TestParseTime(t *testing.T) {
 }
 
 func TestParseBlock(t *testing.T) {
-	blockReader := NewLogReader(createTestLog())
+	blockReader := NewLogReader(strings.NewReader(Node1TestLog))
 
-	time2, _ := parseTime("[05-04|09:34:15.080]")
-	time3, _ := parseTime("[05-04|09:34:15.537]")
-	time4, _ := parseTime("[05-04|09:34:16.027]")
-	time5, _ := parseTime("[05-04|09:34:16.512]")
-	time6, _ := parseTime("[05-04|09:34:17.003]")
-
-	s1 := "INFO [05-04|09:34:15.080] New block                                index=2 id=2:1:247c79       gas_used=417,928 txs=2/0 age=7.392s t=3.686ms \n"
-	s2 := "INFO [05-04|09:34:15.537] New block                                index=3 id=3:1:3d6fb6       gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms \n"
-	s3 := "INFO [05-04|09:34:16.027] New block                                index=4 id=3:4:9bb789       gas_used=43426   txs=1/0 age=380.470ms t=1.540ms \n"
-	s4 := "INFO [05-04|09:34:16.512] New block                                index=5 id=3:7:a780ce       gas_used=138,470 txs=5/0 age=374.251ms t=3.796ms \n"
-	s5 := "INFO [05-04|09:34:17.003] New block                                index=6 id=3:10:d7da0b      gas_used=105,304 txs=4/0 age=381.575ms t=3.249ms \n"
-
-	logToBlock := map[string]Block{
-		s1: {2, time2, 2, 417_928},
-		s2: {3, time3, 1, 117_867},
-		s3: {4, time4, 1, 43426},
-		s4: {5, time5, 5, 138_470},
-		s5: {6, time6, 4, 105_304},
-	}
-
-	blockToLog := make(map[int]string, len(logToBlock))
-	for k, v := range logToBlock {
-		blockToLog[v.Height] = k
-	}
-
-	for b := range blockReader {
-		s, exists := blockToLog[b.Height]
+	var count int
+	for got := range blockReader {
+		want, exists := BlockHeight1TestMap[got.Height]
 		if !exists {
-			t.Errorf("unknow block: %d", b.Height)
+			t.Errorf("unknow block: %d", got.Height)
 		}
 
-		val, exists := logToBlock[s]
-		if !exists {
-			t.Errorf("unknow log: %s", s)
+		if want.Txs != got.Txs {
+			t.Errorf("values do not match: %v != %v", want.Txs, got.Txs)
+		}
+		if want.GasUsed != got.GasUsed {
+			t.Errorf("values do not match: %v != %v", want.GasUsed, got.GasUsed)
+		}
+		if want.Time != got.Time {
+			t.Errorf("values do not match: %v != %v", want.Time, got.Time)
+		}
+		if want.ProcessingTime != got.ProcessingTime {
+			t.Errorf("values do not match: %s != %s", want.Time, got.Time)
 		}
 
-		if val.Txs != b.Txs {
-			t.Errorf("values do not match: %v != %v", val.Txs, b.Txs)
-		}
-		if val.GasUsed != b.GasUsed {
-			t.Errorf("values do not match: %v != %v", val.GasUsed, b.GasUsed)
-		}
-		if val.Time != b.Time {
-			t.Errorf("values do not match: %v != %v", val.Time, b.Time)
-		}
-
-		delete(blockToLog, b.Height)
+		count++
 	}
 
-	if len(blockToLog) != 0 {
+	if len(BlockHeight1TestMap) != count {
 		t.Errorf("not all keys were visited")
 	}
 }
 
 func TestParseLogStream(t *testing.T) {
-	blockReader := NewLogReader(createTestLog())
+	blockReader := NewLogReader(strings.NewReader(Node1TestLog))
 
-	time2, _ := parseTime("[05-04|09:34:15.080]")
-	time3, _ := parseTime("[05-04|09:34:15.537]")
-	time4, _ := parseTime("[05-04|09:34:16.027]")
-	time5, _ := parseTime("[05-04|09:34:16.512]")
-	time6, _ := parseTime("[05-04|09:34:17.003]")
+	var count int
+	for got := range blockReader {
+		want, err := BlockHeight1TestMap[got.Height]
+		if !err {
+			t.Errorf("unknow block: %d", got.Height)
+		}
 
-	expected := map[int]Block{
-		2: {2, time2, 2, 417_928},
-		3: {3, time3, 1, 117_867},
-		4: {4, time4, 1, 43426},
-		5: {5, time5, 5, 138_470},
-		6: {6, time6, 4, 105_304},
+		if want.Txs != got.Txs {
+			t.Errorf("values do not match: %v != %v", want.Txs, got.Txs)
+		}
+		if want.GasUsed != got.GasUsed {
+			t.Errorf("values do not match: %v != %v", want.GasUsed, got.GasUsed)
+		}
+		if want.Time != got.Time {
+			t.Errorf("values do not match: %v != %v", want.Time, got.Time)
+		}
+		if want.ProcessingTime != got.ProcessingTime {
+			t.Errorf("values do not match: %s != %s", want.Time, got.Time)
+		}
+
+		count++
 	}
 
-	for b := range blockReader {
-		val, exists := expected[b.Height]
-		if !exists {
-			t.Errorf("unknow block: %d", b.Height)
-		}
-
-		if val.Txs != b.Txs {
-			t.Errorf("values do not match: %v != %v", val.Txs, b.Txs)
-		}
-		if val.GasUsed != b.GasUsed {
-			t.Errorf("values do not match: %v != %v", val.GasUsed, b.GasUsed)
-		}
-		if val.Time != b.Time {
-			t.Errorf("values do not match: %v != %v", val.Time, b.Time)
-		}
-
-		delete(expected, b.Height)
-	}
-
-	if len(expected) != 0 {
+	if len(BlockHeight1TestMap) != count {
 		t.Errorf("not all keys were visited")
 	}
-}
-
-func createTestLog() io.Reader {
-	testLog :=
-		"INFO [05-04|09:34:15.080] New block                                index=2 id=2:1:247c79       gas_used=417,928 txs=2/0 age=7.392s t=3.686ms \n" +
-			"INFO [05-04|09:34:15.537] New block                                index=3 id=3:1:3d6fb6       gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms \n" +
-			"INFO [05-04|09:34:16.027] New block                                index=4 id=3:4:9bb789       gas_used=43426   txs=1/0 age=380.470ms t=1.540ms \n" +
-			"INFO [05-04|09:34:16.512] New block                                index=5 id=3:7:a780ce       gas_used=138,470 txs=5/0 age=374.251ms t=3.796ms \n" +
-			"INFO [05-04|09:34:17.003] New block                                index=6 id=3:10:d7da0b      gas_used=105,304 txs=4/0 age=381.575ms t=3.249ms \n"
-
-	return strings.NewReader(testLog)
 }
