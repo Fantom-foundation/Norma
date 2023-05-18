@@ -14,10 +14,18 @@ var (
 		Name:        "BlockCompletionTime",
 		Description: "Time the block was completed",
 	}
+
+	BlockEventAndTxsProcessingTime = monitoring.Metric[monitoring.Node, monitoring.BlockSeries[time.Duration]]{
+		Name:        "BlockEventAndTxsProcessingTime",
+		Description: "Time to process a block, it applies all lachesis events, applies all transactions, and commits stateDB",
+	}
 )
 
 func init() {
 	if err := monitoring.RegisterSource(BlockCompletionTime, monitoring.AdaptLogProviderToMonitorFactory(newBlockTimeSource)); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+	if err := monitoring.RegisterSource(BlockEventAndTxsProcessingTime, monitoring.AdaptLogProviderToMonitorFactory(newBlockProcessingTimeSource)); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
@@ -42,6 +50,19 @@ func NewBlockTimeSource(reg monitoring.NodeLogProvider) *BlockNodeMetricSource[t
 // newBlockTimeSource is the same as its public counterpart, it only returns the struct instead of the Source interface
 func newBlockTimeSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Time]] {
 	return NewBlockTimeSource(reg)
+}
+
+// NewBlockProcessingTimeSource creates a metric capturing time of the block finalisation for each Node.
+func NewBlockProcessingTimeSource(reg monitoring.NodeLogProvider) *BlockNodeMetricSource[time.Duration] {
+	f := func(b monitoring.Block) time.Duration {
+		return b.ProcessingTime
+	}
+	return newBlockNodeMetricsSource[time.Duration](reg, f, BlockEventAndTxsProcessingTime)
+}
+
+// newBlockProcessingTimeSource is the same as its public counterpart, it only returns the struct instead of the Source interface
+func newBlockProcessingTimeSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Duration]] {
+	return NewBlockProcessingTimeSource(reg)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log

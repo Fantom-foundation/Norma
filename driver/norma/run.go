@@ -128,26 +128,36 @@ func logState(monitor *monitoring.Monitor) {
 	blockHeights := getBlockHeights(monitor)
 	txs := getNumTxs(monitor)
 	gas := getGasUsed(monitor)
-	log.Printf("Nodes: %s, block heights: %v, txs: %v, gas: %s", numNodes, blockHeights, txs, gas)
+	processingTimes := getBlockProcessingTimes(monitor)
+	log.Printf("Nodes: %s, block heights: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txs, gas, processingTimes)
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
 	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
-	return getLastValAsString[monitoring.Time](*data)
+	return getLastValAsString[monitoring.Time, int](*data)
 }
 
 func getNumTxs(monitor *monitoring.Monitor) string {
 	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
-	return getLastValAsString[monitoring.BlockNumber](*data)
+	return getLastValAsString[monitoring.BlockNumber, int](*data)
 }
 
 func getGasUsed(monitor *monitoring.Monitor) string {
 	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockGasUsed)
-	return getLastValAsString[monitoring.BlockNumber](*data)
+	return getLastValAsString[monitoring.BlockNumber, int](*data)
 }
 
 func getBlockHeights(monitor *monitoring.Monitor) []string {
 	metric := nodemon.NodeBlockHeight
+	return getLastValAllSubjects[monitoring.Time, int, monitoring.TimeSeries[int]](monitor, metric)
+}
+
+func getBlockProcessingTimes(monitor *monitoring.Monitor) []string {
+	metric := nodemon.BlockEventAndTxsProcessingTime
+	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.BlockSeries[time.Duration]](monitor, metric)
+}
+
+func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, T]](monitor *monitoring.Monitor, metric monitoring.Metric[monitoring.Node, X]) []string {
 	nodes := monitoring.GetSubjects(monitor, metric)
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i] < nodes[j] })
 
@@ -158,12 +168,12 @@ func getBlockHeights(monitor *monitoring.Monitor) []string {
 			res = append(res, "N/A")
 			continue
 		}
-		res = append(res, getLastValAsString[monitoring.Time](*data))
+		res = append(res, getLastValAsString[K, T](*data))
 	}
 	return res
 }
 
-func getLastValAsString[K constraints.Ordered](series monitoring.Series[K, int]) string {
+func getLastValAsString[K constraints.Ordered, T any](series monitoring.Series[K, T]) string {
 	if series == nil {
 		return "N/A"
 	}
@@ -171,5 +181,5 @@ func getLastValAsString[K constraints.Ordered](series monitoring.Series[K, int])
 	if point == nil {
 		return "N/A"
 	}
-	return fmt.Sprintf("%d", point.Value)
+	return fmt.Sprintf("%v", point.Value)
 }
