@@ -73,9 +73,8 @@ func (s *numNodesSource) GetSubjects() []mon.Network {
 	return []mon.Network{{}}
 }
 
-func (s *numNodesSource) GetData(mon.Network) *mon.TimeSeries[int] {
-	var res mon.TimeSeries[int] = &s.data
-	return &res
+func (s *numNodesSource) GetData(mon.Network) (mon.TimeSeries[int], bool) {
+	return &s.data, true
 }
 
 func (s *numNodesSource) Shutdown() error {

@@ -82,12 +82,12 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	}
 
 	for _, subject := range subjects {
-		data := source.GetData(subject)
-		if data == nil {
+		data, exists := source.GetData(subject)
+		if data == nil || !exists {
 			t.Errorf("no data found for node %s", subject)
 			continue
 		}
-		subrange := (*data).GetRange(mon.Time(0), mon.Time(math.MaxInt64))
+		subrange := data.GetRange(mon.Time(0), mon.Time(math.MaxInt64))
 		if len(subrange) == 0 {
 			t.Errorf("no data collected for node %s", subject)
 		}

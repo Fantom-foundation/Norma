@@ -61,15 +61,15 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 		t.Errorf("invalid list of subjects, wanted %v, got %v", want, got)
 	}
 
-	if *GetData(monitor, Node("A"), metric) != seriesA {
+	if series, exists := GetData(monitor, Node("A"), metric); !exists || series != seriesA {
 		t.Errorf("obtained wrong data for node 1")
 	}
 
-	if *GetData(monitor, Node("B"), metric) != seriesB {
+	if series, exists := GetData(monitor, Node("B"), metric); !exists || series != seriesB {
 		t.Errorf("obtained wrong data for node 2")
 	}
 
-	if GetData(monitor, Node("C"), metric) != nil {
+	if series, exists := GetData(monitor, Node("C"), metric); exists || series != nil {
 		t.Errorf("should not have obtained any data for node 3")
 	}
 

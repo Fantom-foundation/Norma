@@ -25,12 +25,12 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	source.Shutdown()
 
-	series := source.GetData(monitoring.Network{})
-	if series == nil {
-		t.Fatalf("failed to obtain data from source!")
+	series, exists := source.GetData(monitoring.Network{})
+	if series == nil || !exists {
+		t.Fatalf("failed to obtain data from source")
 	}
 
-	data := (*series).GetRange(monitoring.Time(0), monitoring.Time(math.MaxInt64))
+	data := series.GetRange(monitoring.Time(0), monitoring.Time(math.MaxInt64))
 	if len(data) == 0 {
 		t.Errorf("no data collected")
 	}

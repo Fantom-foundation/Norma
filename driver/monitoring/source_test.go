@@ -34,12 +34,9 @@ func (s *TestSource) GetSubjects() []Node {
 	return res
 }
 
-func (s *TestSource) GetData(node Node) *BlockSeries[int] {
-	res := s.data[node]
-	if res == nil {
-		return nil
-	}
-	return &res
+func (s *TestSource) GetData(node Node) (BlockSeries[int], bool) {
+	res, exists := s.data[node]
+	return res, exists
 }
 func (s *TestSource) Start() error {
 	// Nothing to do.
@@ -89,13 +86,13 @@ func TestTestSource_RetrievesCorrectDataSeries(t *testing.T) {
 	source.setData(Node("A"), seriesA)
 	source.setData(Node("B"), seriesB)
 
-	if *source.GetData(Node("A")) != seriesA {
+	if series, exists := source.GetData(Node("A")); !exists || series != seriesA {
 		t.Errorf("test source returned wrong series")
 	}
-	if *source.GetData(Node("B")) != seriesB {
+	if series, exists := source.GetData(Node("B")); !exists || series != seriesB {
 		t.Errorf("test source returned wrong series")
 	}
-	if source.GetData(Node("C")) != nil {
+	if series, exists := source.GetData(Node("C")); exists || series != nil {
 		t.Errorf("test source returned wrong series")
 	}
 }

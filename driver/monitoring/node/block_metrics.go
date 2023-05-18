@@ -98,16 +98,12 @@ func (s *BlockNodeMetricSource[T]) GetSubjects() []monitoring.Node {
 	return res
 }
 
-func (s *BlockNodeMetricSource[T]) GetData(node monitoring.Node) *monitoring.BlockSeries[T] {
+func (s *BlockNodeMetricSource[T]) GetData(node monitoring.Node) (monitoring.BlockSeries[T], bool) {
 	s.seriesLock.Lock()
 	defer s.seriesLock.Unlock()
 
-	if val, exists := s.series[node]; exists {
-		var res monitoring.BlockSeries[T] = val
-		return &res
-	}
-
-	return nil
+	res, exists := s.series[node]
+	return res, exists
 }
 
 func (s *BlockNodeMetricSource[T]) Shutdown() error {

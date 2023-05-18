@@ -129,11 +129,11 @@ func (s *periodicNodeDataSource[T]) GetSubjects() []mon.Node {
 	return res
 }
 
-func (s *periodicNodeDataSource[T]) GetData(node mon.Node) *mon.TimeSeries[T] {
+func (s *periodicNodeDataSource[T]) GetData(node mon.Node) (mon.TimeSeries[T], bool) {
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
-	var res mon.TimeSeries[T] = s.data[node]
-	return &res
+	res, exists := s.data[node]
+	return res, exists
 }
 
 func (s *periodicNodeDataSource[T]) Shutdown() error {

@@ -25,7 +25,7 @@ func init() {
 	}
 }
 
-// NewNumNodesSource creates a new data source periodically collecting data on
+// NewNodeBlockHeightSource creates a new data source periodically collecting data on
 // the block height at various nodes over time.
 func NewNodeBlockHeightSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[int]] {
 	return newNodeBlockHeightSource(network, time.Second)

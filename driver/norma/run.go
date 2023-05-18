@@ -133,18 +133,18 @@ func logState(monitor *monitoring.Monitor) {
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
-	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
-	return getLastValAsString[monitoring.Time, int](*data)
+	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
+	return getLastValAsString[monitoring.Time, int](exists, data)
 }
 
 func getNumTxs(monitor *monitoring.Monitor) string {
-	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
-	return getLastValAsString[monitoring.BlockNumber, int](*data)
+	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
+	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
 }
 
 func getGasUsed(monitor *monitoring.Monitor) string {
-	data := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockGasUsed)
-	return getLastValAsString[monitoring.BlockNumber, int](*data)
+	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockGasUsed)
+	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
 }
 
 func getBlockHeights(monitor *monitoring.Monitor) []string {
@@ -163,18 +163,14 @@ func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, 
 
 	res := make([]string, 0, len(nodes))
 	for _, node := range nodes {
-		data := monitoring.GetData(monitor, node, metric)
-		if data == nil {
-			res = append(res, "N/A")
-			continue
-		}
-		res = append(res, getLastValAsString[K, T](*data))
+		data, exists := monitoring.GetData(monitor, node, metric)
+		res = append(res, getLastValAsString[K, T](exists, data))
 	}
 	return res
 }
 
-func getLastValAsString[K constraints.Ordered, T any](series monitoring.Series[K, T]) string {
-	if series == nil {
+func getLastValAsString[K constraints.Ordered, T any](exists bool, series monitoring.Series[K, T]) string {
+	if !exists || series == nil {
 		return "N/A"
 	}
 	point := series.GetLatest()
