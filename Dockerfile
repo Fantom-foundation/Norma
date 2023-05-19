@@ -6,10 +6,10 @@
 # > docker build . -t <image-name>
 #
 FROM golang:1.20.3 AS build
-WORKDIR /client
 
-COPY client/ .
-RUN make opera
+COPY client/ client/
+COPY scripts/build_opera.sh .
+RUN /bin/bash build_opera.sh
 
 # This results in an image that contains the Opera binary
 #
@@ -23,10 +23,12 @@ RUN make opera
 # > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t opera 
 #
 FROM debian:bookworm
-COPY --from=build /client/build/opera .
+COPY --from=build /go/client/build/opera .
+COPY --from=build /go/client/carmen/go/lib/libcarmen.so .
 
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
+ENV LD_LIBRARY_PATH=./
 
 EXPOSE 6060
 EXPOSE 18545
