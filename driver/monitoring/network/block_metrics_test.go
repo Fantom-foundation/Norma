@@ -92,15 +92,17 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 	for _, want := range expectedBlocks {
 		var found bool
 		for i := 0; i < 100; i++ {
-			series := *source.GetData(network)
-			for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-				if source.getBlockProperty(want) == got.Value {
-					found = true
+			series, exists := source.GetData(network)
+			if exists {
+				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+					if source.getBlockProperty(want) == got.Value {
+						found = true
+						break
+					}
+				}
+				if found {
 					break
 				}
-			}
-			if found {
-				break
 			}
 			time.Sleep(2 * 10 * time.Millisecond)
 		}
@@ -111,7 +113,11 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 	}
 
 	// check the size of the series matches the expected blocks
-	if got, want := len((*source.GetData(network)).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))), len(expectedBlocks); got != want {
+	series, exists := source.GetData(network)
+	if !exists {
+		t.Fatalf("series should exist")
+	}
+	if got, want := len(series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))), len(expectedBlocks); got != want {
 		t.Errorf("block series lengths do not match")
 	}
 }
@@ -139,7 +145,11 @@ func testNetworkSource[T comparable](t *testing.T, source *BlockNetworkMetricSou
 
 	// table check results
 	for _, network := range source.GetSubjects() {
-		for _, block := range (*source.GetData(network)).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+		series, exists := source.GetData(network)
+		if !exists {
+			t.Fatalf("series should exist")
+		}
+		for _, block := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
 			if got, want := block.Value, source.getBlockProperty(monitoring.BlockchainTestData[block.Position-1]); got != want {
 				t.Errorf("data series contain unexpected value: %v != %v", got, want)
 			}

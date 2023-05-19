@@ -95,9 +95,8 @@ func (s *BlockNetworkMetricSource[T]) GetSubjects() []monitoring.Network {
 	return []monitoring.Network{item}
 }
 
-func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) *monitoring.BlockSeries[T] {
-	var res monitoring.BlockSeries[T] = s.series
-	return &res
+func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.BlockSeries[T], bool) {
+	return s.series, true
 }
 
 func (s *BlockNetworkMetricSource[T]) Shutdown() error {

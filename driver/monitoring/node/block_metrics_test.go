@@ -61,7 +61,7 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	reg.AfterNodeCreation(node3)
 	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId, monitoring.Node2TestId}, source)
 	// series not created at all
-	if series := source.GetData(monitoring.Node3TestId); series != nil {
+	if _, exists := source.GetData(monitoring.Node3TestId); exists {
 		t.Errorf("series shold not exist")
 	}
 }
@@ -100,9 +100,9 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 	for _, want := range expectedBlocks {
 		var found bool
 		for i := 0; i < 100; i++ {
-			series := source.GetData(node)
-			if series != nil {
-				for _, got := range (*series).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+			series, exists := source.GetData(node)
+			if exists {
+				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
 					if source.getBlockProperty(want) == got.Value {
 						found = true
 						break
@@ -121,7 +121,11 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 	}
 
 	// check the size of the series matches the expected blocks
-	if got, want := len((*source.GetData(node)).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))), len(expectedBlocks); got != want {
+	series, exists := source.GetData(node)
+	if !exists {
+		t.Fatalf("series should exist")
+	}
+	if got, want := len(series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))), len(expectedBlocks); got != want {
 		t.Errorf("block series do not match")
 	}
 }
@@ -150,7 +154,11 @@ func testNodeSource[T comparable](t *testing.T, source *BlockNodeMetricSource[T]
 
 	// table check results in each series for every node
 	for _, node := range source.GetSubjects() {
-		for _, block := range (*source.GetData(node)).GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+		series, exists := source.GetData(node)
+		if !exists {
+			t.Fatalf("series should exist")
+		}
+		for _, block := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
 			if got, want := block.Value, source.getBlockProperty(monitoring.NodeBlockTestData[node][block.Position-1]); got != want {
 				t.Errorf("data series contain unexpected value: %v != %v", got, want)
 			}

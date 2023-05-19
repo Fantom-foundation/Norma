@@ -18,9 +18,10 @@ type Source[S any, T any] interface {
 	// available in this source. The list is expected to grow monotonies.
 	GetSubjects() []S
 
-	// GetData obtains the monitoring data retained for a selected subject
-	// or nil if there is no such data.
-	GetData(S) *T
+	// GetData obtains the monitoring data retained for a selected subject.
+	// The other argument returns false if the value for the subject does not exist, true otherwise.
+	// When true is returned, the first return parameter is not nil, otherwise it is unspecified.
+	GetData(S) (T, bool)
 }
 
 // source is a type-erased base type for sources. While its methods should
