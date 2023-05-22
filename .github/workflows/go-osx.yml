@@ -13,11 +13,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
-
-    - uses: actions/checkout@v3
       with:
-        repository: Fantom-foundation/go-opera-norma
-        path: client
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
