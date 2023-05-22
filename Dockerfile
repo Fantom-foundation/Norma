@@ -7,9 +7,19 @@
 #
 FROM golang:1.20.3 AS build
 
-COPY client/ client/
-COPY scripts/build_opera.sh .
-RUN /bin/bash build_opera.sh
+# Install Carmen prerequisities
+RUN apt-get update && apt-get install -y clang
+RUN go install github.com/bazelbuild/bazelisk@v1.15.0 && ln -s /go/bin/bazelisk /bin/bazel
+
+COPY client/ /client
+
+# Build Carmen C++ library
+WORKDIR /client/carmen/go/lib
+RUN /bin/bash ./build_libcarmen.sh
+
+# Build Opera
+WORKDIR /client
+RUN make opera
 
 # This results in an image that contains the Opera binary
 #
@@ -23,8 +33,8 @@ RUN /bin/bash build_opera.sh
 # > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t opera 
 #
 FROM debian:bookworm
-COPY --from=build /go/client/build/opera .
-COPY --from=build /go/client/carmen/go/lib/libcarmen.so .
+COPY --from=build /client/build/opera .
+COPY --from=build /client/carmen/go/lib/libcarmen.so .
 
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
