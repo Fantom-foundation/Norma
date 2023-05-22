@@ -19,6 +19,12 @@ type Series[K constraints.Ordered, T any] interface {
 	// GetLatest retrieves the latest collected data point or nil if no data
 	// was collected.
 	GetLatest() *DataPoint[K, T]
+
+	// Size returns the number of DataPoints int this series
+	Size() int
+
+	// GetAt returns the DataPoint at the input index, which must be in range [0..Size())
+	GetAt(index int) DataPoint[K, T]
 }
 
 // TimeSeries is a data Series using time-stamps as the index type.

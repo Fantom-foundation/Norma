@@ -67,12 +67,22 @@ func GetSubjects[S any, T any](monitor *Monitor, metric Metric[S, T]) []S {
 	return source.(Source[S, T]).GetSubjects()
 }
 
-// GetData retrieves access to the data collected for a given metric or nil, if
-// the defined metric for the given subject is not available.
+// GetData retrieves access to the data collected for a given metric. If
+// the defined metric for the given subject is not available, the second returned argument will be false.
 func GetData[S any, T any](monitor *Monitor, subject S, metric Metric[S, T]) (t T, exists bool) {
 	source := monitor.sources[metric.Name]
 	if source == nil {
 		return t, false
 	}
 	return source.(Source[S, T]).GetData(subject)
+}
+
+// GetSource retrieves access to the source for a given metric or nil, if
+// the defined metric for the given subject is not available.
+func GetSource[S any, T any](monitor *Monitor, metric Metric[S, T]) Source[S, T] {
+	source := monitor.sources[metric.Name]
+	if source == nil {
+		return nil
+	}
+	return source.(Source[S, T])
 }

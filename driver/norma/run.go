@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"golang.org/x/exp/constraints"
 	"log"
+	"os"
 	"sort"
 	"time"
 
@@ -63,10 +65,13 @@ func run(ctx *cli.Context) (err error) {
 	// Initialize monitoring environment.
 	monitor := monitoring.NewMonitor(net)
 	defer func() {
-		// TODO: dump data before shutting down monitor
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
 			fmt.Printf("error during monitor shutdown:\n%v", err)
+		}
+		// TODO: dump many more data before shutting down monitor
+		if err := generateCsv(monitor); err != nil {
+			fmt.Printf("error to export data to CSV: %v\n", err)
 		}
 	}()
 
@@ -178,4 +183,36 @@ func getLastValAsString[K constraints.Ordered, T any](exists bool, series monito
 		return "N/A"
 	}
 	return fmt.Sprintf("%v", point.Value)
+}
+
+func generateCsv(monitor *monitoring.Monitor) error {
+	path := "./output.csv"
+	fmt.Printf("exporting to %s\n", path)
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	csv := export.NewCsvExporter(f)
+	defer func() {
+		if err := csv.Close(); err != nil {
+			fmt.Printf("error to export data to CSV: %v\n", err)
+		}
+	}()
+
+	blockCreation := monitoring.GetSource(monitor, nodemon.BlockCompletionTime)
+	blockProcessing := monitoring.GetSource(monitor, nodemon.BlockEventAndTxsProcessingTime)
+	blockTransactions := monitoring.GetSource(monitor, netmon.BlockNumberOfTransactions)
+	blockGasUsed := monitoring.GetSource(monitor, netmon.BlockGasUsed)
+	nodeBlockHeight := monitoring.GetSource(monitor, nodemon.NodeBlockHeight)
+
+	export.AddSection[monitoring.BlockNumber](csv)
+	export.AddNodeBlockSeriesSource[time.Time](csv, blockCreation, export.TimeConverter{})
+	export.AddNodeBlockSeriesSource[time.Duration](csv, blockProcessing, export.DurationConverter{})
+	export.AddNetworkBlockSeriesSource[int](csv, blockTransactions, export.DirectConverter[int]{})
+	export.AddNetworkBlockSeriesSource[int](csv, blockGasUsed, export.DirectConverter[int]{})
+	export.AddEmptySection(csv, 1)
+	export.AddSection[monitoring.Time](csv)
+	export.AddNodeTimeSeriesSource[int](csv, nodeBlockHeight, export.DirectConverter[int]{})
+
+	return nil
 }

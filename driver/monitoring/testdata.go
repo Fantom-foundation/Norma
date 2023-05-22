@@ -23,6 +23,14 @@ var (
 	time5, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:17.003]")
 	time6, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:38:15.080]")
 
+	now    = time.Now()
+	time1y = time.Date(now.Year(), time1.Month(), time1.Day(), time1.Hour(), time1.Minute(), time1.Second(), time1.Nanosecond(), time.UTC)
+	time2y = time.Date(now.Year(), time2.Month(), time2.Day(), time2.Hour(), time2.Minute(), time2.Second(), time2.Nanosecond(), time.UTC)
+	time3y = time.Date(now.Year(), time3.Month(), time3.Day(), time3.Hour(), time3.Minute(), time3.Second(), time3.Nanosecond(), time.UTC)
+	time4y = time.Date(now.Year(), time4.Month(), time4.Day(), time4.Hour(), time4.Minute(), time4.Second(), time4.Nanosecond(), time.UTC)
+	time5y = time.Date(now.Year(), time5.Month(), time5.Day(), time5.Hour(), time5.Minute(), time5.Second(), time5.Nanosecond(), time.UTC)
+	time6y = time.Date(now.Year(), time6.Month(), time6.Day(), time6.Hour(), time6.Minute(), time6.Second(), time6.Nanosecond(), time.UTC)
+
 	dur1, _ = time.ParseDuration("711.334µs")
 	dur2, _ = time.ParseDuration("1.579ms")
 	dur3, _ = time.ParseDuration("1.540ms")
@@ -30,14 +38,14 @@ var (
 	dur5, _ = time.ParseDuration("2.579ms")
 	dur6, _ = time.ParseDuration("5.686ms")
 
-	block1 = Block{Height: 1, Time: time1, Txs: 10, GasUsed: 11, ProcessingTime: dur1}
-	block2 = Block{Height: 2, Time: time2, Txs: 20, GasUsed: 22, ProcessingTime: dur2}
-	block3 = Block{Height: 3, Time: time3, Txs: 30, GasUsed: 33, ProcessingTime: dur3}
+	block1 = Block{Height: 1, Time: time1y, Txs: 10, GasUsed: 11, ProcessingTime: dur1}
+	block2 = Block{Height: 2, Time: time2y, Txs: 20, GasUsed: 22, ProcessingTime: dur2}
+	block3 = Block{Height: 3, Time: time3y, Txs: 30, GasUsed: 33, ProcessingTime: dur3}
 
-	block4 = Block{Height: 1, Time: time4, Txs: 10, GasUsed: 11, ProcessingTime: dur4}
-	block5 = Block{Height: 2, Time: time5, Txs: 20, GasUsed: 22, ProcessingTime: dur5}
+	block4 = Block{Height: 1, Time: time4y, Txs: 10, GasUsed: 11, ProcessingTime: dur4}
+	block5 = Block{Height: 2, Time: time5y, Txs: 20, GasUsed: 22, ProcessingTime: dur5}
 
-	block6 = Block{Height: 1, Time: time6, Txs: 10, GasUsed: 11, ProcessingTime: dur6}
+	block6 = Block{Height: 1, Time: time6y, Txs: 10, GasUsed: 11, ProcessingTime: dur6}
 
 	NodeBlockTestData = map[Node][]Block{
 		Node1TestId: {block1, block2, block3},

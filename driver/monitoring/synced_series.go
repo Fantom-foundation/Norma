@@ -47,6 +47,20 @@ func (s *SyncedSeries[K, T]) GetLatest() *DataPoint[K, T] {
 	return &res
 }
 
+func (s *SyncedSeries[K, T]) Size() int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return len(s.data)
+}
+
+func (s *SyncedSeries[K, T]) GetAt(index int) DataPoint[K, T] {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return s.data[index]
+}
+
 // Append adds new data to the end of the series. The operation fails if the
 // provided point is <= the last added point.
 func (s *SyncedSeries[K, T]) Append(point K, value T) error {

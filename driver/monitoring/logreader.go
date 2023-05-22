@@ -58,8 +58,13 @@ func readBlocks(reader io.Reader, ch chan<- Block) error {
 
 // parseTime convert time from log format into Time type.
 func parseTime(str string) (time.Time, error) {
+	t, err := time.Parse("[01-02|15:04:05.000]", str)
+	if err != nil {
+		return t, err
+	}
 
-	return time.Parse("[01-02|15:04:05.000]", str)
+	now := time.Now()
+	return time.Date(now.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.UTC), nil
 }
 
 // parseBlock parses block information from the log line. It is expected the log line is well-formed.

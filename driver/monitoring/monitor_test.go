@@ -73,6 +73,10 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 		t.Errorf("should not have obtained any data for node 3")
 	}
 
+	if source := GetSource(monitor, metric); source == nil {
+		t.Errorf("should have obtained a source")
+	}
+
 	if err := monitor.Shutdown(); err != nil {
 		t.Errorf("failed to shutdown monitor: %v", err)
 	}

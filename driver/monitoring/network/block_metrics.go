@@ -91,8 +91,7 @@ func (s *BlockNetworkMetricSource[T]) GetMetric() monitoring.Metric[monitoring.N
 }
 
 func (s *BlockNetworkMetricSource[T]) GetSubjects() []monitoring.Network {
-	var item monitoring.Network
-	return []monitoring.Network{item}
+	return []monitoring.Network{{}}
 }
 
 func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.BlockSeries[T], bool) {

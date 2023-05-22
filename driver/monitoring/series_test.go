@@ -37,6 +37,14 @@ func (s *TestBlockSeries) SetData(data []int) {
 	copy(s.data[:], data[:])
 }
 
+func (s *TestBlockSeries) Size() int {
+	return len(s.data)
+}
+
+func (s *TestBlockSeries) GetAt(index int) DataPoint[BlockNumber, int] {
+	return DataPoint[BlockNumber, int]{BlockNumber(index), s.data[index]}
+}
+
 func TestTestSeries_IsABlockSeries(t *testing.T) {
 	var s TestBlockSeries
 	var _ BlockSeries[int] = &s
@@ -86,5 +94,33 @@ func TestTestSeries_GetRange(t *testing.T) {
 		if !slices.Equal(res, test.result) {
 			t.Errorf("invalid result, expected %v, got %v", series.data, res)
 		}
+	}
+}
+
+func TestTestSeries_GetAt(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	series := TestBlockSeries{}
+	series.SetData(data)
+
+	for i := 0; i < series.Size(); i++ {
+		point := series.GetAt(i)
+		if point.Value != data[i] {
+			t.Errorf("values do not match: %v != %v", point.Value, data[i])
+		}
+	}
+}
+
+func TestTestSeries_Size(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+	series := TestBlockSeries{}
+
+	if series.Size() != 0 {
+		t.Errorf("series is not empty")
+	}
+
+	series.SetData(data)
+
+	if series.Size() != len(data) {
+		t.Errorf("sizes do not mathc: %v != %v", series.Size(), len(data))
 	}
 }

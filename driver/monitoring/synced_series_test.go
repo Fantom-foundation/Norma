@@ -81,3 +81,39 @@ func TestSyncedSeries_GetLatestReturnsLastAppendedValue(t *testing.T) {
 		t.Errorf("latest element not as expected, wanted %d, got %d", got, want)
 	}
 }
+
+func TestSyncedSeries_GetAt(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+
+	series := SyncedSeries[BlockNumber, int]{}
+	for _, item := range data {
+		_ = series.Append(BlockNumber(item), item)
+	}
+
+	if series.Size() != len(data) {
+		t.Errorf("sizes do not mathc: %v != %v", series.Size(), len(data))
+	}
+
+	for i := 0; i < series.Size(); i++ {
+		point := series.GetAt(i)
+		if point.Value != data[i] {
+			t.Errorf("values do not match: %v != %v", point.Value, data[i])
+		}
+		if point.Position != BlockNumber(data[i]) {
+			t.Errorf("values do not match: %v != %v", point.Position, data[i])
+		}
+	}
+}
+
+func TestSyncedSeries_Size(t *testing.T) {
+	data := []int{1, 2, 3, 4, 5}
+
+	series := SyncedSeries[BlockNumber, int]{}
+	for _, item := range data {
+		_ = series.Append(BlockNumber(item), item)
+	}
+
+	if series.Size() != len(data) {
+		t.Errorf("sizes do not mathc: %v != %v", series.Size(), len(data))
+	}
+}
