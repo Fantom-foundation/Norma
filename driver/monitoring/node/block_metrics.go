@@ -37,7 +37,7 @@ type BlockNodeMetricSource[T any] struct {
 	getBlockProperty func(b monitoring.Block) T
 	monitor          *monitoring.Monitor
 	series           map[monitoring.Node]*monitoring.SyncedSeries[monitoring.BlockNumber, T]
-	seriesLock       sync.Mutex
+	seriesLock       *sync.Mutex
 }
 
 // NewBlockTimeSource creates a metric capturing time of the block finalisation for each Node.
@@ -78,6 +78,7 @@ func newBlockNodeMetricsSource[T any](
 		getBlockProperty: getBlockProperty,
 		monitor:          monitor,
 		series:           make(map[monitoring.Node]*monitoring.SyncedSeries[monitoring.BlockNumber, T], 50),
+		seriesLock:       &sync.Mutex{},
 	}
 
 	monitor.NodeLogProvider().RegisterLogListener(m)

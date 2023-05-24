@@ -163,10 +163,11 @@ func (l *progressLogger) shutdown() {
 func logState(monitor *monitoring.Monitor) {
 	numNodes := getNumNodes(monitor)
 	blockHeights := getBlockHeights(monitor)
+	txPers := getTxPerSec(monitor)
 	txs := getNumTxs(monitor)
 	gas := getGasUsed(monitor)
 	processingTimes := getBlockProcessingTimes(monitor)
-	log.Printf("Nodes: %s, block heights: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txs, gas, processingTimes)
+	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txPers, txs, gas, processingTimes)
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
@@ -177,6 +178,11 @@ func getNumNodes(monitor *monitoring.Monitor) string {
 func getNumTxs(monitor *monitoring.Monitor) string {
 	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
 	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
+}
+
+func getTxPerSec(monitor *monitoring.Monitor) []string {
+	metric := nodemon.TransactionsThroughput
+	return getLastValAllSubjects[monitoring.BlockNumber, float32](monitor, metric)
 }
 
 func getGasUsed(monitor *monitoring.Monitor) string {

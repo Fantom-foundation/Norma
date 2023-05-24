@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
-	"github.com/ethereum/go-ethereum/log"
+	"log"
 	"sync"
 )
 
@@ -38,7 +38,7 @@ type BlockNetworkMetricSource[T any] struct {
 	getBlockProperty func(b monitoring.Block) T
 	monitor          *monitoring.Monitor
 	series           *monitoring.SyncedSeries[monitoring.BlockNumber, T]
-	seriesLock       sync.Mutex
+	seriesLock       *sync.Mutex
 	lastBlock        int // track last block added in the series not to add duplicated block heights
 }
 
@@ -79,6 +79,7 @@ func newBlockNetworkMetricsSource[T any](
 		getBlockProperty: getBlockProperty,
 		monitor:          monitor,
 		series:           &monitoring.SyncedSeries[monitoring.BlockNumber, T]{},
+		seriesLock:       &sync.Mutex{},
 		lastBlock:        -1,
 	}
 
@@ -114,7 +115,7 @@ func (s *BlockNetworkMetricSource[T]) OnBlock(_ monitoring.Node, block monitorin
 
 	if block.Height > s.lastBlock {
 		if err := s.series.Append(monitoring.BlockNumber(block.Height), s.getBlockProperty(block)); err != nil {
-			log.Error("error to add to the series: %s", err)
+			log.Printf("error to add to the series: %s", err)
 		}
 		s.lastBlock = block.Height
 	}
