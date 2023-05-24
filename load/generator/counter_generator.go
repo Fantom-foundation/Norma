@@ -60,3 +60,11 @@ func (cg *CounterTransactionGenerator) SendTx() error {
 	_, err := cg.counterContract.IncrementCounter(cg.auth)
 	return err
 }
+
+func (cg *CounterTransactionGenerator) GetAmountOfReceivedTxs() (uint64, error) {
+	count, err := cg.counterContract.GetCount(nil)
+	if err != nil {
+		return 0, err
+	}
+	return count.Uint64(), nil
+}
