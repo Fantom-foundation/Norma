@@ -45,18 +45,18 @@ func TestTrafficGenerating(t *testing.T) {
 
 	constantShaper := shaper.NewConstantShaper(5.0) // 5 txs/sec
 
-	sourceDriver := controller.NewAppController(counterGenerator, constantShaper, rpcClient)
-	err = sourceDriver.Init()
+	app := controller.NewAppController(counterGenerator, constantShaper, rpcClient)
+	err = app.Init()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// let the sourceDriver run for 1 second
+	// let the app run for 1 second
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	// Run is supposed to run in a standalone thread, however we would have to wait anyway
-	err = sourceDriver.Run(ctx)
+	// run the app in the same thread, will be interrupted by the context timeout
+	err = app.Run(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
