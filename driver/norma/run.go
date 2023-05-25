@@ -205,13 +205,13 @@ func generateCsv(monitor *monitoring.Monitor) error {
 	blockGasUsed := monitoring.GetSource(monitor, netmon.BlockGasUsed)
 	nodeBlockHeight := monitoring.GetSource(monitor, nodemon.NodeBlockHeight)
 
-	export.AddSection[monitoring.BlockNumber](csv)
+	export.AddSection(csv)
 	export.AddNodeBlockSeriesSource[time.Time](csv, blockCreation, export.TimeConverter{})
 	export.AddNodeBlockSeriesSource[time.Duration](csv, blockProcessing, export.DurationConverter{})
 	export.AddNetworkBlockSeriesSource[int](csv, blockTransactions, export.DirectConverter[int]{})
 	export.AddNetworkBlockSeriesSource[int](csv, blockGasUsed, export.DirectConverter[int]{})
 	export.AddEmptySection(csv, 1)
-	export.AddSection[monitoring.Time](csv)
+	export.AddSection(csv)
 	export.AddNodeTimeSeriesSource[int](csv, nodeBlockHeight, export.DirectConverter[int]{})
 
 	return nil
