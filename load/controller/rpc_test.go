@@ -28,24 +28,28 @@ func TestTrafficGenerating(t *testing.T) {
 
 	rpcUrl := net.GetActiveNodes()[0].GetHttpServiceUrl(&node.OperaRpcService)
 
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
-	if err != nil {
-		t.Fatalf("failed to connecting testing Opera %s: %s", *rpcUrl, err)
-	}
-
-	privateKey, err := crypto.HexToECDSA(PrivateKey)
+	primaryPrivateKey, err := crypto.HexToECDSA(PrivateKey)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	counterGenerator, err := generator.NewCounterTransactionGenerator(privateKey, big.NewInt(FakeNetworkID))
+	rpcClientForInit, err := ethclient.Dial(string(*rpcUrl))
 	if err != nil {
-		t.Fatalf("failed to create generator: %s", err)
+		t.Fatal(err)
+	}
+	defer rpcClientForInit.Close()
+
+	generatorFactory, err := generator.NewCounterGeneratorFactory(rpcClientForInit, primaryPrivateKey, big.NewInt(FakeNetworkID))
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	constantShaper := shaper.NewConstantShaper(5.0) // 5 txs/sec
+	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
-	app := controller.NewAppController(counterGenerator, constantShaper, rpcClient)
+	app := controller.NewAppController(generatorFactory, constantShaper, func() (*ethclient.Client, error) {
+		// create an ethclient for each worker, prevent bottlenecks in one connection used by multiple workers
+		return ethclient.Dial(string(*rpcUrl))
+	}, 5) // 5 parallel workers
 	err = app.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -61,15 +65,22 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	time.Sleep(2 * time.Second) // wait for txs in TxPool
+
 	// get amount of txs applied to the chain
-	count, err := counterGenerator.GetAmountOfReceivedTxs()
+	countInChain, err := generatorFactory.GetAmountOfReceivedTxs(rpcClientForInit)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// in optimal case should be generated 5 txs per second
-	// as a tolerance for slow CI we require at least 2 txs
-	if count < 2 || count > 5 {
-		t.Errorf("unexpected amount of generated txs: %d (expected 2-5)", count)
+	countSent := generatorFactory.GetAmountOfSentTxs()
+	if countInChain != countSent {
+		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", countInChain, countSent)
+	}
+
+	// in optimal case should be generated 30 txs per second
+	// as a tolerance for slow CI we require at least 20 txs
+	if countInChain < 20 || countInChain > 30 {
+		t.Errorf("unexpected amount of generated txs: %d", countInChain)
 	}
 }

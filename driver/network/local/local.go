@@ -173,31 +173,36 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
-	rpcClient, err := ethclient.Dial(string(*url))
-	if err != nil {
-		return nil, err
-	}
-
 	privateKey, err := crypto.HexToECDSA(treasureAccountPrivateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	counterGenerator, err := generator.NewCounterTransactionGenerator(privateKey, big.NewInt(fakeNetworkID))
+	rpcClientForInit, err := ethclient.Dial(string(*url))
 	if err != nil {
 		return nil, err
+	}
+	defer rpcClientForInit.Close()
+
+	generatorFactory, err := generator.NewCounterGeneratorFactory(rpcClientForInit, privateKey, big.NewInt(fakeNetworkID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	sourceDriver := controller.NewAppController(counterGenerator, constantShaper, rpcClient)
-	err = sourceDriver.Init()
+	appController := controller.NewAppController(generatorFactory, constantShaper, func() (*ethclient.Client, error) {
+		// create an ethclient for each worker, prevent bottlenecks in one connection used by multiple workers
+		return ethclient.Dial(string(*url))
+	}, 10) // TODO: amount of workers configurable
+
+	err = appController.Init()
 	if err != nil {
 		return nil, err
 	}
 
 	app := &localApplication{
-		controller: sourceDriver,
+		controller: appController,
 	}
 
 	n.appsMutex.Lock()
