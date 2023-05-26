@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -44,11 +45,19 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	node2.EXPECT().GetHttpServiceUrl(gomock.Any()).AnyTimes().Return(&url)
 	node3.EXPECT().GetHttpServiceUrl(gomock.Any()).AnyTimes().Return(&url)
 
-	net.EXPECT().RegisterListener(gomock.Any())
-	net.EXPECT().UnregisterListener(gomock.Any())
-	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2})
+	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
+	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
+	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
 
-	source := newNodeBlockHeightSource(net, 50*time.Millisecond)
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().UnregisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2}).AnyTimes()
+
+	writer := mon.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	writer.EXPECT().Close().AnyTimes()
+
+	source := newNodeBlockHeightSource(mon.NewMonitor(net, mon.MonitorConfig{}, writer), 50*time.Millisecond)
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()

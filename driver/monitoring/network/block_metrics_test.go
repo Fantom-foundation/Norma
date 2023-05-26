@@ -16,8 +16,15 @@ func TestCaptureSeriesFromNodeBlocks(t *testing.T) {
 	producer := monitoring.NewMockNodeLogProvider(ctrl)
 	producer.EXPECT().RegisterLogListener(gomock.Any()).AnyTimes()
 
-	source1 := NewNumberOfTransactionsSource(producer)
-	source2 := NewGasUsedSource(producer)
+	net := driver.NewMockNetwork(ctrl)
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	source1 := NewNumberOfTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	source2 := NewGasUsedSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
 
 	// simulate data received to metric
 	testNetworkSource(t, source1)
@@ -43,8 +50,11 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
 	reg := monitoring.NewNodeLogDispatcher(net)
-	source := NewNumberOfTransactionsSource(reg)
+	source := NewNumberOfTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
 	reg.RegisterLogListener(source)
 
 	// pre-existing node with some blocks

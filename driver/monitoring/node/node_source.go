@@ -2,6 +2,7 @@ package nodemon
 
 import (
 	"errors"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"log"
 	"sync"
 	"time"
@@ -25,7 +26,7 @@ type SensorFactory[T any] interface {
 // node-associated sensors for data.
 type periodicNodeDataSource[T any] struct {
 	metric   mon.Metric[mon.Node, mon.TimeSeries[T]]
-	network  driver.Network
+	monitor  *mon.Monitor
 	period   time.Duration
 	factory  SensorFactory[T]
 	data     map[mon.Node]*mon.SyncedSeries[mon.Time, T]
@@ -38,26 +39,28 @@ type periodicNodeDataSource[T any] struct {
 // instances for a given metric and periodically collecting data from those.
 func NewPeriodicNodeDataSource[T any](
 	metric mon.Metric[mon.Node, mon.TimeSeries[T]],
-	network driver.Network,
+	monitor *mon.Monitor,
 	factory SensorFactory[T],
+	converter export.Converter[T],
 ) mon.Source[mon.Node, mon.TimeSeries[T]] {
-	return newPeriodicNodeDataSource(metric, network, time.Second, factory)
+	return newPeriodicNodeDataSource(metric, monitor, time.Second, factory, converter)
 }
 
 // newPeriodicNodeDataSource is the same as NewPeriodicNodeDataSource but with
 // a customizable sampling periode.
 func newPeriodicNodeDataSource[T any](
 	metric mon.Metric[mon.Node, mon.TimeSeries[T]],
-	network driver.Network,
+	monitor *mon.Monitor,
 	period time.Duration,
 	factory SensorFactory[T],
+	converter export.Converter[T],
 ) mon.Source[mon.Node, mon.TimeSeries[T]] {
 	stop := make(chan bool)
 	done := make(chan error)
 
 	res := &periodicNodeDataSource[T]{
 		metric:  metric,
-		network: network,
+		monitor: monitor,
 		period:  period,
 		factory: factory,
 		data:    map[mon.Node]*mon.SyncedSeries[mon.Time, T]{},
@@ -65,11 +68,15 @@ func newPeriodicNodeDataSource[T any](
 		done:    done,
 	}
 
-	network.RegisterListener(res)
+	monitor.Network().RegisterListener(res)
 
-	for _, node := range network.GetActiveNodes() {
+	for _, node := range monitor.Network().GetActiveNodes() {
 		res.AfterNodeCreation(node)
 	}
+
+	monitor.Writer().Add(func() error {
+		return export.AddNodeTimeSeriesSource[T](monitor.Writer(), res, converter)
+	})
 
 	return res
 }
@@ -137,13 +144,12 @@ func (s *periodicNodeDataSource[T]) GetData(node mon.Node) (mon.TimeSeries[T], b
 }
 
 func (s *periodicNodeDataSource[T]) Shutdown() error {
-	if s.network == nil {
+	if s.monitor.Network() == nil {
 		return nil
 	}
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
-	s.network.UnregisterListener(s)
-	s.network = nil
+	s.monitor.Network().UnregisterListener(s)
 	close(s.stop)
 
 	<-s.done

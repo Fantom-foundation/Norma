@@ -1,8 +1,11 @@
 package nodemon
 
 import (
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
+	"io"
 	"math"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -53,11 +56,19 @@ func TestNodeSourceRetrievesSensorData(t *testing.T) {
 	node2.EXPECT().GetNodeID().AnyTimes().Return(node2Id, nil)
 	node3.EXPECT().GetNodeID().AnyTimes().Return(node3Id, nil)
 
-	net.EXPECT().RegisterListener(gomock.Any())
-	net.EXPECT().UnregisterListener(gomock.Any())
-	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2})
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().UnregisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2}).AnyTimes()
 
-	source := newPeriodicNodeDataSource[int](testNodeMetric, net, 50*time.Millisecond, &testSensorFactory{})
+	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
+	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
+	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
+
+	writer := mon.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	writer.EXPECT().Close().AnyTimes()
+
+	source := newPeriodicNodeDataSource[int](testNodeMetric, mon.NewMonitor(net, mon.MonitorConfig{}, writer), 50*time.Millisecond, &testSensorFactory{}, export.DirectConverter[int]{})
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()

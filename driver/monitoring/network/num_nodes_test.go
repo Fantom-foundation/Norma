@@ -1,7 +1,10 @@
 package netmon
 
 import (
+	"fmt"
+	"io"
 	"math"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,13 +17,26 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
-	numNodes := 0
+	var numNodes int
 	net.EXPECT().GetActiveNodes().AnyTimes().DoAndReturn(func() []driver.Node {
 		numNodes++
-		return make([]driver.Node, numNodes)
+		nodes := make([]driver.Node, 0, numNodes)
+		for i := 0; i < numNodes; i++ {
+			node := driver.NewMockNode(ctrl)
+			node.EXPECT().GetNodeID().Return(driver.NodeID(fmt.Sprintf("%d", i)), nil).AnyTimes()
+			node.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
+			nodes = append(nodes, node)
+		}
+		return nodes
 	})
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 
-	source := newNumNodesSource(net, 50*time.Millisecond)
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer)
+	numNodes = 0
+	source := newNumNodesSource(monitor, 50*time.Millisecond)
 
 	time.Sleep(200 * time.Millisecond)
 	source.Shutdown()

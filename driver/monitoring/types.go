@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"golang.org/x/exp/constraints"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -41,4 +42,30 @@ type Percent float32
 
 func (p Percent) String() string {
 	return fmt.Sprintf("%.1f%%", p*100)
+}
+
+// Comparator of two typed pairs
+type Comparator[T any] interface {
+	Compare(a, b *T) int
+}
+
+// OrderedTypeComparator compares constraints.Ordered by using <, > operators.
+type OrderedTypeComparator[T constraints.Ordered] struct{}
+
+func (OrderedTypeComparator[T]) Compare(a, b *T) int {
+	if *a > *b {
+		return 1
+	}
+	if *a < *b {
+		return -1
+	}
+
+	return 0
+}
+
+// NoopComparator performs no comparison, it is used for types that cannot be ordered.
+type NoopComparator[T any] struct{}
+
+func (NoopComparator[T]) Compare(_, _ *T) int {
+	return 0
 }

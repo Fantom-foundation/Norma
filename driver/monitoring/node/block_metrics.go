@@ -3,6 +3,7 @@ package nodemon
 import (
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"github.com/ethereum/go-ethereum/log"
 	"sync"
 	"time"
@@ -22,10 +23,10 @@ var (
 )
 
 func init() {
-	if err := monitoring.RegisterSource(BlockCompletionTime, monitoring.AdaptLogProviderToMonitorFactory(newBlockTimeSource)); err != nil {
+	if err := monitoring.RegisterSource(BlockCompletionTime, newBlockTimeSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
-	if err := monitoring.RegisterSource(BlockEventAndTxsProcessingTime, monitoring.AdaptLogProviderToMonitorFactory(newBlockProcessingTimeSource)); err != nil {
+	if err := monitoring.RegisterSource(BlockEventAndTxsProcessingTime, newBlockProcessingTimeSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
@@ -34,51 +35,55 @@ func init() {
 type BlockNodeMetricSource[T any] struct {
 	metric           monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]]
 	getBlockProperty func(b monitoring.Block) T
-	registry         monitoring.NodeLogProvider
+	monitor          *monitoring.Monitor
 	series           map[monitoring.Node]*monitoring.SyncedSeries[monitoring.BlockNumber, T]
 	seriesLock       sync.Mutex
 }
 
 // NewBlockTimeSource creates a metric capturing time of the block finalisation for each Node.
-func NewBlockTimeSource(reg monitoring.NodeLogProvider) *BlockNodeMetricSource[time.Time] {
+func NewBlockTimeSource(monitor *monitoring.Monitor) *BlockNodeMetricSource[time.Time] {
 	f := func(b monitoring.Block) time.Time {
 		return b.Time
 	}
-	return newBlockNodeMetricsSource[time.Time](reg, f, BlockCompletionTime)
+	return newBlockNodeMetricsSource[time.Time](monitor, f, BlockCompletionTime, export.TimeConverter{})
 }
 
 // newBlockTimeSource is the same as its public counterpart, it only returns the struct instead of the Source interface
-func newBlockTimeSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Time]] {
-	return NewBlockTimeSource(reg)
+func newBlockTimeSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Time]] {
+	return NewBlockTimeSource(monitor)
 }
 
 // NewBlockProcessingTimeSource creates a metric capturing time of the block finalisation for each Node.
-func NewBlockProcessingTimeSource(reg monitoring.NodeLogProvider) *BlockNodeMetricSource[time.Duration] {
+func NewBlockProcessingTimeSource(monitor *monitoring.Monitor) *BlockNodeMetricSource[time.Duration] {
 	f := func(b monitoring.Block) time.Duration {
 		return b.ProcessingTime
 	}
-	return newBlockNodeMetricsSource[time.Duration](reg, f, BlockEventAndTxsProcessingTime)
+	return newBlockNodeMetricsSource[time.Duration](monitor, f, BlockEventAndTxsProcessingTime, export.DurationConverter{})
 }
 
 // newBlockProcessingTimeSource is the same as its public counterpart, it only returns the struct instead of the Source interface
-func newBlockProcessingTimeSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Duration]] {
-	return NewBlockProcessingTimeSource(reg)
+func newBlockProcessingTimeSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.BlockSeries[time.Duration]] {
+	return NewBlockProcessingTimeSource(monitor)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log
 func newBlockNodeMetricsSource[T any](
-	reg monitoring.NodeLogProvider,
+	monitor *monitoring.Monitor,
 	getBlockProperty func(b monitoring.Block) T,
-	metric monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]]) *BlockNodeMetricSource[T] {
+	metric monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]],
+	converter export.Converter[T]) *BlockNodeMetricSource[T] {
 
 	m := &BlockNodeMetricSource[T]{
 		metric:           metric,
 		getBlockProperty: getBlockProperty,
-		registry:         reg,
+		monitor:          monitor,
 		series:           make(map[monitoring.Node]*monitoring.SyncedSeries[monitoring.BlockNumber, T], 50),
 	}
 
-	reg.RegisterLogListener(m)
+	monitor.NodeLogProvider().RegisterLogListener(m)
+	monitor.Writer().Add(func() error {
+		return export.AddNodeBlockSeriesSource[T](monitor.Writer(), m, converter)
+	})
 
 	return m
 }
@@ -107,7 +112,7 @@ func (s *BlockNodeMetricSource[T]) GetData(node monitoring.Node) (monitoring.Blo
 }
 
 func (s *BlockNodeMetricSource[T]) Shutdown() error {
-	s.registry.UnregisterLogListener(s)
+	s.monitor.NodeLogProvider().UnregisterLogListener(s)
 	return nil
 }
 

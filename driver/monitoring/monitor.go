@@ -3,7 +3,6 @@ package monitoring
 import (
 	"errors"
 	"fmt"
-
 	"github.com/Fantom-foundation/Norma/driver"
 )
 
@@ -21,6 +20,7 @@ type Monitor struct {
 	config          MonitorConfig
 	nodeLogProvider NodeLogProvider
 	sources         map[string]source
+	writer          WriterChain
 }
 
 type MonitorConfig struct {
@@ -28,12 +28,13 @@ type MonitorConfig struct {
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
-func NewMonitor(network driver.Network, config MonitorConfig) *Monitor {
+func NewMonitor(network driver.Network, config MonitorConfig, writer WriterChain) *Monitor {
 	return &Monitor{
 		network:         network,
 		config:          config,
 		nodeLogProvider: NewNodeLogDispatcher(network),
 		sources:         map[string]source{},
+		writer:          writer,
 	}
 }
 
@@ -46,6 +47,8 @@ func (m *Monitor) Shutdown() error {
 			errs = append(errs, err)
 		}
 	}
+
+	errs = append(errs, m.writer.Close())
 	return errors.Join(errs...)
 }
 
@@ -87,13 +90,23 @@ func GetData[S any, T any](monitor *Monitor, subject S, metric Metric[S, T]) (t 
 	return source.(Source[S, T]).GetData(subject)
 }
 
-// GetNetwork returns a reference to the network monitored by this instance.
+// Network returns a reference to the network monitored by this instance.
 func (m *Monitor) Network() driver.Network {
 	return m.network
 }
 
-// GetConfig returns general monitoring configuration options set for the given
+// Config returns general monitoring configuration options set for the given
 // monitor instance.
 func (m *Monitor) Config() MonitorConfig {
 	return m.config
+}
+
+// Writer returns a reference to the writer instance.
+func (m *Monitor) Writer() WriterChain {
+	return m.writer
+}
+
+// NodeLogProvider returns a reference to the log parser instance.
+func (m *Monitor) NodeLogProvider() NodeLogProvider {
+	return m.nodeLogProvider
 }

@@ -89,15 +89,21 @@ func run(ctx *cli.Context) (err error) {
 	}()
 
 	// Initialize monitoring environment.
+	csvPath := "./output.csv"
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return err
+	}
 	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{
 		OutputDir: outputDir,
-	})
+	}, monitoring.NewWriterChain(csvFile))
 	defer func() {
 		// TODO: dump data before shutting down monitor
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
 			fmt.Printf("error during monitor shutdown:\n%v", err)
 		}
+		_ = csvFile.Close()
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 	}()
 
