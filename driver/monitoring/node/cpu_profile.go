@@ -2,6 +2,7 @@ package nodemon
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"io"
 	"net/http"
 	"time"
@@ -36,19 +37,20 @@ var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[PprofData]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NodeCpuProfile, mon.AdaptNetworkToMonitorFactory(NewNodeCpuProfileSource)); err != nil {
+	if err := mon.RegisterSource(NodeCpuProfile, NewNodeCpuProfileSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
 
 // NewNodeCpuProfileSource creates a new data source periodically collecting
 // CPU profiling data at configured sampling periods.
-func NewNodeCpuProfileSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[PprofData]] {
+func NewNodeCpuProfileSource(monitor *mon.Monitor) mon.Source[mon.Node, mon.TimeSeries[PprofData]] {
 	return newPeriodicNodeDataSource[PprofData](
 		NodeCpuProfile,
-		network,
+		monitor,
 		10*time.Second, // Sampling period; TODO: make customizable
 		&cpuProfileSensorFactory{},
+		export.DirectConverter[PprofData]{},
 	)
 }
 

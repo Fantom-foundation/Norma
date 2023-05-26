@@ -3,7 +3,6 @@ package monitoring
 import (
 	"errors"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
 )
 
 // Source is a provider of monitoring data for a single metric. A source is
@@ -60,22 +59,6 @@ func RegisterFactory[S any, T any](factory SourceFactory[S, T]) error {
 // a metric and a factory function for registering a source.
 func RegisterSource[S any, T any](metric Metric[S, T], factory func(*Monitor) Source[S, T]) error {
 	return RegisterFactory[S, T](&genericSourceFactory[S, T]{metric, factory})
-}
-
-// AdaptLogProviderToMonitorFactory provides an adapter between factory functions that create the Source.
-// This adapter convert the factory that takes the NodeLogProvider and returns the factory with the *Monitor
-func AdaptLogProviderToMonitorFactory[S any, T any](f func(provider NodeLogProvider) Source[S, T]) func(*Monitor) Source[S, T] {
-	return func(monitor *Monitor) Source[S, T] {
-		return f(monitor.nodeLogProvider)
-	}
-}
-
-// AdaptNetworkToMonitorFactory provides an adapter between factory functions that create the Source.
-// This adapter convert the factory that takes the Network and returns the factory with the *Monitor
-func AdaptNetworkToMonitorFactory[S any, T any](f func(network driver.Network) Source[S, T]) func(*Monitor) Source[S, T] {
-	return func(monitor *Monitor) Source[S, T] {
-		return f(monitor.network)
-	}
 }
 
 // InstallAllRegisteredSources installs one instance of every registered source

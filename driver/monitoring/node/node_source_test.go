@@ -1,6 +1,7 @@
 package nodemon
 
 import (
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"math"
 	"sort"
 	"testing"
@@ -57,7 +58,10 @@ func TestNodeSourceRetrievesSensorData(t *testing.T) {
 	net.EXPECT().UnregisterListener(gomock.Any())
 	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2})
 
-	source := newPeriodicNodeDataSource[int](testNodeMetric, net, 50*time.Millisecond, &testSensorFactory{})
+	writer := mon.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	source := newPeriodicNodeDataSource[int](testNodeMetric, &mon.Monitor{Network: net, Writer: writer}, 50*time.Millisecond, &testSensorFactory{}, export.DirectConverter[int]{})
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()

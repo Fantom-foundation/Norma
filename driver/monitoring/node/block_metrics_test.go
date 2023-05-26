@@ -16,8 +16,11 @@ func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
 	producer := monitoring.NewMockNodeLogProvider(ctrl)
 	producer.EXPECT().RegisterLogListener(gomock.Any()).AnyTimes()
 
-	source1 := NewBlockTimeSource(producer)
-	source2 := NewBlockProcessingTimeSource(producer)
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	source1 := NewBlockTimeSource(&monitoring.Monitor{NodeLogProvider: producer, Writer: writer})
+	source2 := NewBlockProcessingTimeSource(&monitoring.Monitor{NodeLogProvider: producer, Writer: writer})
 
 	// simulate data received to metric
 	testNodeSource(t, source1)
@@ -43,8 +46,11 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
 	reg := monitoring.NewNodeLogDispatcher(net)
-	source := NewBlockTimeSource(reg)
+	source := NewBlockTimeSource(&monitoring.Monitor{NodeLogProvider: reg, Writer: writer})
 	reg.RegisterLogListener(source)
 
 	// pre-existing node with some blocks

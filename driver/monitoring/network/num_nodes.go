@@ -2,9 +2,9 @@ package netmon
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 )
 
@@ -16,7 +16,7 @@ var NumberOfNodes = mon.Metric[mon.Network, mon.TimeSeries[int]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NumberOfNodes, mon.AdaptNetworkToMonitorFactory(NewNumNodesSource)); err != nil {
+	if err := mon.RegisterSource(NumberOfNodes, NewNumNodesSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
@@ -24,28 +24,26 @@ func init() {
 // numNodesSource is a monitoring data source tracking the number of active
 // nodes in a network environment.
 type numNodesSource struct {
-	network driver.Network
-	data    mon.SyncedSeries[mon.Time, int]
-	stop    chan<- bool
-	done    <-chan bool
+	data mon.SyncedSeries[mon.Time, int]
+	stop chan<- bool
+	done <-chan bool
 }
 
 // NewNumNodesSource creates a new data source periodically collecting data on
 // the number of nodes in the network.
-func NewNumNodesSource(network driver.Network) mon.Source[mon.Network, mon.TimeSeries[int]] {
-	return newNumNodesSource(network, time.Second)
+func NewNumNodesSource(monitor *mon.Monitor) mon.Source[mon.Network, mon.TimeSeries[int]] {
+	return newNumNodesSource(monitor, time.Second)
 }
 
 // newNumNodesSource creates a new data source periodically collecting data on
 // the number of nodes in the network.
-func newNumNodesSource(network driver.Network, period time.Duration) mon.Source[mon.Network, mon.TimeSeries[int]] {
+func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Network, mon.TimeSeries[int]] {
 	stop := make(chan bool)
 	done := make(chan bool)
 
 	res := &numNodesSource{
-		network: network,
-		stop:    stop,
-		done:    done,
+		stop: stop,
+		done: done,
 	}
 
 	go func() {
@@ -54,13 +52,17 @@ func newNumNodesSource(network driver.Network, period time.Duration) mon.Source[
 		for {
 			select {
 			case now := <-ticker.C:
-				numNodes := len(network.GetActiveNodes())
+				numNodes := len(monitor.Network.GetActiveNodes())
 				res.data.Append(mon.NewTime(now), numNodes)
 			case <-stop:
 				return
 			}
 		}
 	}()
+
+	monitor.Writer.Add(func() error {
+		return export.AddNetworkTimeSeriesSource[int](monitor.Writer, res, export.DirectConverter[int]{})
+	})
 
 	return res
 }

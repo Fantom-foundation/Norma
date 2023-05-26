@@ -3,8 +3,8 @@ package monitoring
 import (
 	"errors"
 	"fmt"
-
 	"github.com/Fantom-foundation/Norma/driver"
+	"os"
 )
 
 // Monitor instances are handling the life-cycle of sets of data sources for a
@@ -17,14 +17,15 @@ import (
 // methods in Go. Thus, several methods interacting with Monitor instances
 // are free functions (see implementations below).
 type Monitor struct {
-	network         driver.Network
-	nodeLogProvider NodeLogProvider
+	Network         driver.Network
+	NodeLogProvider NodeLogProvider
 	sources         map[string]source
+	Writer          WriterChain
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
-func NewMonitor(network driver.Network) *Monitor {
-	return &Monitor{network, NewNodeLogDispatcher(network), map[string]source{}}
+func NewMonitor(network driver.Network, csvFile *os.File) *Monitor {
+	return &Monitor{network, NewNodeLogDispatcher(network), map[string]source{}, NewWriterChain(csvFile)}
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
@@ -36,6 +37,8 @@ func (m *Monitor) Shutdown() error {
 			errs = append(errs, err)
 		}
 	}
+
+	errs = append(errs, m.Writer.Close())
 	return errors.Join(errs...)
 }
 

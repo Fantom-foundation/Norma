@@ -20,7 +20,10 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 		return make([]driver.Node, numNodes)
 	})
 
-	source := newNumNodesSource(net, 50*time.Millisecond)
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	source := newNumNodesSource(&monitoring.Monitor{Network: net, Writer: writer}, 50*time.Millisecond)
 
 	time.Sleep(200 * time.Millisecond)
 	source.Shutdown()

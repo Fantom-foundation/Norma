@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/exp/constraints"
 	"log"
+	"os"
 	"sort"
 	"time"
 
@@ -61,13 +62,19 @@ func run(ctx *cli.Context) (err error) {
 	}()
 
 	// Initialize monitoring environment.
-	monitor := monitoring.NewMonitor(net)
+	csvPath := "./output.csv"
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return err
+	}
+	monitor := monitoring.NewMonitor(net, csvFile)
 	defer func() {
 		// TODO: dump data before shutting down monitor
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
 			fmt.Printf("error during monitor shutdown:\n%v", err)
 		}
+		_ = csvFile.Close()
 	}()
 
 	// Install monitoring sensory.

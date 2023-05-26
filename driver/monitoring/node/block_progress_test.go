@@ -48,7 +48,10 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	net.EXPECT().UnregisterListener(gomock.Any())
 	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2})
 
-	source := newNodeBlockHeightSource(net, 50*time.Millisecond)
+	writer := mon.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+
+	source := newNodeBlockHeightSource(&mon.Monitor{Network: net, Writer: writer}, 50*time.Millisecond)
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()
