@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"log"
 	"time"
 )
 
@@ -14,49 +14,54 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	generator generator.TransactionGenerator
-	shaper    shaper.Shaper
-	rpcClient *ethclient.Client
+	shaper  shaper.Shaper
+	trigger chan struct{}
 }
 
-func NewAppController(generator generator.TransactionGenerator, shaper shaper.Shaper, rpcClient *ethclient.Client) *AppController {
-	return &AppController{
-		generator: generator,
-		shaper:    shaper,
-		rpcClient: rpcClient,
-	}
-}
+func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) (*AppController, error) {
+	trigger := make(chan struct{})
 
-func (sd *AppController) Init() error {
-	// initialize generator
-	return sd.generator.Init(sd.rpcClient)
-}
-
-func (sd *AppController) Run(ctx context.Context) error {
-
-	for {
-		startTime := time.Now()
-		err := sd.generator.SendTx()
+	// initialize workers
+	for i := 0; i < workers; i++ {
+		generator, err := generatorFactory.Create()
 		if err != nil {
-			return fmt.Errorf("failed to send tx; %v", err)
+			return nil, fmt.Errorf("failed to create load generator; %s", err)
 		}
 
-		waitTime := sd.shaper.GetNextWaitTime()
-		waitTime -= time.Since(startTime) // subtract time consumed by generating
-		if waitTime > 0 {
-			time.Sleep(waitTime)
+		worker := Worker{
+			generator: generator,
+			trigger:   trigger,
 		}
+		go worker.Run()
+	}
 
-		// interrupt the loop if the context have been cancelled
+	return &AppController{
+		shaper:  shaper,
+		trigger: trigger,
+	}, nil
+}
+
+func (ac *AppController) Run(ctx context.Context) error {
+	defer close(ac.trigger)
+	for {
 		select {
 		case <-ctx.Done():
+			// interrupt the loop if the context has been cancelled
 			err := ctx.Err()
 			if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil // terminated gracefully
 			}
 			return err
 		default:
-			// no interruption - continue
+			// trigger a worker to send a tx
+			select {
+			case ac.trigger <- struct{}{}:
+			default:
+				log.Print("sending not fast enough for the required frequency")
+			}
+
+			// wait for time determined by the shaper
+			time.Sleep(ac.shaper.GetNextWaitTime())
 		}
 	}
 }

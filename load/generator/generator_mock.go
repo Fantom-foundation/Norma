@@ -7,7 +7,6 @@ package generator
 import (
 	reflect "reflect"
 
-	ethclient "github.com/ethereum/go-ethereum/ethclient"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -34,18 +33,18 @@ func (m *MockTransactionGenerator) EXPECT() *MockTransactionGeneratorMockRecorde
 	return m.recorder
 }
 
-// Init mocks base method.
-func (m *MockTransactionGenerator) Init(client *ethclient.Client) error {
+// Close mocks base method.
+func (m *MockTransactionGenerator) Close() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", client)
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Init indicates an expected call of Init.
-func (mr *MockTransactionGeneratorMockRecorder) Init(client interface{}) *gomock.Call {
+// Close indicates an expected call of Close.
+func (mr *MockTransactionGeneratorMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockTransactionGenerator)(nil).Init), client)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockTransactionGenerator)(nil).Close))
 }
 
 // SendTx mocks base method.
@@ -60,4 +59,42 @@ func (m *MockTransactionGenerator) SendTx() error {
 func (mr *MockTransactionGeneratorMockRecorder) SendTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTx", reflect.TypeOf((*MockTransactionGenerator)(nil).SendTx))
+}
+
+// MockTransactionGeneratorFactory is a mock of TransactionGeneratorFactory interface.
+type MockTransactionGeneratorFactory struct {
+	ctrl     *gomock.Controller
+	recorder *MockTransactionGeneratorFactoryMockRecorder
+}
+
+// MockTransactionGeneratorFactoryMockRecorder is the mock recorder for MockTransactionGeneratorFactory.
+type MockTransactionGeneratorFactoryMockRecorder struct {
+	mock *MockTransactionGeneratorFactory
+}
+
+// NewMockTransactionGeneratorFactory creates a new mock instance.
+func NewMockTransactionGeneratorFactory(ctrl *gomock.Controller) *MockTransactionGeneratorFactory {
+	mock := &MockTransactionGeneratorFactory{ctrl: ctrl}
+	mock.recorder = &MockTransactionGeneratorFactoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransactionGeneratorFactory) EXPECT() *MockTransactionGeneratorFactoryMockRecorder {
+	return m.recorder
+}
+
+// Create mocks base method.
+func (m *MockTransactionGeneratorFactory) Create() (TransactionGenerator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Create")
+	ret0, _ := ret[0].(TransactionGenerator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Create indicates an expected call of Create.
+func (mr *MockTransactionGeneratorFactoryMockRecorder) Create() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionGeneratorFactory)(nil).Create))
 }
