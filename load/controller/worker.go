@@ -7,7 +7,7 @@ import (
 
 type Worker struct {
 	generator generator.TransactionGenerator
-	trigger   chan struct{}
+	trigger   <-chan struct{}
 }
 
 func (w *Worker) Run() {

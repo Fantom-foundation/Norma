@@ -26,8 +26,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec
 
-	sourceDriver := NewAppController(mockedGeneratorFactory, constantShaper, workers)
-	err := sourceDriver.Init()
+	sourceDriver, err := NewAppController(mockedGeneratorFactory, constantShaper, workers)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,37 +14,31 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	generatorFactory generator.TransactionGeneratorFactory
-	shaper           shaper.Shaper
-	workers          int
-	trigger          chan struct{}
+	shaper  shaper.Shaper
+	trigger chan struct{}
 }
 
-func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) *AppController {
-	return &AppController{
-		generatorFactory: generatorFactory,
-		shaper:           shaper,
-		workers:          workers,
-		trigger:          make(chan struct{}),
-	}
-}
+func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) (*AppController, error) {
+	trigger := make(chan struct{})
 
-func (ac *AppController) Init() error {
 	// initialize workers
-	for i := 0; i < ac.workers; i++ {
-		gen, err := ac.generatorFactory.Create()
+	for i := 0; i < workers; i++ {
+		generator, err := generatorFactory.Create()
 		if err != nil {
-			return fmt.Errorf("failed to create load generator; %s", err)
+			return nil, fmt.Errorf("failed to create load generator; %s", err)
 		}
 
 		worker := Worker{
-			generator: gen,
-			trigger:   ac.trigger,
+			generator: generator,
+			trigger:   trigger,
 		}
 		go worker.Run()
 	}
 
-	return nil
+	return &AppController{
+		shaper:  shaper,
+		trigger: trigger,
+	}, nil
 }
 
 func (ac *AppController) Run(ctx context.Context) error {
