@@ -49,28 +49,28 @@ func transferValue(rpcClient *ethclient.Client, chainID *big.Int, privateKey *ec
 	if err != nil {
 		return err
 	}
-	return waitUntilAccountHasBalance(toAddress, rpcClient)
+	return waitUntilAccountNonceIsAtLeast(fromAddress, nonce+1, rpcClient)
 }
 
-// waitUntilAccountHasBalance allows to wait until the given address has non-zero balance.
-func waitUntilAccountHasBalance(address common.Address, rpcClient *ethclient.Client) error {
-	for i := 0; i < 150; i++ {
-		time.Sleep(time.Second)
-		balance, err := rpcClient.BalanceAt(context.Background(), address, nil)
+// waitUntilAccountNonceIsAtLeast allows to wait until a transaction is applied by checking the account nonce.
+func waitUntilAccountNonceIsAtLeast(address common.Address, minNonce uint64, rpcClient *ethclient.Client) error {
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
+		nonce, err := rpcClient.NonceAt(context.Background(), address, nil) // nonce at latest block
 		if err != nil {
-			return fmt.Errorf("failed to check contract existence; %v", err)
+			return fmt.Errorf("failed to check address nonce; %v", err)
 		}
-		if balance.Uint64() != 0 {
+		if nonce >= minNonce {
 			return nil
 		}
 	}
-	return fmt.Errorf("transfered balance available before timeout")
+	return fmt.Errorf("nonce not increased before timeout")
 }
 
 // waitUntilContractStartExisting allows to wait until the given contract is available on the chain.
 func waitUntilContractStartExisting(contractAddress common.Address, rpcClient *ethclient.Client) error {
-	for i := 0; i < 150; i++ {
-		time.Sleep(time.Second)
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
 		code, err := rpcClient.CodeAt(context.Background(), contractAddress, nil)
 		if err != nil {
 			return fmt.Errorf("failed to check contract existence; %v", err)
