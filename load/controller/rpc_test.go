@@ -25,7 +25,10 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcUrl := net.GetActiveNodes()[0].GetHttpServiceUrl(&node.OperaRpcService)
+	rpcUrl := net.GetActiveNodes()[0].GetWebsocketServiceUrl(&node.OperaWsService)
+	if rpcUrl == nil {
+		t.Fatal("websocket service is not available")
+	}
 
 	primaryPrivateKey, err := crypto.HexToECDSA(PrivateKey)
 	if err != nil {

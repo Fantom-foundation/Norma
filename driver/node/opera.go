@@ -20,6 +20,13 @@ var OperaRpcService = network.ServiceDescription{
 	Port: OperaRPCPort,
 }
 
+const OperaWsPort = 18546
+
+var OperaWsService = network.ServiceDescription{
+	Name: "OperaWs",
+	Port: OperaWsPort,
+}
+
 const OperaPprofPort = 6060
 
 var OperaPprofService = network.ServiceDescription{
@@ -62,7 +69,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	ports, err := network.GetFreePorts(2)
+	ports, err := network.GetFreePorts(3)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +78,8 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		ShutdownTimeout: &shutdownTimeout,
 		PortForwarding: map[network.Port]network.Port{
 			OperaRPCPort:   ports[0],
-			OperaPprofPort: ports[1],
+			OperaWsPort:    ports[1],
+			OperaPprofPort: ports[2],
 		},
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorId,
@@ -115,6 +123,15 @@ func (n *OperaNode) GetHttpServiceUrl(service *network.ServiceDescription) *driv
 		return nil
 	}
 	url := driver.URL(fmt.Sprintf("http://%s", *addr))
+	return &url
+}
+
+func (n *OperaNode) GetWebsocketServiceUrl(service *network.ServiceDescription) *driver.URL {
+	addr := n.host.GetAddressForService(service)
+	if addr == nil {
+		return nil
+	}
+	url := driver.URL(fmt.Sprintf("ws://%s", *addr))
 	return &url
 }
 

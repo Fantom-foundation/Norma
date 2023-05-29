@@ -43,6 +43,7 @@ ENV LD_LIBRARY_PATH=./
 
 EXPOSE 6060
 EXPOSE 18545
+EXPOSE 18546
 
 COPY scripts/run_opera.sh .
 CMD /bin/bash run_opera.sh

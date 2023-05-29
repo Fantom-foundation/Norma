@@ -27,6 +27,10 @@ type Node interface {
 	// represented node. May be nil if no such service is offered.
 	GetHttpServiceUrl(*network.ServiceDescription) *URL
 
+	// GetWebsocketServiceUrl returns the URL of a WebSocket service running on the
+	// represented node. May be nil if no such service is offered.
+	GetWebsocketServiceUrl(service *network.ServiceDescription) *URL
+
 	// StreamLog provides a reader that is continuously providing the host log.
 	// It is up to the caller to close the stream.
 	StreamLog() (io.ReadCloser, error)
