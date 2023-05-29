@@ -43,7 +43,7 @@ type OperaNodeConfig struct {
 
 // StartOperaDockerNode creates a new OperaNode running in a Docker container.
 func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*OperaNode, error) {
-	timeout := 1 * time.Second
+	shutdownTimeout := 1 * time.Second
 
 	validatorId := "0"
 	if config.ValidatorId != nil {
@@ -56,7 +56,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 	}
 	host, err := client.Start(&docker.ContainerConfig{
 		ImageName:       operaDockerImageName,
-		ShutdownTimeout: &timeout,
+		ShutdownTimeout: &shutdownTimeout,
 		PortForwarding: map[network.Port]network.Port{
 			OperaRPCPort:   ports[0],
 			OperaPprofPort: ports[1],
@@ -73,8 +73,8 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		host: host,
 	}
 
-	// Wait until the OperaNode inside the Container is ready.
-	for i := 0; i < 100; i++ {
+	// Wait until the OperaNode inside the Container is ready. (3 minutes max)
+	for i := 0; i < 3*60; i++ {
 		_, err := node.GetNodeID()
 		if err == nil {
 			return node, nil

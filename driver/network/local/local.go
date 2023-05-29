@@ -101,15 +101,18 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
 	node, err := node.StartOperaDockerNode(n.docker, nodeConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to start opera docker; %v", err)
 	}
 
 	n.nodesMutex.Lock()
 	id, err := node.GetNodeID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node id; %v", err)
+	}
 	for _, other := range n.nodes {
-		if err := other.AddPeer(id); err != nil {
+		if err = other.AddPeer(id); err != nil {
 			n.nodesMutex.Unlock()
-			return nil, err
+			return nil, fmt.Errorf("failed to add peer; %v", err)
 		}
 	}
 	n.nodes[id] = node
@@ -119,7 +122,7 @@ func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.Op
 		listener.AfterNodeCreation(node)
 	}
 
-	return node, err
+	return node, nil
 }
 
 // CreateNode creates non-validator nodes in the network.
