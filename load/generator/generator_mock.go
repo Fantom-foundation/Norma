@@ -7,7 +7,6 @@ package generator
 import (
 	reflect "reflect"
 
-	ethclient "github.com/ethereum/go-ethereum/ethclient"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -86,16 +85,16 @@ func (m *MockTransactionGeneratorFactory) EXPECT() *MockTransactionGeneratorFact
 }
 
 // Create mocks base method.
-func (m *MockTransactionGeneratorFactory) Create(rpcClient *ethclient.Client) (TransactionGenerator, error) {
+func (m *MockTransactionGeneratorFactory) Create() (TransactionGenerator, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", rpcClient)
+	ret := m.ctrl.Call(m, "Create")
 	ret0, _ := ret[0].(TransactionGenerator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockTransactionGeneratorFactoryMockRecorder) Create(rpcClient interface{}) *gomock.Call {
+func (mr *MockTransactionGeneratorFactoryMockRecorder) Create() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionGeneratorFactory)(nil).Create), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionGeneratorFactory)(nil).Create))
 }

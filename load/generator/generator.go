@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"github.com/ethereum/go-ethereum/ethclient"
 	"io"
 )
 
@@ -16,5 +15,5 @@ type TransactionGenerator interface {
 }
 
 type TransactionGeneratorFactory interface {
-	Create(rpcClient *ethclient.Client) (TransactionGenerator, error)
+	Create() (TransactionGenerator, error)
 }

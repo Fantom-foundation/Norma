@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/mock/gomock"
 	"testing"
 	"time"
@@ -20,14 +19,14 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	mockedGenerator := generator.NewMockTransactionGenerator(mockCtrl)
 
 	mockedGeneratorFactory := generator.NewMockTransactionGeneratorFactory(mockCtrl)
-	mockedGeneratorFactory.EXPECT().Create(gomock.Any()).Return(mockedGenerator, nil).Times(workers)
+	mockedGeneratorFactory.EXPECT().Create().Return(mockedGenerator, nil).Times(workers)
 	mockedGenerator.EXPECT().SendTx().Return(nil).MinTimes(9).MaxTimes(11)
 	mockedGenerator.EXPECT().Close().Return(nil).Times(workers)
 
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec
 
-	sourceDriver := NewAppController(mockedGeneratorFactory, constantShaper, func() (*ethclient.Client, error) { return nil, nil }, workers)
+	sourceDriver := NewAppController(mockedGeneratorFactory, constantShaper, workers)
 	err := sourceDriver.Init()
 	if err != nil {
 		t.Fatal(err)

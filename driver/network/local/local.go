@@ -17,7 +17,6 @@ import (
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // LocalNetwork is a Docker based network running each individual node
@@ -168,8 +167,8 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	url := node.GetHttpServiceUrl(&opera.OperaRpcService)
-	if url == nil {
+	rpcUrl := node.GetHttpServiceUrl(&opera.OperaRpcService)
+	if rpcUrl == nil {
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
@@ -178,23 +177,14 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	rpcClientForInit, err := ethclient.Dial(string(*url))
-	if err != nil {
-		return nil, err
-	}
-	defer rpcClientForInit.Close()
-
-	generatorFactory, err := generator.NewCounterGeneratorFactory(rpcClientForInit, privateKey, big.NewInt(fakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(*rpcUrl, privateKey, big.NewInt(fakeNetworkID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	appController := controller.NewAppController(generatorFactory, constantShaper, func() (*ethclient.Client, error) {
-		// create an ethclient for each worker, prevent bottlenecks in one connection used by multiple workers
-		return ethclient.Dial(string(*url))
-	}, 10) // TODO: amount of workers configurable
+	appController := controller.NewAppController(generatorFactory, constantShaper, 10) // TODO: amount of workers configurable
 
 	err = appController.Init()
 	if err != nil {

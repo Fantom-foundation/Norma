@@ -9,7 +9,6 @@ import (
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"testing"
 	"time"
@@ -33,23 +32,14 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rpcClientForInit, err := ethclient.Dial(string(*rpcUrl))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer rpcClientForInit.Close()
-
-	generatorFactory, err := generator.NewCounterGeneratorFactory(rpcClientForInit, primaryPrivateKey, big.NewInt(FakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(*rpcUrl, primaryPrivateKey, big.NewInt(FakeNetworkID))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
-	app := controller.NewAppController(generatorFactory, constantShaper, func() (*ethclient.Client, error) {
-		// create an ethclient for each worker, prevent bottlenecks in one connection used by multiple workers
-		return ethclient.Dial(string(*rpcUrl))
-	}, 5) // 5 parallel workers
+	app := controller.NewAppController(generatorFactory, constantShaper, 5) // 5 parallel workers
 	err = app.Init()
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +58,7 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	countInChain, err := generatorFactory.GetAmountOfReceivedTxs(rpcClientForInit)
+	countInChain, err := generatorFactory.GetAmountOfReceivedTxs()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 	"time"
 )
@@ -17,16 +16,14 @@ import (
 type AppController struct {
 	generatorFactory generator.TransactionGeneratorFactory
 	shaper           shaper.Shaper
-	rpcClientFactory func() (*ethclient.Client, error)
 	workers          int
 	trigger          chan struct{}
 }
 
-func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, rpcClientFactory func() (*ethclient.Client, error), workers int) *AppController {
+func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) *AppController {
 	return &AppController{
 		generatorFactory: generatorFactory,
 		shaper:           shaper,
-		rpcClientFactory: rpcClientFactory,
 		workers:          workers,
 		trigger:          make(chan struct{}),
 	}
@@ -35,12 +32,7 @@ func NewAppController(generatorFactory generator.TransactionGeneratorFactory, sh
 func (ac *AppController) Init() error {
 	// initialize workers
 	for i := 0; i < ac.workers; i++ {
-		rpcClient, err := ac.rpcClientFactory()
-		if err != nil {
-			return err
-		}
-
-		gen, err := ac.generatorFactory.Create(rpcClient)
+		gen, err := ac.generatorFactory.Create()
 		if err != nil {
 			return fmt.Errorf("failed to create load generator; %s", err)
 		}

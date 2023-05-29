@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,13 +16,16 @@ import (
 // NewCounterGeneratorFactory provides a factory of tx generators incrementing one deployed Counter contract.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-//
-// The provided rpcClient is used only for the initialization, not for txs generating itself.
-func NewCounterGeneratorFactory(rpcClient *ethclient.Client, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*CounterGeneratorFactory, error) {
+func NewCounterGeneratorFactory(rpcUrl driver.URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*CounterGeneratorFactory, error) {
 	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryPrivateKey, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
 	}
+	rpcClient, err := ethclient.Dial(string(rpcUrl))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to RPC to initialize the Counter; %v", err)
+	}
+	defer rpcClient.Close()
 	// Deploy the Counter contract to be used by generators created using the factory
 	contractAddress, _, _, err := abi.DeployCounter(txOpts, rpcClient)
 	if err != nil {
@@ -32,6 +36,7 @@ func NewCounterGeneratorFactory(rpcClient *ethclient.Client, primaryPrivateKey *
 		return nil, err
 	}
 	return &CounterGeneratorFactory{
+		rpcUrl:            rpcUrl,
 		primaryPrivateKey: primaryPrivateKey,
 		chainID:           chainID,
 		contractAddress:   contractAddress,
@@ -42,6 +47,7 @@ func NewCounterGeneratorFactory(rpcClient *ethclient.Client, primaryPrivateKey *
 // A factory represents one deployed Counter contract, incremented by all its generators.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type CounterGeneratorFactory struct {
+	rpcUrl            driver.URL
 	primaryPrivateKey *ecdsa.PrivateKey
 	chainID           *big.Int
 	contractAddress   common.Address
@@ -49,11 +55,16 @@ type CounterGeneratorFactory struct {
 }
 
 // Create a new generator to be used by one worker thread.
-func (f *CounterGeneratorFactory) Create(rpcClient *ethclient.Client) (TransactionGenerator, error) {
+func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 	// generate a new account for each worker - avoid account nonces related bottlenecks
 	address, privateKey, err := generateAddress()
 	if err != nil {
 		return nil, err
+	}
+
+	rpcClient, err := ethclient.Dial(string(f.rpcUrl))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to RPC to create a tx generator; %v", err)
 	}
 
 	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
@@ -107,7 +118,12 @@ func (f *CounterGeneratorFactory) GetAmountOfSentTxs() uint64 {
 
 // GetAmountOfReceivedTxs provides the amount of relevant txs applied to the chain state
 // This is obtained as the counter value in the Counter contract.
-func (f *CounterGeneratorFactory) GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error) {
+func (f *CounterGeneratorFactory) GetAmountOfReceivedTxs() (uint64, error) {
+	rpcClient, err := ethclient.Dial(string(f.rpcUrl))
+	if err != nil {
+		return 0, fmt.Errorf("failed to connect to RPC to get amount of txs on chain; %v", err)
+	}
+	defer rpcClient.Close()
 	// get a representation of the deployed contract, bound to worker's rpcClient
 	counterContract, err := abi.NewCounter(f.contractAddress, rpcClient)
 	if err != nil {
