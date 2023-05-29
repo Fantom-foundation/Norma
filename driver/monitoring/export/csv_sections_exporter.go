@@ -91,17 +91,18 @@ func AddSource[S any, K constraints.Integer, T any, X monitoring.Series[K, T]](
 
 	// get the sizes, i.e. the number of data points
 	// store in order to arrays as subjects are sorted
-	data := make([]monitoring.Series[K, T], 0, len(subjects))
+	data := make([][]monitoring.DataPoint[K, T], 0, len(subjects))
 	sizes := make([]int, 0, len(subjects))
 	var longestSeriesIndex int
 	var size int
 	for i, subject := range subjects {
 		series, exists := source.GetData(subject)
+		dataPoints := copySeries[K, T](series)
 		if !exists {
 			panic(fmt.Errorf("series for subject: %v does not exist", subject))
 		}
-		data = append(data, series)
-		currentSize := series.Size()
+		data = append(data, dataPoints)
+		currentSize := len(dataPoints)
 		if currentSize > size {
 			size = currentSize
 			longestSeriesIndex = i
@@ -118,7 +119,7 @@ func AddSource[S any, K constraints.Integer, T any, X monitoring.Series[K, T]](
 		// memorise first column positions and reserve lines
 		for i := 0; i < exporter.firstColumnSize; i++ {
 			exporter.newLine()
-			exporter.firstColumn = append(exporter.firstColumn, int(data[longestSeriesIndex].GetAt(i).Position))
+			exporter.firstColumn = append(exporter.firstColumn, int(data[longestSeriesIndex][i].Position))
 		}
 	}
 
@@ -142,7 +143,7 @@ func AddSource[S any, K constraints.Integer, T any, X monitoring.Series[K, T]](
 
 				// try to move to next row when position does not match, try the series may be shifted
 				// matching is simply checking if the position is greater than current position.
-				if k < sizes[i] && int(data[i].GetAt(k).Position) > exporter.firstColumn[j] {
+				if k < sizes[i] && int(data[i][k].Position) > exporter.firstColumn[j] {
 					j++
 					continue
 				}
@@ -151,7 +152,7 @@ func AddSource[S any, K constraints.Integer, T any, X monitoring.Series[K, T]](
 					// series is shorter, replace with empty cells.
 					exporter.concat(j+2, ", ")
 				} else {
-					point := data[i].GetAt(k)
+					point := data[i][k]
 					exporter.concat(j+2, fmt.Sprintf("%s, ", tConverter.Convert(point.Value)))
 					seriesMatch = true
 				}
@@ -167,7 +168,7 @@ func AddSource[S any, K constraints.Integer, T any, X monitoring.Series[K, T]](
 				// memorise first column positions for current series
 				exporter.firstColumn = exporter.firstColumn[0:0]
 				for r := 0; r < exporter.firstColumnSize; r++ {
-					exporter.firstColumn = append(exporter.firstColumn, int(data[i].GetAt(r).Position))
+					exporter.firstColumn = append(exporter.firstColumn, int(data[i][r].Position))
 				}
 			}
 
@@ -238,6 +239,22 @@ func (c *CsvExporter) newLine() {
 
 func (c *CsvExporter) concat(lineNum int, line string) {
 	c.lines[lineNum].WriteString(line)
+}
+
+func copySeries[K constraints.Ordered, T any](series monitoring.Series[K, T]) []monitoring.DataPoint[K, T] {
+	lastPoint := series.GetLatest()
+	if lastPoint == nil {
+		return []monitoring.DataPoint[K, T]{}
+	}
+
+	var k K
+	dataPoints := series.GetRange(k, lastPoint.Position)
+	res := make([]monitoring.DataPoint[K, T], 0, len(dataPoints)+1)
+	for _, point := range dataPoints {
+		res = append(res, point)
+	}
+
+	return append(res, *lastPoint)
 }
 
 func (c *CsvExporter) flush() error {
