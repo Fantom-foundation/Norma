@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -73,6 +74,12 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		host: host,
 	}
 
+	logStream, err := host.StreamLog()
+	if err != nil {
+		return nil, fmt.Errorf("failed to stream logs; %v", err)
+	}
+	defer logStream.Close()
+
 	// Wait until the OperaNode inside the Container is ready. (3 minutes max)
 	for i := 0; i < 3*60; i++ {
 		_, err := node.GetNodeID()
@@ -84,6 +91,11 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 
 	// The node did not show up in time, so we consider the start to have failed.
 	node.host.Cleanup()
+
+	if _, err = io.Copy(os.Stdout, logStream); err != nil {
+		return nil, fmt.Errorf("failed copy logs to stdout; %v", err)
+	}
+
 	return nil, fmt.Errorf("failed to get node online")
 }
 
