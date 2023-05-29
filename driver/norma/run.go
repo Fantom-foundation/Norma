@@ -71,7 +71,7 @@ func run(ctx *cli.Context) (err error) {
 		}
 		// TODO: dump many more data before shutting down monitor
 		if err := generateCsv(monitor); err != nil {
-			fmt.Printf("error to export data to CSV: %v\n", err)
+			fmt.Printf("failed to export data to CSV: %v\n", err)
 		}
 	}()
 
@@ -195,7 +195,7 @@ func generateCsv(monitor *monitoring.Monitor) error {
 	csv := export.NewCsvExporter(f)
 	defer func() {
 		if err := csv.Close(); err != nil {
-			fmt.Printf("error to export data to CSV: %v\n", err)
+			fmt.Printf("failed to export data to CSV: %v\n", err)
 		}
 	}()
 
