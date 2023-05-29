@@ -97,7 +97,7 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
-	// adjust txOpts for the runtime to avoid slow auto-obtaining of nonce/gasPrice
+	// adjust txOpts for the runtime to avoid slow loading of gasPrice/nonce from RPC for each tx
 	txOpts.Nonce = big.NewInt(int64(nonce))
 	txOpts.GasLimit = 50000    // IncrementCounter method call takes 43426 of gas
 	txOpts.GasPrice = gasPrice // use static gasPrice
