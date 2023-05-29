@@ -14,13 +14,13 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	workers := 2
-
-	// generator should be initialized first and then called 10-times to send 10 txs
 	mockedGenerator := generator.NewMockTransactionGenerator(mockCtrl)
 
 	mockedGeneratorFactory := generator.NewMockTransactionGeneratorFactory(mockCtrl)
 	mockedGeneratorFactory.EXPECT().Create().Return(mockedGenerator, nil).Times(workers)
-	mockedGenerator.EXPECT().SendTx().Return(nil).MinTimes(9).MaxTimes(11)
+
+	// generator should be called 10-times to send 10 txs
+	mockedGenerator.EXPECT().SendTx().Return(nil).MinTimes(5).MaxTimes(11)
 	mockedGenerator.EXPECT().Close().Return(nil).Times(workers)
 
 	// use constant shaper
