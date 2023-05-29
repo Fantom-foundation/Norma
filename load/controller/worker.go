@@ -11,18 +11,14 @@ type Worker struct {
 }
 
 func (w *Worker) Run() {
-	for {
-		_, isOpen := <-w.trigger
-		if !isOpen {
-			err := w.generator.Close()
-			if err != nil {
-				log.Printf("failed to close generator; %v", err)
-			}
-			return // terminated gracefully by closing channel
-		}
+	for range w.trigger {
 		err := w.generator.SendTx()
 		if err != nil {
 			log.Printf("failed to send generated tx; %v", err)
 		}
+	}
+	err := w.generator.Close()
+	if err != nil {
+		log.Printf("failed to close generator; %v", err)
 	}
 }
