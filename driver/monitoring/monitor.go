@@ -18,13 +18,23 @@ import (
 // are free functions (see implementations below).
 type Monitor struct {
 	network         driver.Network
+	config          MonitorConfig
 	nodeLogProvider NodeLogProvider
 	sources         map[string]source
 }
 
+type MonitorConfig struct {
+	OutputDir string
+}
+
 // NewMonitor creates a new Monitor instance without any registered sources.
-func NewMonitor(network driver.Network) *Monitor {
-	return &Monitor{network, NewNodeLogDispatcher(network), map[string]source{}}
+func NewMonitor(network driver.Network, config MonitorConfig) *Monitor {
+	return &Monitor{
+		network:         network,
+		config:          config,
+		nodeLogProvider: NewNodeLogDispatcher(network),
+		sources:         map[string]source{},
+	}
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
@@ -75,4 +85,15 @@ func GetData[S any, T any](monitor *Monitor, subject S, metric Metric[S, T]) (t 
 		return t, false
 	}
 	return source.(Source[S, T]).GetData(subject)
+}
+
+// GetNetwork returns a reference to the network monitored by this instance.
+func (m *Monitor) Network() driver.Network {
+	return m.network
+}
+
+// GetConfig returns general monitoring configuration options set for the given
+// monitor instance.
+func (m *Monitor) Config() MonitorConfig {
+	return m.config
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -31,18 +32,29 @@ const operaDockerImageName = "opera"
 // OperaNode implements the driver's Node interface by running a go-opera
 // client on a generic host.
 type OperaNode struct {
-	host network.Host
+	host  network.Host
+	label string
 }
 
 type OperaNodeConfig struct {
+	// The label to be used to name this node. The label should not be empty.
+	Label string
 	// The ID of the validator, nil if the node should node be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
 }
 
+// labelPattern restricts labels for nodes to non-empty alpha-numerical strings
+// with underscores and hyphens.
+var labelPattern = regexp.MustCompile("[A-Za-z0-9_-]+")
+
 // StartOperaDockerNode creates a new OperaNode running in a Docker container.
 func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*OperaNode, error) {
+	if !labelPattern.Match([]byte(config.Label)) {
+		return nil, fmt.Errorf("invalid label for node: '%v'", config.Label)
+	}
+
 	shutdownTimeout := 1 * time.Second
 
 	validatorId := "0"
@@ -71,7 +83,8 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		return nil, err
 	}
 	node := &OperaNode{
-		host: host,
+		host:  host,
+		label: config.Label,
 	}
 
 	// Wait until the OperaNode inside the Container is ready. (3 minutes max)
@@ -86,6 +99,10 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 	// The node did not show up in time, so we consider the start to have failed.
 	node.host.Cleanup()
 	return nil, fmt.Errorf("failed to get node online")
+}
+
+func (n *OperaNode) GetLabel() string {
+	return n.label
 }
 
 func (n *OperaNode) IsRunning() bool {

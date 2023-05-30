@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -52,6 +53,12 @@ func run(ctx *cli.Context) (err error) {
 		return fmt.Errorf("requires scenario file as an argument")
 	}
 
+	outputDir, err := os.MkdirTemp("", "norma_data_")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+
 	path := args.First()
 	fmt.Printf("Reading '%s' ...\n", path)
 	scenario, err := parser.ParseFile(path)
@@ -82,13 +89,16 @@ func run(ctx *cli.Context) (err error) {
 	}()
 
 	// Initialize monitoring environment.
-	monitor := monitoring.NewMonitor(net)
+	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{
+		OutputDir: outputDir,
+	})
 	defer func() {
 		// TODO: dump data before shutting down monitor
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
 			fmt.Printf("error during monitor shutdown:\n%v", err)
 		}
+		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 	}()
 
 	// Install monitoring sensory.

@@ -63,6 +63,20 @@ func (mr *MockNodeMockRecorder) GetHttpServiceUrl(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHttpServiceUrl", reflect.TypeOf((*MockNode)(nil).GetHttpServiceUrl), arg0)
 }
 
+// GetLabel mocks base method.
+func (m *MockNode) GetLabel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLabel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetLabel indicates an expected call of GetLabel.
+func (mr *MockNodeMockRecorder) GetLabel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabel", reflect.TypeOf((*MockNode)(nil).GetLabel))
+}
+
 // GetNodeID mocks base method.
 func (m *MockNode) GetNodeID() (NodeID, error) {
 	m.ctrl.T.Helper()
