@@ -12,6 +12,10 @@ import (
 // control of a node, allowing it to be started (through an Environment),
 // interact with the node, and shut it down.
 type Node interface {
+	// GetLabel returns a human-readable identifer for this node. Is is intended
+	// to label data and should be unique within a single scenario run.
+	GetLabel() string
+
 	// Returns true if the node is still running, false if stopped.
 	IsRunning() bool
 

@@ -15,7 +15,7 @@ func TestMonitor_CreateAndShutdown(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	monitor := NewMonitor(net)
+	monitor := NewMonitor(net, MonitorConfig{})
 	if err := monitor.Shutdown(); err != nil {
 		t.Errorf("shutdown of empty monitor failed: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 
 	metric := source.GetMetric()
 
-	monitor := NewMonitor(net)
+	monitor := NewMonitor(net, MonitorConfig{})
 	if IsSupported(monitor, metric) {
 		t.Errorf("empty monitor should not support any metric")
 	}

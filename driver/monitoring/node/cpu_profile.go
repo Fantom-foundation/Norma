@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 )
@@ -30,42 +32,62 @@ func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
 }
 
 // NodeCpuProfile periodically collects CPU profiles from individual nodes.
-var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[PprofData]]{
+var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[string]]{
 	Name:        "NodeCpuProfile",
 	Description: "CpuProfile samples of a node at various times.",
 }
 
 func init() {
-	if err := mon.RegisterSource(NodeCpuProfile, mon.AdaptNetworkToMonitorFactory(NewNodeCpuProfileSource)); err != nil {
+	if err := mon.RegisterSource(NodeCpuProfile, NewNodeCpuProfileSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
 
 // NewNodeCpuProfileSource creates a new data source periodically collecting
 // CPU profiling data at configured sampling periods.
-func NewNodeCpuProfileSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[PprofData]] {
-	return newPeriodicNodeDataSource[PprofData](
+func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.TimeSeries[string]] {
+	return newPeriodicNodeDataSource[string](
 		NodeCpuProfile,
-		network,
+		monitor.Network(),
 		10*time.Second, // Sampling period; TODO: make customizable
-		&cpuProfileSensorFactory{},
+		&cpuProfileSensorFactory{
+			outputDir: monitor.Config().OutputDir,
+		},
 	)
 }
 
-type cpuProfileSensorFactory struct{}
+type cpuProfileSensorFactory struct {
+	outputDir string
+}
 
-func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (Sensor[PprofData], error) {
+func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (Sensor[string], error) {
 	return &cpuProfileSensor{
-		node,
-		5 * time.Second, // the duration of the CPU profile collection; TODO: make configurable
+		node:      node,
+		duration:  5 * time.Second, // the duration of the CPU profile collection; TODO: make configurable
+		outputDir: f.outputDir,
 	}, nil
 }
 
 type cpuProfileSensor struct {
-	node     driver.Node
-	duration time.Duration
+	node        driver.Node
+	duration    time.Duration
+	outputDir   string
+	numProfiles int
 }
 
-func (s *cpuProfileSensor) ReadValue() (PprofData, error) {
-	return GetPprofData(s.node, s.duration)
+func (s *cpuProfileSensor) ReadValue() (string, error) {
+	data, err := GetPprofData(s.node, s.duration)
+	if err != nil {
+		return "", err
+	}
+	dir := fmt.Sprintf("%s/cpu_profiles/%s", s.outputDir, s.node.GetLabel())
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return "", err
+	}
+	filename := fmt.Sprintf("%s/%06d.prof", dir, s.numProfiles)
+	s.numProfiles++
+	if err := os.WriteFile(filename, data, 0600); err != nil {
+		return "", err
+	}
+	return filename, nil
 }

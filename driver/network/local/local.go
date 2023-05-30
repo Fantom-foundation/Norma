@@ -74,9 +74,8 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 	for i := 0; i < config.NumberOfValidators; i++ {
 		// TODO: create nodes in parallel
 		*nodeConfig.ValidatorId = i + 1
-		validator, err := net.createNode(&driver.NodeConfig{
-			Name: fmt.Sprintf("Validator-%d", i+1),
-		}, &nodeConfig)
+		nodeConfig.Label = fmt.Sprintf("Validator-%d", i+1)
+		validator, err := net.createNode(&nodeConfig)
 		if err != nil {
 			errs = append(errs, err)
 		} else {
@@ -98,7 +97,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 
 // createNode is an internal version of CreateNode enabling the creation
 // of validator and non-validator nodes in the network.
-func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
+func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
 	node, err := node.StartOperaDockerNode(n.docker, nodeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start opera docker; %v", err)
@@ -127,7 +126,8 @@ func (n *LocalNetwork) createNode(config *driver.NodeConfig, nodeConfig *node.Op
 
 // CreateNode creates non-validator nodes in the network.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
-	return n.createNode(config, &node.OperaNodeConfig{
+	return n.createNode(&node.OperaNodeConfig{
+		Label:         config.Name,
 		NetworkConfig: &n.config,
 	})
 }

@@ -23,6 +23,7 @@ func TestOperaNode_StartAndStop(t *testing.T) {
 	}
 	defer docker.Close()
 	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
 	if err != nil {
@@ -40,6 +41,7 @@ func TestOperaNode_RpcServiceIsReadyAfterStartup(t *testing.T) {
 	}
 	defer docker.Close()
 	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
 	if err != nil {
@@ -63,8 +65,12 @@ func TestOperaNode_StreamLog(t *testing.T) {
 	})
 
 	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
+	if err != nil {
+		t.Fatalf("failed to create an Opera node on Docker: %v", err)
+	}
 	t.Cleanup(func() {
 		_ = node.Cleanup()
 	})
