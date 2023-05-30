@@ -38,6 +38,7 @@ COPY --from=build /client/carmen/go/lib/libcarmen.so .
 
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
+ENV STATE_DB_IMPL="geth"
 ENV LD_LIBRARY_PATH=./
 
 EXPOSE 6060

@@ -37,6 +37,8 @@ type Network interface {
 type NetworkConfig struct {
 	// NumberOfValidators is the (static) number of validators in the network.
 	NumberOfValidators int
+	// The name of the StateDB implementation to be used by network nodes.
+	StateDbImplementation string
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there
