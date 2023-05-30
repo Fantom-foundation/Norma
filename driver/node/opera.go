@@ -64,6 +64,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorId,
 			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
+			"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 		},
 	})
 	if err != nil {

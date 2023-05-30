@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/exp/constraints"
 	"log"
 	"sort"
+	"strings"
 	"time"
+
+	"golang.org/x/exp/constraints"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
@@ -23,9 +25,27 @@ var runCommand = cli.Command{
 	Action: run,
 	Name:   "run",
 	Usage:  "runs a scenario",
+	Flags: []cli.Flag{
+		&DbImpl,
+	},
 }
 
+var (
+	DbImpl = cli.StringFlag{
+		Name:  "db-impl",
+		Usage: "select the DB implementation to use (geth or carmen)",
+		Value: "carmen",
+	}
+)
+
 func run(ctx *cli.Context) (err error) {
+
+	db := strings.ToLower(ctx.String(DbImpl.Name))
+	if db == "carmen" || db == "go-file" {
+		db = "go-file"
+	} else if db != "geth" {
+		return fmt.Errorf("unknown value fore --%v flag: %v", DbImpl.Name, db)
+	}
 
 	args := ctx.Args()
 	if args.Len() < 1 {
@@ -43,12 +63,13 @@ func run(ctx *cli.Context) (err error) {
 
 	// Startup network.
 	netConfig := driver.NetworkConfig{
-		NumberOfValidators: 1,
+		NumberOfValidators:    1,
+		StateDbImplementation: db,
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
-	fmt.Printf("Creating network with %d validator(s) ...\n", netConfig.NumberOfValidators)
+	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
