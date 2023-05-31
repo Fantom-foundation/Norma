@@ -2,6 +2,7 @@ package nodemon
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"io"
 	"net/http"
 	"os"
@@ -48,11 +49,12 @@ func init() {
 func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.TimeSeries[string]] {
 	return newPeriodicNodeDataSource[string](
 		NodeCpuProfile,
-		monitor.Network(),
+		monitor,
 		10*time.Second, // Sampling period; TODO: make customizable
 		&cpuProfileSensorFactory{
 			outputDir: monitor.Config().OutputDir,
 		},
+		export.DirectConverter[string]{},
 	)
 }
 

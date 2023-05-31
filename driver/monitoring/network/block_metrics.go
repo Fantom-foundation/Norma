@@ -3,6 +3,7 @@ package netmon
 import (
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"github.com/ethereum/go-ethereum/log"
 	"sync"
 )
@@ -22,11 +23,11 @@ var (
 )
 
 func init() {
-	if err := monitoring.RegisterSource(BlockNumberOfTransactions, monitoring.AdaptLogProviderToMonitorFactory(newNumberOfTransactionsSource)); err != nil {
+	if err := monitoring.RegisterSource(BlockNumberOfTransactions, newNumberOfTransactionsSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 
-	if err := monitoring.RegisterSource(BlockGasUsed, monitoring.AdaptLogProviderToMonitorFactory(newGasUsedSource)); err != nil {
+	if err := monitoring.RegisterSource(BlockGasUsed, newGasUsedSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
@@ -35,53 +36,56 @@ func init() {
 type BlockNetworkMetricSource[T any] struct {
 	metric           monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]]
 	getBlockProperty func(b monitoring.Block) T
-	registry         monitoring.NodeLogProvider
+	monitor          *monitoring.Monitor
 	series           *monitoring.SyncedSeries[monitoring.BlockNumber, T]
 	seriesLock       sync.Mutex
 	lastBlock        int // track last block added in the series not to add duplicated block heights
 }
 
 // NewNumberOfTransactionsSource creates a metric capturing number of transactions for each block of a network
-func NewNumberOfTransactionsSource(reg monitoring.NodeLogProvider) *BlockNetworkMetricSource[int] {
+func NewNumberOfTransactionsSource(monitor *monitoring.Monitor) *BlockNetworkMetricSource[int] {
 	f := func(b monitoring.Block) int {
 		return b.Txs
 	}
-	return newBlockNetworkMetricsSource[int](reg, f, BlockNumberOfTransactions)
+	return newBlockNetworkMetricsSource[int](monitor, f, BlockNumberOfTransactions)
 }
 
 // NewGasUsedSource creates a metric capturing Gas used for each block of a network.
-func NewGasUsedSource(reg monitoring.NodeLogProvider) *BlockNetworkMetricSource[int] {
+func NewGasUsedSource(monitor *monitoring.Monitor) *BlockNetworkMetricSource[int] {
 	f := func(b monitoring.Block) int {
 		return b.GasUsed
 	}
-	return newBlockNetworkMetricsSource[int](reg, f, BlockGasUsed)
+	return newBlockNetworkMetricsSource[int](monitor, f, BlockGasUsed)
 }
 
 // newNumberOfTransactionsSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
-func newNumberOfTransactionsSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
-	return NewNumberOfTransactionsSource(reg)
+func newNumberOfTransactionsSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+	return NewNumberOfTransactionsSource(monitor)
 }
 
 // newGasUsedSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
-func newGasUsedSource(reg monitoring.NodeLogProvider) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
-	return NewGasUsedSource(reg)
+func newGasUsedSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+	return NewGasUsedSource(monitor)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log
 func newBlockNetworkMetricsSource[T any](
-	reg monitoring.NodeLogProvider,
+	monitor *monitoring.Monitor,
 	getBlockProperty func(b monitoring.Block) T,
 	metric monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]]) *BlockNetworkMetricSource[T] {
 
 	m := &BlockNetworkMetricSource[T]{
 		metric:           metric,
 		getBlockProperty: getBlockProperty,
-		registry:         reg,
+		monitor:          monitor,
 		series:           &monitoring.SyncedSeries[monitoring.BlockNumber, T]{},
 		lastBlock:        -1,
 	}
 
-	reg.RegisterLogListener(m)
+	monitor.NodeLogProvider().RegisterLogListener(m)
+	monitor.Writer().Add(func() error {
+		return export.AddNetworkBlockSeriesSource[T](monitor.Writer(), m, export.DirectConverter[T]{})
+	})
 
 	return m
 }
@@ -100,7 +104,7 @@ func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.Bl
 }
 
 func (s *BlockNetworkMetricSource[T]) Shutdown() error {
-	s.registry.UnregisterLogListener(s)
+	s.monitor.NodeLogProvider().UnregisterLogListener(s)
 	return nil
 }
 

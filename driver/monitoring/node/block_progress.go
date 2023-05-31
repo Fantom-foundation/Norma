@@ -3,6 +3,7 @@ package nodemon
 import (
 	"context"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"strconv"
 	"strings"
 	"time"
@@ -20,19 +21,19 @@ var NodeBlockHeight = mon.Metric[mon.Node, mon.TimeSeries[int]]{
 }
 
 func init() {
-	if err := mon.RegisterSource(NodeBlockHeight, mon.AdaptNetworkToMonitorFactory(NewNodeBlockHeightSource)); err != nil {
+	if err := mon.RegisterSource(NodeBlockHeight, NewNodeBlockHeightSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
 
 // NewNodeBlockHeightSource creates a new data source periodically collecting data on
 // the block height at various nodes over time.
-func NewNodeBlockHeightSource(network driver.Network) mon.Source[mon.Node, mon.TimeSeries[int]] {
-	return newNodeBlockHeightSource(network, time.Second)
+func NewNodeBlockHeightSource(monitor *mon.Monitor) mon.Source[mon.Node, mon.TimeSeries[int]] {
+	return newNodeBlockHeightSource(monitor, time.Second)
 }
 
-func newNodeBlockHeightSource(network driver.Network, period time.Duration) mon.Source[mon.Node, mon.TimeSeries[int]] {
-	return newPeriodicNodeDataSource[int](NodeBlockHeight, network, period, &blockProgressSensorFactory{})
+func newNodeBlockHeightSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Node, mon.TimeSeries[int]] {
+	return newPeriodicNodeDataSource[int](NodeBlockHeight, monitor, period, &blockProgressSensorFactory{}, export.DirectConverter[int]{})
 }
 
 type blockProgressSensorFactory struct{}
