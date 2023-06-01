@@ -92,6 +92,20 @@ func (mr *MockNodeMockRecorder) GetNodeID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeID", reflect.TypeOf((*MockNode)(nil).GetNodeID))
 }
 
+// GetWebsocketServiceUrl mocks base method.
+func (m *MockNode) GetWebsocketServiceUrl(service *network.ServiceDescription) *URL {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetWebsocketServiceUrl", service)
+	ret0, _ := ret[0].(*URL)
+	return ret0
+}
+
+// GetWebsocketServiceUrl indicates an expected call of GetWebsocketServiceUrl.
+func (mr *MockNodeMockRecorder) GetWebsocketServiceUrl(service interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebsocketServiceUrl", reflect.TypeOf((*MockNode)(nil).GetWebsocketServiceUrl), service)
+}
+
 // IsRunning mocks base method.
 func (m *MockNode) IsRunning() bool {
 	m.ctrl.T.Helper()
