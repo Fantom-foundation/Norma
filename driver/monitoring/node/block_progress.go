@@ -39,7 +39,7 @@ func newNodeBlockHeightSource(monitor *mon.Monitor, period time.Duration) mon.So
 type blockProgressSensorFactory struct{}
 
 func (f *blockProgressSensorFactory) CreateSensor(node driver.Node) (Sensor[int], error) {
-	url := node.GetHttpServiceUrl(&opera.OperaRpcService)
+	url := node.GetServiceUrl(&opera.OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not export an RPC server")
 	}

@@ -13,25 +13,22 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-const OperaRPCPort = 18545
-
 var OperaRpcService = network.ServiceDescription{
-	Name: "OperaRPC",
-	Port: OperaRPCPort,
+	Name:     "OperaRPC",
+	Port:     18545,
+	Protocol: "http",
 }
-
-const OperaWsPort = 18546
 
 var OperaWsService = network.ServiceDescription{
-	Name: "OperaWs",
-	Port: OperaWsPort,
+	Name:     "OperaWs",
+	Port:     18546,
+	Protocol: "ws",
 }
 
-const OperaPprofPort = 6060
-
 var OperaPprofService = network.ServiceDescription{
-	Name: "OperaPprof",
-	Port: OperaPprofPort,
+	Name:     "OperaPprof",
+	Port:     6060,
+	Protocol: "http",
 }
 
 const operaDockerImageName = "opera"
@@ -77,9 +74,9 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 		ImageName:       operaDockerImageName,
 		ShutdownTimeout: &shutdownTimeout,
 		PortForwarding: map[network.Port]network.Port{
-			OperaRPCPort:   ports[0],
-			OperaWsPort:    ports[1],
-			OperaPprofPort: ports[2],
+			OperaRpcService.Port:   ports[0],
+			OperaWsService.Port:    ports[1],
+			OperaPprofService.Port: ports[2],
 		},
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorId,
@@ -117,26 +114,17 @@ func (n *OperaNode) IsRunning() bool {
 	return n.host.IsRunning()
 }
 
-func (n *OperaNode) GetHttpServiceUrl(service *network.ServiceDescription) *driver.URL {
+func (n *OperaNode) GetServiceUrl(service *network.ServiceDescription) *driver.URL {
 	addr := n.host.GetAddressForService(service)
 	if addr == nil {
 		return nil
 	}
-	url := driver.URL(fmt.Sprintf("http://%s", *addr))
-	return &url
-}
-
-func (n *OperaNode) GetWebsocketServiceUrl(service *network.ServiceDescription) *driver.URL {
-	addr := n.host.GetAddressForService(service)
-	if addr == nil {
-		return nil
-	}
-	url := driver.URL(fmt.Sprintf("ws://%s", *addr))
+	url := driver.URL(fmt.Sprintf("%s://%s", service.Protocol, *addr))
 	return &url
 }
 
 func (n *OperaNode) GetNodeID() (driver.NodeID, error) {
-	url := n.GetHttpServiceUrl(&OperaRpcService)
+	url := n.GetServiceUrl(&OperaRpcService)
 	if url == nil {
 		return "", fmt.Errorf("node does not export an RPC server")
 	}
@@ -169,7 +157,7 @@ func (n *OperaNode) Cleanup() error {
 // AddPeer informs the client instance represented by the OperaNode about the
 // existence of another node, to which it may establish a connection.
 func (n *OperaNode) AddPeer(id driver.NodeID) error {
-	url := n.GetHttpServiceUrl(&OperaRpcService)
+	url := n.GetServiceUrl(&OperaRpcService)
 	if url == nil {
 		return fmt.Errorf("node does not export an RPC server")
 	}

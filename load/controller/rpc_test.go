@@ -25,7 +25,7 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcUrl := net.GetActiveNodes()[0].GetWebsocketServiceUrl(&node.OperaWsService)
+	rpcUrl := net.GetActiveNodes()[0].GetServiceUrl(&node.OperaWsService)
 	if rpcUrl == nil {
 		t.Fatal("websocket service is not available")
 	}

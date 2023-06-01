@@ -23,13 +23,9 @@ type Node interface {
 	// An error shall be produced if no valid node ID could be obtained.
 	GetNodeID() (NodeID, error)
 
-	// GetHttpServiceUrl returns the URL of a HTTP service running on the
+	// GetServiceUrl returns the URL of a service running on the
 	// represented node. May be nil if no such service is offered.
-	GetHttpServiceUrl(*network.ServiceDescription) *URL
-
-	// GetWebsocketServiceUrl returns the URL of a WebSocket service running on the
-	// represented node. May be nil if no such service is offered.
-	GetWebsocketServiceUrl(service *network.ServiceDescription) *URL
+	GetServiceUrl(*network.ServiceDescription) *URL
 
 	// StreamLog provides a reader that is continuously providing the host log.
 	// It is up to the caller to close the stream.
