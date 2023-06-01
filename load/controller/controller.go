@@ -19,7 +19,7 @@ type AppController struct {
 }
 
 func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) (*AppController, error) {
-	trigger := make(chan struct{})
+	trigger := make(chan struct{}, workers)
 
 	// initialize workers
 	for i := 0; i < workers; i++ {
