@@ -147,8 +147,10 @@ type CounterGenerator struct {
 
 func (g *CounterGenerator) SendTx() error {
 	_, err := g.counterContract.IncrementCounter(g.txOpts)
-	g.txOpts.Nonce.Add(g.txOpts.Nonce, big.NewInt(1))
-	atomic.AddUint64(g.sentTxs, 1)
+	if err == nil {
+		g.txOpts.Nonce.Add(g.txOpts.Nonce, big.NewInt(1))
+		atomic.AddUint64(g.sentTxs, 1)
+	}
 	return err
 }
 

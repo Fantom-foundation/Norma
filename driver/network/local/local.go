@@ -170,7 +170,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	rpcUrl := node.GetHttpServiceUrl(&opera.OperaRpcService)
+	rpcUrl := node.GetServiceUrl(&opera.OperaWsService)
 	if rpcUrl == nil {
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}

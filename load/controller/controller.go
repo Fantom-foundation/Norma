@@ -43,10 +43,14 @@ func NewAppController(generatorFactory generator.TransactionGeneratorFactory, sh
 
 func (ac *AppController) Run(ctx context.Context) error {
 	defer close(ac.trigger)
+	missed := 0
 	for {
 		select {
 		case <-ctx.Done():
 			// interrupt the loop if the context has been cancelled
+			if missed != 0 {
+				log.Printf("sending not fast enough for the required frequency: %d times\n", missed)
+			}
 			err := ctx.Err()
 			if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil // terminated gracefully
@@ -57,6 +61,7 @@ func (ac *AppController) Run(ctx context.Context) error {
 			select {
 			case ac.trigger <- struct{}{}:
 			default:
+				missed++
 				log.Print("sending not fast enough for the required frequency")
 			}
 

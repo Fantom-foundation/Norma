@@ -10,8 +10,9 @@ import (
 
 // ServiceDescription is
 type ServiceDescription struct {
-	Name string
-	Port Port
+	Name     string
+	Port     Port
+	Protocol string
 }
 
 // Port provides an alias type for a TCP port.
