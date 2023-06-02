@@ -24,12 +24,7 @@ func generateAddress() (common.Address, *ecdsa.PrivateKey, error) {
 
 // transferValue transfer a financial value from account identified by given privateKey, to given toAddress.
 // It returns when the value is already available on the target account.
-func transferValue(rpcClient *ethclient.Client, chainID *big.Int, privateKey *ecdsa.PrivateKey, toAddress common.Address, value *big.Int) error {
-	fromAddress := crypto.PubkeyToAddress(privateKey.PublicKey)
-	nonce, err := rpcClient.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		return err
-	}
+func transferValue(rpcClient *ethclient.Client, chainID *big.Int, privateKey *ecdsa.PrivateKey, toAddress common.Address, value *big.Int, nonce uint64) (err error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return err
@@ -45,11 +40,7 @@ func transferValue(rpcClient *ethclient.Client, chainID *big.Int, privateKey *ec
 	if err != nil {
 		return err
 	}
-	err = rpcClient.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		return err
-	}
-	return waitUntilAccountNonceIsAtLeast(fromAddress, nonce+1, rpcClient)
+	return rpcClient.SendTransaction(context.Background(), signedTx)
 }
 
 // waitUntilAccountNonceIsAtLeast allows to wait until a transaction is applied by checking the account nonce.
