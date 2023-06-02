@@ -197,6 +197,19 @@ func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	}
 }
 
+func TestApplication_NegativeAccountCounterIsNotAllowed(t *testing.T) {
+	scenario := Scenario{}
+	accounts := 5
+	app := Application{Name: "test", Accounts: &accounts, Rate: Rate{Constant: new(float32)}}
+	if err := app.Check(&scenario); err != nil {
+		t.Errorf("default instance value should be valid, but got error: %v", err)
+	}
+	*app.Accounts = -1
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of accounts") {
+		t.Errorf("negative account counter was not detected")
+	}
+}
+
 func TestApplication_DetectsTimingIssue(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{
