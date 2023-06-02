@@ -21,5 +21,6 @@ applications:
   - name: counter
     start: 10          # start time
     end: 50            # termination time
+    accounts: 20       # accounts generating txs
     rate:
       constant: 10     # Tx/s

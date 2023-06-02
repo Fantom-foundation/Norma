@@ -187,7 +187,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	appController, err := controller.NewAppController(generatorFactory, constantShaper, 10) // TODO: amount of workers configurable
+	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts)
 	if err != nil {
 		return nil, err
 	}

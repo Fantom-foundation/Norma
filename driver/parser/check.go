@@ -60,6 +60,10 @@ func (s *Application) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *s.Instances))
 	}
 
+	if s.Accounts != nil && *s.Accounts < 1 {
+		errs = append(errs, fmt.Errorf("number of accounts must be >= 1, is %d", *s.Accounts))
+	}
+
 	if err := checkTimeInterval(s.Start, s.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
 	}

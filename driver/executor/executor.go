@@ -189,6 +189,10 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	if source.Instances != nil {
 		instances = *source.Instances
 	}
+	accounts := 1
+	if source.Accounts != nil {
+		accounts = *source.Accounts
+	}
 	startTime := Time(0)
 	if source.Start != nil {
 		startTime = Seconds(*source.Start)
@@ -206,8 +210,9 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 		var instance = new(driver.Application)
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
 			newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-				Name: name,
-				Rate: rate,
+				Name:     name,
+				Rate:     rate,
+				Accounts: accounts,
 			})
 			if err != nil {
 				return err
