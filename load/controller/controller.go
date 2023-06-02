@@ -18,18 +18,18 @@ type AppController struct {
 	trigger chan struct{}
 }
 
-func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, workers int) (*AppController, error) {
+func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, accounts int) (*AppController, error) {
 	trigger := make(chan struct{})
 
-	// initialize workers
-	for i := 0; i < workers; i++ {
-		generator, err := generatorFactory.Create()
+	// initialize workers for individual accounts
+	for i := 0; i < accounts; i++ {
+		gen, err := generatorFactory.Create()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create load generator; %s", err)
 		}
 
 		worker := Worker{
-			generator: generator,
+			generator: gen,
 			trigger:   trigger,
 		}
 		go worker.Run()

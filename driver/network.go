@@ -64,6 +64,9 @@ type ApplicationConfig struct {
 	// Rate defines the Tx/s the source should produce while active.
 	Rate float32
 
+	// Accounts defines the amount of accounts sending transactions to the app.
+	Accounts int
+
 	// TODO: add other parameters as needed
 	//  - application type
 	//  - other traffic shapes
