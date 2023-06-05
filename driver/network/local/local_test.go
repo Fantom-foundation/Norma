@@ -70,6 +70,11 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 				if err != nil {
 					t.Errorf("failed to create app: %v", err)
 				}
+
+				if got, want := app.Config().Name, fmt.Sprintf("T-%d", i); got != want {
+					t.Errorf("app configurion not propagated: %v != %v", got, want)
+				}
+
 				defer app.Stop()
 				apps = append(apps, app)
 			}

@@ -7,6 +7,7 @@ package driver
 import (
 	reflect "reflect"
 
+	generator "github.com/Fantom-foundation/Norma/load/generator"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -31,6 +32,35 @@ func NewMockApplication(ctrl *gomock.Controller) *MockApplication {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
+}
+
+// Config mocks base method.
+func (m *MockApplication) Config() *ApplicationConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Config")
+	ret0, _ := ret[0].(*ApplicationConfig)
+	return ret0
+}
+
+// Config indicates an expected call of Config.
+func (mr *MockApplicationMockRecorder) Config() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockApplication)(nil).Config))
+}
+
+// GetTransactionCounts mocks base method.
+func (m *MockApplication) GetTransactionCounts() (generator.TransactionCounts, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransactionCounts")
+	ret0, _ := ret[0].(generator.TransactionCounts)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetTransactionCounts indicates an expected call of GetTransactionCounts.
+func (mr *MockApplicationMockRecorder) GetTransactionCounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionCounts", reflect.TypeOf((*MockApplication)(nil).GetTransactionCounts))
 }
 
 // Start mocks base method.

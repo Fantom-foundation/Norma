@@ -15,6 +15,9 @@ type Node driver.NodeID
 // as the subject of a metric.
 type Network struct{}
 
+// App is an identifier of an application deployed in the network
+type App string
+
 // Time is the time used in time series. The value represents UnixNanos.
 // Note, time.Time cannot be used since it doesn't satisfy constraints.Ordered.
 type Time uint64

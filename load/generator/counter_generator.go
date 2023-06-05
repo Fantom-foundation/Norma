@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,7 @@ import (
 // NewCounterGeneratorFactory provides a factory of tx generators incrementing one deployed Counter contract.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterGeneratorFactory(rpcUrl driver.URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*CounterGeneratorFactory, error) {
+func NewCounterGeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*CounterGeneratorFactory, error) {
 	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryPrivateKey, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
@@ -48,7 +47,7 @@ func NewCounterGeneratorFactory(rpcUrl driver.URL, primaryPrivateKey *ecdsa.Priv
 // A factory represents one deployed Counter contract, incremented by all its generators.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type CounterGeneratorFactory struct {
-	rpcUrl            driver.URL
+	rpcUrl            URL
 	primaryPrivateKey *ecdsa.PrivateKey
 	chainID           *big.Int
 	contractAddress   common.Address

@@ -1,0 +1,59 @@
+# This scenario simulates a small network
+# running the simple Counter application
+# with various number of workers (i.e. accounts sending transactions)
+# and rather high tx/s.
+# It tests how many transactions can pass through
+# application layers from the RPC endpoint to block processing
+# and how many transaction is Opera able to accept.
+
+# The name of the scenario
+name: Various Number of Workers
+
+# The duration of the scenario's runtime, in seconds.
+duration: 600
+
+# The number of validator nodes in the network.
+num_validators: 1
+
+# The network scenario to exercise. 
+nodes:
+  # We include three additional non-validator nodes for the full duration.
+  - name: A
+    instances: 0
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: counter
+    start: 0          # start time
+    end: 60            # termination time
+    accounts: 5       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s
+
+  - name: counter
+    start: 120          # start time
+    end: 180            # termination time
+    accounts: 10       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s
+
+  - name: counter
+    start: 240          # start time
+    end: 300            # termination time
+    accounts: 20       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s
+
+  - name: counter
+    start: 360          # start time
+    end: 420            # termination time
+    accounts: 50       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s
+
+  - name: counter
+    start: 480          # start time
+    end: 540            # termination time
+    accounts: 100       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s

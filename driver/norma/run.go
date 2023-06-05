@@ -13,6 +13,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	_ "github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
 	"github.com/Fantom-foundation/Norma/driver/network/local"

@@ -140,6 +140,7 @@ const fakeNetworkID = 0xfa3
 
 type localApplication struct {
 	controller *controller.AppController
+	config     *driver.ApplicationConfig
 	cancel     context.CancelFunc
 }
 
@@ -163,6 +164,14 @@ func (a *localApplication) Stop() error {
 	return nil
 }
 
+func (a *localApplication) GetTransactionCounts() (generator.TransactionCounts, bool) {
+	return a.controller.GetTransactionCounts()
+}
+
+func (a *localApplication) Config() *driver.ApplicationConfig {
+	return a.config
+}
+
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
 
 	node, err := n.getRandomValidator()
@@ -180,7 +189,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, err
 	}
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(*rpcUrl, privateKey, big.NewInt(fakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), privateKey, big.NewInt(fakeNetworkID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
 	}
@@ -194,6 +203,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 
 	app := &localApplication{
 		controller: appController,
+		config:     config,
 	}
 
 	n.appsMutex.Lock()

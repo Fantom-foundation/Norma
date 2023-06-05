@@ -2,6 +2,7 @@ package export_test
 
 import (
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
@@ -64,6 +65,10 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	_ = s8.Append(monitoring.NewTime(time1y), 11)
 	_ = s8.Append(monitoring.NewTime(time2y), 13)
 
+	s9 := &monitoring.SyncedSeries[int, int]{}
+	_ = s9.Append(100, 110)
+	_ = s9.Append(200, 213)
+
 	n1 := monitoring.Node("A")
 	n2 := monitoring.Node("B")
 
@@ -90,6 +95,10 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	source5.put(n1, s7)
 	source5.put(n2, s8)
 
+	// section 5
+	source6 := newSource[monitoring.App, int, int, monitoring.Series[int, int]](app.ReceivedTransactions)
+	source6.put("app-1", s9)
+
 	// add in the CSV
 	var builder strings.Builder
 	csv := monitoring.NewWriterChain(&stringBuilderCloser{&builder})
@@ -98,30 +107,33 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	_ = export.AddNetworkBlockSeriesSource[int](csv, source4, export.DirectConverter[int]{})
 	_ = export.AddNetworkTimeSeriesSource[int](csv, source3, export.DirectConverter[int]{})
 	_ = export.AddNodeTimeSeriesSource[int](csv, source5, export.DirectConverter[int]{})
+	_ = export.AddAppSeriesSource[int, int](csv, source6, export.DirectConverter[int]{}, export.DirectConverter[int]{})
 	_ = csv.Close()
 
 	expected :=
-		"BlockCompletionTime, network, A, , 1, 1683192855080000000\n" +
-			"BlockCompletionTime, network, A, , 2, 1683192855537000000\n" +
-			"BlockCompletionTime, network, A, , 3, 1683192856027000000\n" +
-			"BlockCompletionTime, network, B, , 1, 1683192856512000000\n" +
-			"BlockCompletionTime, network, B, , 2, 1683192857003000000\n" +
-			"BlockCompletionTime, network, B, , 3, 1683193095080000000\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 1, 10000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 2, 20000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 3, 30000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, B, , 1, 15000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, B, , 2, 25000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, B, , 3, 30000000000\n" +
-			"BlockNumberOfTransactions, network, , , 1, 17\n" +
-			"BlockNumberOfTransactions, network, , , 2, 21\n" +
-			"BlockNumberOfTransactions, network, , , 3, 35\n" +
-			"NumberOfNodes, network, , 1683192855080000000, , 110\n" +
-			"NumberOfNodes, network, , 1683192855537000000, , 120\n" +
-			"NodeBlockHeight, network, A, 1683192855080000000, , 11\n" +
-			"NodeBlockHeight, network, A, 1683192855537000000, , 12\n" +
-			"NodeBlockHeight, network, B, 1683192855080000000, , 11\n" +
-			"NodeBlockHeight, network, B, 1683192855537000000, , 13\n"
+		"BlockCompletionTime, network, A, , , 1, , 1683192855080000000\n" +
+			"BlockCompletionTime, network, A, , , 2, , 1683192855537000000\n" +
+			"BlockCompletionTime, network, A, , , 3, , 1683192856027000000\n" +
+			"BlockCompletionTime, network, B, , , 1, , 1683192856512000000\n" +
+			"BlockCompletionTime, network, B, , , 2, , 1683192857003000000\n" +
+			"BlockCompletionTime, network, B, , , 3, , 1683193095080000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, B, , , 1, , 15000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, B, , , 2, , 25000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, B, , , 3, , 30000000000\n" +
+			"BlockNumberOfTransactions, network, , , , 1, , 17\n" +
+			"BlockNumberOfTransactions, network, , , , 2, , 21\n" +
+			"BlockNumberOfTransactions, network, , , , 3, , 35\n" +
+			"NumberOfNodes, network, , , 1683192855080000000, , , 110\n" +
+			"NumberOfNodes, network, , , 1683192855537000000, , , 120\n" +
+			"NodeBlockHeight, network, A, , 1683192855080000000, , , 11\n" +
+			"NodeBlockHeight, network, A, , 1683192855537000000, , , 12\n" +
+			"NodeBlockHeight, network, B, , 1683192855080000000, , , 11\n" +
+			"NodeBlockHeight, network, B, , 1683192855537000000, , , 13\n" +
+			"ReceivedTransactions, network, , app-1, , , 100, 110\n" +
+			"ReceivedTransactions, network, , app-1, , , 200, 213\n"
 
 	if expected != builder.String() {
 		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, builder.String())
@@ -150,12 +162,12 @@ func TestRegisterSources(t *testing.T) {
 	_ = csv.Close()
 
 	expected :=
-		"BlockEventAndTxsProcessingTime, network, A, , 1, 10s\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 2, 20s\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 3, 30s\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 1, 10000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 2, 20000000000\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , 3, 30000000000\n"
+		"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10s\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20s\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30s\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30000000000\n"
 
 	if expected != builder.String() {
 		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, builder.String())
