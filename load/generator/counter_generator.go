@@ -8,6 +8,7 @@ import (
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"sync/atomic"
@@ -67,11 +68,9 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 		return nil, fmt.Errorf("failed to connect to RPC to create a tx generator; %v", err)
 	}
 
-	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.chainID, f.primaryPrivateKey, address, workerBudget)
+	err = f.primeGeneratorAccount(rpcClient, address)
 	if err != nil {
-		return nil, fmt.Errorf("failed to tranfer from primary account to generator account: %s", err)
+		return nil, fmt.Errorf("account priming failed; %v", err)
 	}
 
 	// get a representation of the deployed contract, bound to worker's rpcClient
@@ -109,6 +108,28 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 		sentTxs:         &f.sentTxs,
 	}
 	return gen, nil
+}
+
+func (f *CounterGeneratorFactory) primeGeneratorAccount(rpcClient *ethclient.Client, address common.Address) error {
+	primaryAddress := crypto.PubkeyToAddress(f.primaryPrivateKey.PublicKey)
+	primaryNonce, err := rpcClient.PendingNonceAt(context.Background(), primaryAddress)
+	if err != nil {
+		return fmt.Errorf("failed to get nonce of primary account: %s", err)
+	}
+
+	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
+	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
+	err = transferValue(rpcClient, f.chainID, f.primaryPrivateKey, address, workerBudget, primaryNonce)
+	if err != nil {
+		return fmt.Errorf("failed to tranfer from primary account to generator account: %v", err)
+	}
+
+	// wait until required updates are on the chain
+	err = waitUntilAccountNonceIsAtLeast(primaryAddress, primaryNonce+1, rpcClient)
+	if err != nil {
+		return fmt.Errorf("waiting for chain changes failed; %v", err)
+	}
+	return nil
 }
 
 // GetAmountOfSentTxs provides the amount of txs send from all generators of the factory

@@ -17,3 +17,13 @@ type TransactionGenerator interface {
 type TransactionGeneratorFactory interface {
 	Create() (TransactionGenerator, error)
 }
+
+type TransactionGeneratorFactoryWithStats interface {
+	TransactionGeneratorFactory
+
+	// GetAmountOfSentTxs provides the amount of txs send from all generators of the factory
+	GetAmountOfSentTxs() uint64
+
+	// GetAmountOfReceivedTxs provides the amount of relevant txs applied to the chain state
+	GetAmountOfReceivedTxs() (uint64, error)
+}
