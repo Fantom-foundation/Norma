@@ -50,7 +50,7 @@ type LocalNetwork struct {
 	listenerMutex sync.Mutex
 }
 
-func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
+func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, err
@@ -130,6 +130,25 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 		Label:         config.Name,
 		NetworkConfig: &n.config,
 	})
+}
+
+func (n *LocalNetwork) RemoveNode(node driver.Node) error {
+	n.nodesMutex.Lock()
+	id, err := node.GetNodeID()
+	if err != nil {
+		return fmt.Errorf("failed to get node id; %v", err)
+	}
+
+	delete(n.nodes, id)
+	for _, other := range n.nodes {
+		if err = other.RemovePeer(id); err != nil {
+			n.nodesMutex.Unlock()
+			return fmt.Errorf("failed to add peer; %v", err)
+		}
+	}
+	n.nodesMutex.Unlock()
+
+	return nil
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to
