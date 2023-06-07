@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	crand "crypto/rand"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,7 +17,7 @@ import (
 
 // NewERC20GeneratorFactory provides a factory of tx generators transferring ERC20 tokens.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20GeneratorFactory(rpcUrl driver.URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*ERC20GeneratorFactory, error) {
+func NewERC20GeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*ERC20GeneratorFactory, error) {
 	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryPrivateKey, chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
@@ -64,7 +63,7 @@ func generateRecipientsAddresses() ([]common.Address, error) {
 // ERC20GeneratorFactory is a factory of tx generators transferring tokens of one ERC20 contract.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type ERC20GeneratorFactory struct {
-	rpcUrl            driver.URL
+	rpcUrl            URL
 	primaryPrivateKey *ecdsa.PrivateKey
 	chainID           *big.Int
 	contractAddress   common.Address

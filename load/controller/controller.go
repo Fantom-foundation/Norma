@@ -14,8 +14,10 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	shaper  shaper.Shaper
-	trigger chan struct{}
+	shaper              shaper.Shaper
+	txsCounter          generator.TransactionCounts
+	txsCounterSupported bool
+	trigger             chan struct{}
 }
 
 func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, accounts int) (*AppController, error) {
@@ -35,9 +37,12 @@ func NewAppController(generatorFactory generator.TransactionGeneratorFactory, sh
 		go worker.Run()
 	}
 
+	txsCounter, ok := generatorFactory.(generator.TransactionGeneratorFactoryWithStats)
 	return &AppController{
-		shaper:  shaper,
-		trigger: trigger,
+		shaper:              shaper,
+		txsCounter:          txsCounter,
+		txsCounterSupported: ok,
+		trigger:             trigger,
 	}, nil
 }
 
@@ -62,11 +67,18 @@ func (ac *AppController) Run(ctx context.Context) error {
 			case ac.trigger <- struct{}{}:
 			default:
 				missed++
-				log.Print("sending not fast enough for the required frequency")
 			}
 
 			// wait for time determined by the shaper
 			time.Sleep(ac.shaper.GetNextWaitTime())
 		}
 	}
+}
+
+// GetTransactionCounts returns the object that provides the number of send and received transactions
+// of application managed by this application controller.
+// If this application controller is not capable of providing such an information, this method returns
+// false in its second return argument.
+func (ac *AppController) GetTransactionCounts() (generator.TransactionCounts, bool) {
+	return ac.txsCounter, ac.txsCounterSupported
 }

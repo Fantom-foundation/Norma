@@ -112,7 +112,7 @@ func TestTransactionsCsvExport(t *testing.T) {
 	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds+1, 0), Txs: 10})
 	_ = writer.Close()
 	content, _ := os.ReadFile(csvFile.Name())
-	if got, want := string(content), "TransactionsThroughput, network, A, , 11, 10\n"; got != want {
+	if got, want := string(content), "TransactionsThroughput, network, A, , , 11, , 10\n"; got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
 }

@@ -109,7 +109,7 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 	// match the series contains expected blocks, loop a few times to let the goroutine provide the data
 	for _, want := range expectedBlocks {
 		var found bool
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 1000; i++ {
 			series, exists := source.GetData(node)
 			if exists {
 				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {

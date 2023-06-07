@@ -35,7 +35,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(*rpcUrl, primaryPrivateKey, big.NewInt(FakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryPrivateKey, big.NewInt(FakeNetworkID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,4 +75,18 @@ func TestTrafficGenerating(t *testing.T) {
 	if countInChain < 20 || countInChain > 30 {
 		t.Errorf("unexpected amount of generated txs: %d", countInChain)
 	}
+
+	txsCounter, ok := app.GetTransactionCounts()
+	if !ok {
+		t.Errorf("cannot get txs counter")
+	}
+
+	if got, err := txsCounter.GetAmountOfReceivedTxs(); err != nil || got != countInChain {
+		t.Errorf("number of transactions do not match: %d != %d", got, countInChain)
+	}
+
+	if got := txsCounter.GetAmountOfSentTxs(); err != nil || got != countSent {
+		t.Errorf("number of transactions do not match: %d != %d", got, countSent)
+	}
+
 }
