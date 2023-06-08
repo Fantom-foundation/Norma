@@ -40,6 +40,8 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 	signal.Notify(abort, os.Interrupt)
 	defer signal.Stop(abort)
 
+	// restart clock as network initialization could time considerable amount of time.
+	clock.Restart()
 	// Run all events.
 	for !queue.empty() {
 		event := queue.getNext()
@@ -205,29 +207,22 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	if source.Rate.Constant != nil {
 		rate = *source.Rate.Constant
 	}
+
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
-		var instance = new(driver.Application)
-		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
-			newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-				Name:     name,
-				Rate:     rate,
-				Accounts: accounts,
-			})
-			if err != nil {
-				return err
-			}
-			if err := newApp.Start(); err != nil {
-				return err
-			}
-			*instance = newApp
-			return nil
-		}))
-		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping app %s", name), func() error {
-			if instance == nil {
-				return nil
-			}
-			return (*instance).Stop()
-		}))
+		if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
+			Name:     name,
+			Rate:     rate,
+			Accounts: accounts,
+		}); err == nil { // schedule application only when it could be created
+			queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
+				return newApp.Start()
+			}))
+			queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping app %s", name), func() error {
+				return newApp.Stop()
+			}))
+		} else {
+			log.Printf("cannot create application: %v", err)
+		}
 	}
 }
