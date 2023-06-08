@@ -37,6 +37,7 @@ type ContainerConfig struct {
 	ShutdownTimeout *time.Duration
 	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
 	Environment     map[string]string
+	Entrypoint      []string
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -75,9 +76,10 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}
 
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
-		Image: config.ImageName,
-		Tty:   false,
-		Env:   envVars,
+		Image:      config.ImageName,
+		Tty:        false,
+		Env:        envVars,
+		Entrypoint: config.Entrypoint,
 	}, &container.HostConfig{
 		PortBindings: portMapping,
 	}, nil, nil, "")
@@ -178,6 +180,57 @@ func (c *Container) StreamLog() (io.ReadCloser, error) {
 	}
 
 	return reader, nil
+}
+
+// SendSignal sends a signal to the container.
+func (c *Container) SendSignal(signal string) error {
+	return c.client.cli.ContainerKill(context.Background(), c.id, signal)
+}
+
+// Exec executes a command in the container.
+func (c *Container) Exec(cmd []string) (string, error) {
+	// Create a container exec instance
+	execConfig := types.ExecConfig{
+		Tty:          true,
+		Cmd:          cmd,
+		AttachStdout: true,
+		AttachStderr: true,
+	}
+	execResp, err := c.client.cli.ContainerExecCreate(context.Background(), c.id, execConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to create exec instance: %s", err)
+	}
+
+	// Check if any error occurred during exec creation
+	if execResp.ID == "" {
+		return "", fmt.Errorf("failed to create exec instance: Empty exec ID")
+	}
+
+	// Attach to the exec instance
+	resp, err := c.client.cli.ContainerExecAttach(context.Background(), execResp.ID, types.ExecStartCheck{})
+	if err != nil {
+		return "", fmt.Errorf("failed to attach to exec instance: %s", err)
+	}
+	defer resp.Close()
+
+	// Capture the output and errors
+	output, err := io.ReadAll(resp.Reader)
+	if err != nil {
+		return "", fmt.Errorf("failed to read exec output: %s", err)
+	}
+
+	// Wait for the exec command to finish
+	execInspect, err := c.client.cli.ContainerExecInspect(context.Background(), execResp.ID)
+	if err != nil {
+		return (string)(output), fmt.Errorf("failed to inspect exec instance: %s", err)
+	}
+
+	// Check the exit code of the executed command
+	if execInspect.ExitCode != 0 {
+		return (string)(output), fmt.Errorf("command execution failed with exit code %d", execInspect.ExitCode)
+	}
+
+	return (string)(output), nil
 }
 
 func (c *Client) listContainers() ([]types.Container, error) {
