@@ -34,6 +34,9 @@ jobs:
     - name: Fetch Docker test-image
       run: docker image pull hello-world
 
+    - name: Fetch Docker alpine-image
+      run: docker image pull alpine
+
       # Cache of docker layers
     - uses: satackey/action-docker-layer-caching@v0.0.11
       continue-on-error: true
