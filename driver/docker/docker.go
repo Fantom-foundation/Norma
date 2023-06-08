@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types/filters"
 	"io"
 	"os"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )

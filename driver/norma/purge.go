@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/docker"
 
+	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/urfave/cli/v2"
 )
 
