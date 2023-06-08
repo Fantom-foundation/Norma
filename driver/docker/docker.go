@@ -3,8 +3,10 @@ package docker
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/filters"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/network"
@@ -14,10 +16,25 @@ import (
 	"github.com/docker/go-connections/nat"
 )
 
+// projectLabel is the label used to identify objects created by norma.
+const objectsLabel = "norma"
+
+// networkMux synchronizes network creation.
+var networkMux sync.Mutex
+
 // Client provides means to spawn Docker containers capable of hosting
 // services like the go-opera client.
 type Client struct {
 	cli *client.Client
+}
+
+// Network represents a Docker network. It is used to connect Containers
+// to each other.
+type Network struct {
+	id      string
+	name    string
+	client  *Client
+	cleaned bool
 }
 
 // Container represents a Docker Container, typically used for running a
@@ -38,6 +55,7 @@ type ContainerConfig struct {
 	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
 	Environment     map[string]string
 	Entrypoint      []string
+	Network         *Network // Docker network to join, nil to join bridge network
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -49,6 +67,45 @@ func NewClient() (*Client, error) {
 		return nil, err
 	}
 	return &Client{cli}, nil
+}
+
+// Purge removes all Docker objects created by norma.
+func Purge() error {
+	cli, err := NewClient()
+	if err != nil {
+		return err
+	}
+
+	// get all containers created by norma
+	containers, err := cli.listContainers()
+	if err != nil {
+		return err
+	}
+
+	// remove all containers
+	for _, c := range containers {
+		// remove the container
+		err = cli.cli.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{Force: true})
+		if err != nil {
+			return err
+		}
+	}
+
+	// get all networks created by norma
+	networks, err := cli.listNetworks()
+	if err != nil {
+		return err
+	}
+
+	// remove all networks
+	for _, n := range networks {
+		err = cli.cli.NetworkRemove(context.Background(), n.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (c *Client) Close() error {
@@ -75,13 +132,22 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
+	var networkMode container.NetworkMode
+	if config.Network != nil {
+		networkMode = container.NetworkMode(config.Network.name)
+	}
+
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
 		Image:      config.ImageName,
 		Tty:        false,
 		Env:        envVars,
 		Entrypoint: config.Entrypoint,
+		Labels: map[string]string{
+			objectsLabel: "true",
+		},
 	}, &container.HostConfig{
 		PortBindings: portMapping,
+		NetworkMode:  networkMode,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
@@ -92,6 +158,54 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}
 
 	return &Container{resp.ID, c, config, false, false}, nil
+}
+
+// CreateNetwork creates a new Docker bridge network.
+func (c *Client) CreateNetwork() (*Network, error) {
+	// lock the network creation process, so we can create a unique network
+	networkMux.Lock()
+	defer networkMux.Unlock()
+
+	networks, err := c.listNetworks()
+	if err != nil {
+		return nil, err
+	}
+
+	// create a map of network names, so we can check if a network with the
+	// same name already exists
+	netMap := map[string]bool{}
+	for _, n := range networks {
+		netMap[n.Name] = true
+	}
+
+	// find a unique name for the network (start with a high number to avoid
+	// collisions with already existing networks)
+	ix := len(networks) + 1
+	var name string
+	for {
+		// create a unique name for the network
+		name = fmt.Sprintf("norma_network_%d", ix)
+		if netMap[name] == false {
+			break
+		}
+		ix++
+	}
+
+	// create new network
+	resp, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+		Labels: map[string]string{
+			objectsLabel: "true",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Network{
+		id:     resp.ID,
+		name:   name,
+		client: c,
+	}, nil
 }
 
 // IsRunning returns true if the Container has not been stopped yet and is
@@ -233,6 +347,46 @@ func (c *Container) Exec(cmd []string) (string, error) {
 	return (string)(output), nil
 }
 
+// Cleanup removes the network from the Docker host.
+func (n *Network) Cleanup() error {
+	if n.cleaned {
+		return nil
+	}
+	// remove all containers from the network, so we can remove the network
+	containers, err := n.client.listContainers()
+	if err != nil {
+		return err
+	}
+	for _, c := range containers {
+		for _, cn := range c.NetworkSettings.Networks {
+			if cn.NetworkID == n.id {
+				if err := n.client.cli.NetworkDisconnect(context.Background(), n.id, c.ID, true); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	n.cleaned = true
+	// remove the network
+	return n.client.cli.NetworkRemove(context.Background(), n.id)
+}
+
+// listNetworks returns a list of all networks on the Docker host filtered by label.
+func (c *Client) listNetworks() ([]types.NetworkResource, error) {
+	return c.cli.NetworkList(context.Background(), types.NetworkListOptions{
+		Filters: filters.NewArgs(getObjectsLabelFilter()),
+	})
+}
+
+// listContainers returns a list of all containers on the Docker host filtered by label.
 func (c *Client) listContainers() ([]types.Container, error) {
-	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{
+		All:     true,
+		Filters: filters.NewArgs(getObjectsLabelFilter()),
+	})
+}
+
+// getObjectsLabelFilter returns a filter for the objects label.
+func getObjectsLabelFilter() filters.KeyValuePair {
+	return filters.Arg("label", fmt.Sprintf("%s=true", objectsLabel))
 }

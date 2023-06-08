@@ -54,7 +54,7 @@ type OperaNodeConfig struct {
 var labelPattern = regexp.MustCompile("[A-Za-z0-9_-]+")
 
 // StartOperaDockerNode creates a new OperaNode running in a Docker container.
-func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*OperaNode, error) {
+func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *OperaNodeConfig) (*OperaNode, error) {
 	if !labelPattern.Match([]byte(config.Label)) {
 		return nil, fmt.Errorf("invalid label for node: '%v'", config.Label)
 	}
@@ -83,6 +83,7 @@ func StartOperaDockerNode(client *docker.Client, config *OperaNodeConfig) (*Oper
 			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 			"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 		},
+		Network: dn,
 	})
 	if err != nil {
 		return nil, err

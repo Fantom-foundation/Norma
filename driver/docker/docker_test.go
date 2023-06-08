@@ -199,7 +199,7 @@ func TestContainer_StreamManyReaders(t *testing.T) {
 }
 
 func TestContainer_Exec(t *testing.T) {
-	_, cont := startRunningContainer(t)
+	_, cont := startRunningContainer(t, nil)
 	testString := "Hello world!"
 	out, err := cont.Exec([]string{"sh", "-c", "echo " + testString})
 	if err != nil {
@@ -211,7 +211,7 @@ func TestContainer_Exec(t *testing.T) {
 }
 
 func TestContainer_SendSignal(t *testing.T) {
-	cli, cont := startRunningContainer(t)
+	cli, cont := startRunningContainer(t, nil)
 	if err := cont.SendSignal("SIGKILL"); err != nil {
 		t.Fatalf("error: %v", err)
 	}
@@ -225,6 +225,56 @@ func TestContainer_SendSignal(t *testing.T) {
 	}
 }
 
+func TestNetwork_Cleanup(t *testing.T) {
+	cli, net := createNetwork(t)
+
+	if err := net.Cleanup(); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	if networkExists(t, cli, net.id) {
+		t.Errorf("network should not exist: %s", net.id)
+	}
+}
+
+func TestNetwork_CleanupCanBeCalledMoreThanOnce(t *testing.T) {
+	cli, net := createNetwork(t)
+
+	if err := net.Cleanup(); err != nil {
+		t.Fatalf("error cleaning up network: %v", err)
+	}
+
+	if networkExists(t, cli, net.id) {
+		t.Fatalf("network should no longer exist: %s", net.id)
+	}
+
+	if err := net.Cleanup(); err != nil {
+		t.Fatalf("error calling Cleanup() on cleared network: %v", err)
+	}
+}
+
+func TestContainerCanJoinNetwork(t *testing.T) {
+	cli, net := createNetwork(t)
+	_, cont := startRunningContainer(t, net)
+
+	containers, err := cli.listContainers()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	for _, c := range containers {
+		if c.ID != cont.id {
+			continue
+		}
+		for _, cn := range c.NetworkSettings.Networks {
+			if cn.NetworkID == net.id {
+				return
+			}
+		}
+	}
+	t.Fatalf("container is not connected to network: %s", net.id)
+}
+
 func containerExists(t *testing.T, cli *Client, id string) bool {
 	// test the container exists
 	var exists bool
@@ -235,6 +285,24 @@ func containerExists(t *testing.T, cli *Client, id string) bool {
 
 	for _, c := range containers {
 		if c.ID == id {
+			exists = true
+			break
+		}
+	}
+
+	return exists
+}
+
+func networkExists(t *testing.T, cli *Client, id string) bool {
+	// test the network exists
+	var exists bool
+	networks, err := cli.listNetworks()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	for _, n := range networks {
+		if n.ID == id {
 			exists = true
 			break
 		}
@@ -266,7 +334,7 @@ func startContainer(t *testing.T) (*Client, *Container) {
 	return cli, cont
 }
 
-func startRunningContainer(t *testing.T) (*Client, *Container) {
+func startRunningContainer(t *testing.T, dn *Network) (*Client, *Container) {
 	cli, err := NewClient()
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -277,6 +345,7 @@ func startRunningContainer(t *testing.T) (*Client, *Container) {
 		ImageName:       "alpine",                            // use minimal linux image
 		Entrypoint:      []string{"tail", "-f", "/dev/null"}, // keep container running
 		ShutdownTimeout: &timeout,
+		Network:         dn,
 	})
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -288,4 +357,23 @@ func startRunningContainer(t *testing.T) (*Client, *Container) {
 	})
 
 	return cli, cont
+}
+
+func createNetwork(t *testing.T) (*Client, *Network) {
+	cli, err := NewClient()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	net, err := cli.CreateNetwork()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = net.Cleanup()
+		_ = cli.Close()
+	})
+
+	return cli, net
 }

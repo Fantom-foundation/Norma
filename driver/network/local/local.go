@@ -22,8 +22,9 @@ import (
 // LocalNetwork is a Docker based network running each individual node
 // within its own, dedicated Docker Container.
 type LocalNetwork struct {
-	docker *docker.Client
-	config driver.NetworkConfig
+	docker  *docker.Client
+	network *docker.Network
+	config  driver.NetworkConfig
 
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
@@ -56,9 +57,15 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 		return nil, err
 	}
 
+	dn, err := client.CreateNetwork()
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the empty network.
 	net := &LocalNetwork{
 		docker:    client,
+		network:   dn,
 		config:    *config,
 		nodes:     map[driver.NodeID]*node.OperaNode{},
 		apps:      []driver.Application{},
@@ -98,7 +105,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 // createNode is an internal version of CreateNode enabling the creation
 // of validator and non-validator nodes in the network.
 func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
-	node, err := node.StartOperaDockerNode(n.docker, nodeConfig)
+	node, err := node.StartOperaDockerNode(n.docker, n.network, nodeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start opera docker; %v", err)
 	}
@@ -273,6 +280,12 @@ func (n *LocalNetwork) Shutdown() error {
 		}
 	}
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
+
+	// Third, shut down the network.
+	err := n.network.Cleanup()
+	if err != nil {
+		errs = append(errs, err)
+	}
 
 	return errors.Join(errs...)
 }

@@ -19,6 +19,7 @@ func main() {
 		Commands: []*cli.Command{
 			&checkCommand,
 			&runCommand,
+			&purgeCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
