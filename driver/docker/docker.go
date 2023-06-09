@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/network"
@@ -227,7 +228,8 @@ func (c *Container) Exec(cmd []string) (string, error) {
 
 	// Check the exit code of the executed command
 	if execInspect.ExitCode != 0 {
-		return (string)(output), fmt.Errorf("command execution failed with exit code %d", execInspect.ExitCode)
+		return (string)(output), fmt.Errorf(
+			"command '%s' execution failed with exit code %d", strings.Join(cmd, " "), execInspect.ExitCode)
 	}
 
 	return (string)(output), nil
