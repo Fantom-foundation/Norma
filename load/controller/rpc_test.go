@@ -57,6 +57,14 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// add a RPC node, which have been added when chain already contained txs
+	_, err = net.CreateNode(&driver.NodeConfig{
+		Name: "RPC-Later-Added",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
@@ -89,4 +97,34 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Errorf("number of transactions do not match: %d != %d", got, countSent)
 	}
 
+	checkLatestBlockMatches(t, net.GetActiveNodes())
+}
+
+// checkLatestBlockMatches compares hashes of the latest block and the state root across given nodes
+func checkLatestBlockMatches(t *testing.T, nodes []driver.Node) {
+	var latestBlock *node.BlockDetail
+	var err error
+	for _, n := range nodes {
+		operaNode := n.(*node.OperaNode)
+		if latestBlock == nil {
+			latestBlock, err = operaNode.GetBlock("latest")
+			if err != nil {
+				t.Fatalf("failed to get block; %v", err)
+			}
+		} else {
+			block, err := operaNode.GetBlock(latestBlock.Number.String())
+			if err != nil {
+				t.Fatalf("failed to get block %s; %v", latestBlock.Number.ToInt().String(), err)
+			}
+			if block.Number.ToInt().Cmp(latestBlock.Number.ToInt()) != 0 {
+				t.Errorf("unexpected block hash on other node: %s != %s", block.Number, latestBlock.Number)
+			}
+			if block.Hash != latestBlock.Hash {
+				t.Errorf("unexpected block hash on other node: %s != %s", block.Hash, latestBlock.Hash)
+			}
+			if block.StateRoot != latestBlock.StateRoot {
+				t.Errorf("unexpected state root on other node: %s != %s", block.StateRoot, latestBlock.StateRoot)
+			}
+		}
+	}
 }

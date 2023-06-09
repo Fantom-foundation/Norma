@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"io"
 	"regexp"
 	"time"
@@ -166,4 +167,28 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 		return err
 	}
 	return rpcClient.Call(nil, "admin_addPeer", id)
+}
+
+type BlockDetail struct {
+	Number    *hexutil.Big
+	Hash      string
+	Epoch     hexutil.Uint64
+	StateRoot string
+}
+
+func (n *OperaNode) GetBlock(number string) (*BlockDetail, error) {
+	url := n.GetServiceUrl(&OperaRpcService)
+	if url == nil {
+		return nil, fmt.Errorf("node does not export an RPC server")
+	}
+	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+	if err != nil {
+		return nil, err
+	}
+	var blockDetail BlockDetail
+	err = rpcClient.Call(&blockDetail, "ftm_getBlockByNumber", number, false)
+	if err != nil {
+		return nil, err
+	}
+	return &blockDetail, nil
 }
