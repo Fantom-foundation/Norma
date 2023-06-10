@@ -57,7 +57,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 		return nil, err
 	}
 
-	dn, err := client.CreateNetwork()
+	dn, err := client.CreateBridgeNetwork()
 	if err != nil {
 		return nil, err
 	}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
-	"sync"
 	"strings"
 	"time"
 
@@ -19,9 +19,6 @@ import (
 
 // projectLabel is the label used to identify objects created by norma.
 const objectsLabel = "norma"
-
-// networkMux synchronizes network creation.
-var networkMux sync.Mutex
 
 // Client provides means to spawn Docker containers capable of hosting
 // services like the go-opera client.
@@ -161,36 +158,12 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	return &Container{resp.ID, c, config, false, false}, nil
 }
 
-// CreateNetwork creates a new Docker bridge network.
-func (c *Client) CreateNetwork() (*Network, error) {
-	// lock the network creation process, so we can create a unique network
-	networkMux.Lock()
-	defer networkMux.Unlock()
-
-	networks, err := c.listNetworks()
-	if err != nil {
-		return nil, err
-	}
-
-	// create a map of network names, so we can check if a network with the
-	// same name already exists
-	netMap := map[string]bool{}
-	for _, n := range networks {
-		netMap[n.Name] = true
-	}
-
-	// find a unique name for the network (start with a high number to avoid
-	// collisions with already existing networks)
-	ix := len(networks) + 1
-	var name string
-	for {
-		// create a unique name for the network
-		name = fmt.Sprintf("norma_network_%d", ix)
-		if netMap[name] == false {
-			break
-		}
-		ix++
-	}
+// CreateBridgeNetwork creates a new Docker bridge network.
+func (c *Client) CreateBridgeNetwork() (*Network, error) {
+	// generate random name for network
+	rs := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(rs)
+	name := fmt.Sprintf("norma_network_%d", r.Int())
 
 	// create new network
 	resp, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{

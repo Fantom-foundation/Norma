@@ -365,7 +365,7 @@ func createNetwork(t *testing.T) (*Client, *Network) {
 		t.Fatalf("error: %v", err)
 	}
 
-	net, err := cli.CreateNetwork()
+	net, err := cli.CreateBridgeNetwork()
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}

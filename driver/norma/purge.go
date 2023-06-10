@@ -12,7 +12,7 @@ import (
 var purgeCommand = cli.Command{
 	Action: purge,
 	Name:   "purge",
-	Usage:  "purges all resources taken by norma",
+	Usage:  "purges all resources created by norma",
 }
 
 func purge(_ *cli.Context) error {
