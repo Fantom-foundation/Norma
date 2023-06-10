@@ -2,6 +2,7 @@ package executor
 
 import (
 	"testing"
+	"time"
 )
 
 type namedClock struct {
@@ -76,6 +77,24 @@ func TestClock_NotifyAtSkipsTimeAccurately(t *testing.T) {
 			if offset > Milliseconds(1) {
 				t.Errorf("delay between weak-up time and clock time is to high: %v", offset)
 			}
+		})
+	}
+}
+
+func TestClock_Start(t *testing.T) {
+	for _, test := range getClocks() {
+		t.Run(test.name, func(t *testing.T) {
+			clock := test.clock
+			t1 := clock.Now()
+			// wait and reset - the time diff must be below or zero
+			time.Sleep(100 * time.Millisecond)
+			clock.Restart()
+			t2 := clock.Now()
+			diff := time.Duration(t2 - t1)
+			if diff > 0 {
+				t.Errorf("time has not reset")
+			}
+
 		})
 	}
 }

@@ -12,6 +12,9 @@ type Clock interface {
 	// of time as implemented by a given clock.
 	Now() Time
 
+	// Restart starts ticking of this clock, if the clock was already ticking, it is reset.
+	Restart()
+
 	// Suspends execution until the given time (+/- a few milliseconds).
 	SleepUntil(Time) error
 
@@ -59,6 +62,10 @@ func (c *SimClock) Now() Time {
 	return c.now
 }
 
+func (c *SimClock) Restart() {
+	c.now = 0
+}
+
 func (c *SimClock) SleepUntil(time Time) error {
 	if c.now < time {
 		c.now = time
@@ -87,6 +94,10 @@ func NewWallTimeClock() Clock {
 
 func (c *WallTimeClock) Now() Time {
 	return Time(time.Since(c.startTime))
+}
+
+func (c *WallTimeClock) Restart() {
+	c.startTime = time.Now()
 }
 
 func (c *WallTimeClock) SleepUntil(deadline Time) error {
