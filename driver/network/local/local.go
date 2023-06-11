@@ -11,6 +11,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/controller"
@@ -51,7 +52,7 @@ type LocalNetwork struct {
 	listenerMutex sync.Mutex
 }
 
-func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
+func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.PrometheusRunner) (driver.Network, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, err
@@ -88,6 +89,14 @@ func NewLocalNetwork(config *driver.NetworkConfig) (driver.Network, error) {
 		} else {
 			net.validators = append(net.validators, validator)
 		}
+	}
+
+	// Start PrometheusDocker monitoring. We keep the PrometheusDocker container running
+	// after the network is shut down to allow for manual inspection of the
+	// metrics.
+	_, err = pr.StartPrometheus(net, dn)
+	if err != nil {
+		errs = append(errs, err)
 	}
 
 	// If starting the validators failed, the network statup should fail.

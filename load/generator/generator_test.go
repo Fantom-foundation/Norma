@@ -1,14 +1,16 @@
 package generator_test
 
 import (
+	"math/big"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
-	"testing"
-	"time"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -16,7 +18,7 @@ const FakeNetworkID = 0xfa3
 
 func TestGenerators(t *testing.T) {
 	// run local network of one node
-	net, err := local.NewLocalNetwork(&driver.NetworkConfig{NumberOfValidators: 1})
+	net, err := local.NewLocalNetwork(&driver.NetworkConfig{NumberOfValidators: 1}, &prometheusmon.MockPrometheusRunner{})
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}

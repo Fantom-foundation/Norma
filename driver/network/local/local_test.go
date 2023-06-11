@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/golang/mock/gomock"
 )
 
@@ -18,7 +19,7 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 	for N := 1; N <= 3; N++ {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork(&config)
+			net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
@@ -56,7 +57,7 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 	for N := 1; N <= 3; N++ {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork(&config)
+			net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
@@ -98,7 +99,7 @@ func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
 	N := 2
 	config := driver.NetworkConfig{NumberOfValidators: 1}
 
-	net, err := NewLocalNetwork(&config)
+	net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
@@ -132,7 +133,7 @@ func TestLocalNetwork_CanRunWithMultipleValidators(t *testing.T) {
 		config := driver.NetworkConfig{NumberOfValidators: N}
 		t.Run(fmt.Sprintf("num_validators=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork(&config)
+			net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
@@ -162,7 +163,7 @@ func TestLocalNetwork_NotifiesListenersOnNodeStartup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	listener := driver.NewMockNetworkListener(ctrl)
 
-	net, err := NewLocalNetwork(&config)
+	net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
@@ -192,7 +193,7 @@ func TestLocalNetwork_NotifiesListenersOnAppStartup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	listener := driver.NewMockNetworkListener(ctrl)
 
-	net, err := NewLocalNetwork(&config)
+	net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}

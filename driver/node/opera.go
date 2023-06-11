@@ -111,6 +111,14 @@ func (n *OperaNode) GetLabel() string {
 	return n.label
 }
 
+func (n *OperaNode) Hostname() string {
+	return n.host.Hostname()
+}
+
+func (n *OperaNode) MetricsPort() int {
+	return 6060
+}
+
 func (n *OperaNode) IsRunning() bool {
 	return n.host.IsRunning()
 }

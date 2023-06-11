@@ -130,11 +130,6 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
-	var networkMode container.NetworkMode
-	if config.Network != nil {
-		networkMode = container.NetworkMode(config.Network.name)
-	}
-
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
 		Image:      config.ImageName,
 		Tty:        false,
@@ -145,10 +140,20 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		},
 	}, &container.HostConfig{
 		PortBindings: portMapping,
-		NetworkMode:  networkMode,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
+	}
+
+	// connect to custom network if specified
+	// this way the container will be connected to bridge network and
+	// custom network at the same time (otherwise on network cleanup the
+	// forwarded ports would be lost)
+	if config.Network != nil {
+		err = c.cli.NetworkConnect(context.Background(), config.Network.id, resp.ID, nil)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{}); err != nil {
@@ -180,6 +185,13 @@ func (c *Client) CreateBridgeNetwork() (*Network, error) {
 		name:   name,
 		client: c,
 	}, nil
+}
+
+// Hostname returns the hostname of the Host. In this case it is the ID of the
+// Docker Container.
+func (c *Container) Hostname() string {
+	// return the truncated container ID
+	return c.id[:12]
 }
 
 // IsRunning returns true if the Container has not been stopped yet and is
@@ -335,7 +347,7 @@ func (n *Network) Cleanup() error {
 	for _, c := range containers {
 		for _, cn := range c.NetworkSettings.Networks {
 			if cn.NetworkID == n.id {
-				if err := n.client.cli.NetworkDisconnect(context.Background(), n.id, c.ID, true); err != nil {
+				if err := n.client.cli.NetworkDisconnect(context.Background(), n.id, c.ID, false); err != nil {
 					return err
 				}
 			}

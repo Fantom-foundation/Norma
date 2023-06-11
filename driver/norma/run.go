@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"golang.org/x/exp/constraints"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -78,7 +79,7 @@ func run(ctx *cli.Context) (err error) {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
 	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
-	net, err := local.NewLocalNetwork(&netConfig)
+	net, err := local.NewLocalNetwork(&netConfig, &prometheusmon.PrometheusDockerRunner{})
 	if err != nil {
 		return err
 	}

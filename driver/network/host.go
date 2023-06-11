@@ -12,6 +12,9 @@ type AddressPort string
 // or a Docker container hosting services. Hosts may be implicitly created by a
 // Networks's CreateNode function.
 type Host interface {
+	// Hostname returns the hostname of the host.
+	Hostname() string
+
 	// IsRunning tests whether this host is running or has been stopped.
 	IsRunning() bool
 
