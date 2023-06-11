@@ -347,7 +347,7 @@ func (n *Network) Cleanup() error {
 	for _, c := range containers {
 		for _, cn := range c.NetworkSettings.Networks {
 			if cn.NetworkID == n.id {
-				if err := n.client.cli.NetworkDisconnect(context.Background(), n.id, c.ID, false); err != nil {
+				if err := n.client.cli.NetworkDisconnect(context.Background(), n.id, c.ID, true); err != nil {
 					return err
 				}
 			}
