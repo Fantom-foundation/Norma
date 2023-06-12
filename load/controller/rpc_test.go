@@ -57,7 +57,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// add a RPC node, which have been added when chain already contained txs
+	// add an RPC node, which has been added when chain already contained txs
 	_, err = net.CreateNode(&driver.NodeConfig{
 		Name: "RPC-Later-Added",
 	})
@@ -102,7 +102,7 @@ func TestTrafficGenerating(t *testing.T) {
 
 // checkLatestBlockMatches compares hashes of the latest block and the state root across given nodes
 func checkLatestBlockMatches(t *testing.T, nodes []driver.Node) {
-	var latestBlock *node.BlockDetail
+	var latestBlock *node.BlockHeader
 	var err error
 	for _, n := range nodes {
 		operaNode := n.(*node.OperaNode)

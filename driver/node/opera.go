@@ -169,14 +169,14 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 	return rpcClient.Call(nil, "admin_addPeer", id)
 }
 
-type BlockDetail struct {
+type BlockHeader struct {
 	Number    *hexutil.Big
 	Hash      string
 	Epoch     hexutil.Uint64
 	StateRoot string
 }
 
-func (n *OperaNode) GetBlock(number string) (*BlockDetail, error) {
+func (n *OperaNode) GetBlock(number string) (*BlockHeader, error) {
 	url := n.GetServiceUrl(&OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not export an RPC server")
@@ -185,7 +185,7 @@ func (n *OperaNode) GetBlock(number string) (*BlockDetail, error) {
 	if err != nil {
 		return nil, err
 	}
-	var blockDetail BlockDetail
+	var blockDetail BlockHeader
 	err = rpcClient.Call(&blockDetail, "ftm_getBlockByNumber", number, false)
 	if err != nil {
 		return nil, err
