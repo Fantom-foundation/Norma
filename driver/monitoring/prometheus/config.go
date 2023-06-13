@@ -1,6 +1,6 @@
 package prometheusmon
 
-// promCfg is the default PrometheusDocker configuration.
+// promCfg is the default PrometheusDockerNode configuration.
 const promCfg = `
 global:
   scrape_interval: 5s
@@ -13,7 +13,7 @@ scrape_configs:
          - "/etc/prometheus/opera-*.json"
 `
 
-// promTargetCfgTmpl is the PrometheusDocker target configuration template.
+// promTargetCfgTmpl is the PrometheusDockerNode target configuration template.
 const promTargetCfgTmpl = `
 [
   {

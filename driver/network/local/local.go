@@ -50,9 +50,12 @@ type LocalNetwork struct {
 
 	// listenerMutex is synching access to listeners
 	listenerMutex sync.Mutex
+
+	// prometheus is the Prometheus monitoring service.
+	prometheus prometheusmon.PrometheusNode
 }
 
-func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.PrometheusRunner) (driver.Network, error) {
+func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.Prometheus) (driver.Network, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, err
@@ -91,13 +94,14 @@ func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.PrometheusRu
 		}
 	}
 
-	// Start PrometheusDocker monitoring. We keep the PrometheusDocker container running
+	// Start PrometheusDockerNode monitoring. We keep the PrometheusDockerNode container running
 	// after the network is shut down to allow for manual inspection of the
 	// metrics.
-	_, err = pr.Start(net, dn)
+	prom, err := pr.Start(net, dn)
 	if err != nil {
 		errs = append(errs, err)
 	}
+	net.prometheus = prom
 
 	// If starting the validators failed, the network statup should fail.
 	if len(errs) > 0 {
@@ -290,7 +294,14 @@ func (n *LocalNetwork) Shutdown() error {
 	}
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
-	// Third, shut down the network.
+	// Third, shut down the prometheus node.
+	if !n.config.KeepPrometheusRunning {
+		if err := n.prometheus.Shutdown(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	// Fourth, shut down the docker network.
 	err := n.network.Cleanup()
 	if err != nil {
 		errs = append(errs, err)

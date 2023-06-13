@@ -39,6 +39,9 @@ type NetworkConfig struct {
 	NumberOfValidators int
 	// The name of the StateDB implementation to be used by network nodes.
 	StateDbImplementation string
+	// KeepPrometheusRunning keeps the Prometheus instance running after the
+	// network has been shut down.
+	KeepPrometheusRunning bool
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there

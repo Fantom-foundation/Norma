@@ -30,6 +30,7 @@ var runCommand = cli.Command{
 	Usage:  "runs a scenario",
 	Flags: []cli.Flag{
 		&DbImpl,
+		&keepPrometheusRunning,
 	},
 }
 
@@ -38,6 +39,11 @@ var (
 		Name:  "db-impl",
 		Usage: "select the DB implementation to use (geth or carmen)",
 		Value: "carmen",
+	}
+	keepPrometheusRunning = cli.BoolFlag{
+		Name:    "keep-prometheus-running",
+		Usage:   "if set, the Prometheus instance will not be shut down after the run is complete.",
+		Aliases: []string{"kpr"},
 	}
 )
 
@@ -74,12 +80,13 @@ func run(ctx *cli.Context) (err error) {
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators:    1,
 		StateDbImplementation: db,
+		KeepPrometheusRunning: ctx.Bool(keepPrometheusRunning.Name),
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
 	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
-	net, err := local.NewLocalNetwork(&netConfig, &prometheusmon.PrometheusDockerRunner{})
+	net, err := local.NewLocalNetwork(&netConfig, &prometheusmon.PrometheusDocker{})
 	if err != nil {
 		return err
 	}
