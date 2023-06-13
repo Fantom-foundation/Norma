@@ -97,8 +97,11 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 	}
 	// adjust txOpts for the runtime to avoid slow loading of gasPrice/nonce from RPC for each tx
 	txOpts.Nonce = big.NewInt(int64(nonce))
-	txOpts.GasLimit = 50000    // IncrementCounter method call takes 43426 of gas
-	txOpts.GasPrice = gasPrice // use static gasPrice
+	txOpts.GasLimit = 50000 // IncrementCounter method call takes 43426 of gas
+	// use static gasPrice - multiply recommended gas price by two to have some levy
+	// for the cases the min gas price is increased by the network,
+	// and we do not have to query the gas price before every transaction.
+	txOpts.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(int64(2)))
 
 	gen := &CounterGenerator{
 		rpcClient:       rpcClient,
