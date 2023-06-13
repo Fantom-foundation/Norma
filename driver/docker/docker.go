@@ -198,7 +198,7 @@ func (c *Container) SendSignal(signal Signal) error {
 // Exec executes a command in the container.
 // This method is blocking until the command has finished.
 // The output of the command is returned as a string (stdout + stderr).
-// The command is tokenized and interpreted in shell's exec form.
+// The command is required to be tokenized and interpreted in shell's exec form.
 func (c *Container) Exec(cmd []string) (string, error) {
 	// Create a container exec instance
 	execConfig := types.ExecConfig{
