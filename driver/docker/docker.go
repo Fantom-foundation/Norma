@@ -123,7 +123,6 @@ func (c *Client) Close() error {
 // services reachable from outside the Docker container (e.g. by the
 // application running this code).
 func (c *Client) Start(config *ContainerConfig) (*Container, error) {
-
 	envVars := []string{}
 	for key, value := range config.Environment {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
@@ -168,7 +167,8 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 // CreateBridgeNetwork creates a new Docker bridge network.
 func (c *Client) CreateBridgeNetwork() (*Network, error) {
 	// generate random name for network
-	rs := rand.NewSource(time.Now().UnixNano())
+	// use fixed seed to make sure we get the same name every time
+	rs := rand.NewSource(42)
 	r := rand.New(rs)
 	name := fmt.Sprintf("norma_network_%d", r.Int())
 
@@ -365,10 +365,7 @@ func (c *Client) listNetworks() ([]types.NetworkResource, error) {
 
 // listContainers returns a list of all containers on the Docker host filtered by label.
 func (c *Client) listContainers() ([]types.Container, error) {
-	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{
-		All:     true,
-		Filters: filters.NewArgs(getObjectsLabelFilter()),
-	})
+	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 }
 
 // getObjectsLabelFilter returns a filter for the objects label.
