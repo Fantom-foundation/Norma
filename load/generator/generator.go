@@ -10,6 +10,7 @@ import (
 type URL string
 
 // TransactionGenerator produces a stream of transactions to generate traffic on the chain.
+// Generators are not thread-safe.
 type TransactionGenerator interface {
 	// SendTx generates a new tx and send it to the RPC
 	SendTx() error
@@ -18,7 +19,12 @@ type TransactionGenerator interface {
 }
 
 type TransactionGeneratorFactory interface {
+	// Create and return a new generator instance
 	Create() (TransactionGenerator, error)
+
+	// WaitForInit blocks until generators initialization is finished in the latest block of the chain
+	// Should be called after a batch of Create calls, before the generators will start to be used.
+	WaitForInit() error
 }
 
 type TransactionGeneratorFactoryWithStats interface {

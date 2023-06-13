@@ -18,6 +18,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 
 	mockedGeneratorFactory := generator.NewMockTransactionGeneratorFactory(mockCtrl)
 	mockedGeneratorFactory.EXPECT().Create().Return(mockedGenerator, nil).Times(workers)
+	mockedGeneratorFactory.EXPECT().WaitForInit().Return(nil)
 
 	// generator should be called 10-times to send 10 txs
 	mockedGenerator.EXPECT().SendTx().Return(nil).MinTimes(5).MaxTimes(11)

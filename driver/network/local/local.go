@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/big"
 	"math/rand"
 	"sync"
 
@@ -16,15 +15,15 @@ import (
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // LocalNetwork is a Docker based network running each individual node
 // within its own, dedicated Docker Container.
 type LocalNetwork struct {
-	docker  *docker.Client
-	network *docker.Network
-	config  driver.NetworkConfig
+	docker         *docker.Client
+	network        *docker.Network
+	config         driver.NetworkConfig
+	primaryAccount *generator.Account
 
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
@@ -62,14 +61,21 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 		return nil, err
 	}
 
+	// Create chain account, which will be used for the initialization
+	primaryAccount, err := generator.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the empty network.
 	net := &LocalNetwork{
-		docker:    client,
-		network:   dn,
-		config:    *config,
-		nodes:     map[driver.NodeID]*node.OperaNode{},
-		apps:      []driver.Application{},
-		listeners: map[driver.NetworkListener]bool{},
+		docker:         client,
+		network:        dn,
+		config:         *config,
+		primaryAccount: primaryAccount,
+		nodes:          map[driver.NodeID]*node.OperaNode{},
+		apps:           []driver.Application{},
+		listeners:      map[driver.NetworkListener]bool{},
 	}
 
 	// Start all validators.
@@ -210,12 +216,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
-	privateKey, err := crypto.HexToECDSA(treasureAccountPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-
-	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), privateKey, big.NewInt(fakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), n.primaryAccount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
 	}

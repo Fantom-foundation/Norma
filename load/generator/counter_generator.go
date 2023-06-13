@@ -2,12 +2,10 @@ package generator
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"sync/atomic"
@@ -16,30 +14,35 @@ import (
 // NewCounterGeneratorFactory provides a factory of tx generators incrementing one deployed Counter contract.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterGeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*CounterGeneratorFactory, error) {
-	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryPrivateKey, chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
-	}
+func NewCounterGeneratorFactory(rpcUrl URL, primaryAccount *Account) (*CounterGeneratorFactory, error) {
 	rpcClient, err := ethclient.Dial(string(rpcUrl))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the Counter; %v", err)
 	}
 	defer rpcClient.Close()
+
+	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
+	}
+	nonce, err := primaryAccount.getNextNonce(rpcClient)
+	if err != nil {
+		return nil, err
+	}
+	txOpts.Nonce = big.NewInt(int64(nonce))
+
 	// Deploy the Counter contract to be used by generators created using the factory
 	contractAddress, _, _, err := abi.DeployCounter(txOpts, rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy Counter contract; %v", err)
 	}
-	err = waitUntilContractStartExisting(contractAddress, rpcClient)
-	if err != nil {
+	if err = primaryAccount.WaitUntilAllTxsApplied(rpcClient); err != nil {
 		return nil, err
 	}
 	return &CounterGeneratorFactory{
-		rpcUrl:            rpcUrl,
-		primaryPrivateKey: primaryPrivateKey,
-		chainID:           chainID,
-		contractAddress:   contractAddress,
+		rpcUrl:          rpcUrl,
+		primaryAccount:  primaryAccount,
+		contractAddress: contractAddress,
 	}, nil
 }
 
@@ -47,11 +50,10 @@ func NewCounterGeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey,
 // A factory represents one deployed Counter contract, incremented by all its generators.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type CounterGeneratorFactory struct {
-	rpcUrl            URL
-	primaryPrivateKey *ecdsa.PrivateKey
-	chainID           *big.Int
-	contractAddress   common.Address
-	sentTxs           uint64
+	rpcUrl          URL
+	primaryAccount  *Account
+	contractAddress common.Address
+	sentTxs         uint64
 }
 
 // Create a new generator to be used by one worker thread.
@@ -91,7 +93,7 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 	}
 
 	// prepare options to generate transactions with
-	txOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, f.chainID)
+	txOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, f.primaryAccount.chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
@@ -113,23 +115,11 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 }
 
 func (f *CounterGeneratorFactory) primeGeneratorAccount(rpcClient *ethclient.Client, address common.Address) error {
-	primaryAddress := crypto.PubkeyToAddress(f.primaryPrivateKey.PublicKey)
-	primaryNonce, err := rpcClient.PendingNonceAt(context.Background(), primaryAddress)
-	if err != nil {
-		return fmt.Errorf("failed to get nonce of primary account: %s", err)
-	}
-
 	// transfer budget (1000 FTM) to worker's account - finances to cover transaction fees
 	workerBudget := big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.chainID, f.primaryPrivateKey, address, workerBudget, primaryNonce)
+	err := transferValue(rpcClient, f.primaryAccount, address, workerBudget)
 	if err != nil {
 		return fmt.Errorf("failed to tranfer from primary account to generator account: %v", err)
-	}
-
-	// wait until required updates are on the chain
-	err = waitUntilAccountNonceIsAtLeast(primaryAddress, primaryNonce+1, rpcClient)
-	if err != nil {
-		return fmt.Errorf("waiting for chain changes failed; %v", err)
 	}
 	return nil
 }
@@ -157,6 +147,16 @@ func (f *CounterGeneratorFactory) GetAmountOfReceivedTxs() (uint64, error) {
 		return 0, err
 	}
 	return count.Uint64(), nil
+}
+
+// WaitForInit blocks until the initialization is finished in the latest block of the chain
+func (f *CounterGeneratorFactory) WaitForInit() error {
+	rpcClient, err := ethclient.Dial(string(f.rpcUrl))
+	if err != nil {
+		return fmt.Errorf("failed to connect to RPC to wait until generator is initialized; %v", err)
+	}
+	defer rpcClient.Close()
+	return f.primaryAccount.WaitUntilAllTxsApplied(rpcClient)
 }
 
 // CounterGenerator is a txs generator incrementing trivial Counter contract.

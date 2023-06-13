@@ -81,7 +81,7 @@ func testNodeSubjects[T any](t *testing.T, expected []monitoring.Node, source *B
 	for _, want := range expected {
 		var found bool
 		// query the data for some time due to async goroutine
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 1000; i++ {
 			for _, got := range source.GetSubjects() {
 				if got == want {
 					found = true
