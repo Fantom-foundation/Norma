@@ -295,16 +295,18 @@ func (n *LocalNetwork) Shutdown() error {
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
 	// Third, shut down the prometheus node.
-	if !n.config.KeepPrometheusRunning {
+	if !n.config.KeepPrometheusRunning && n.prometheus != nil {
 		if err := n.prometheus.Shutdown(); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
 	// Fourth, shut down the docker network.
-	err := n.network.Cleanup()
-	if err != nil {
-		errs = append(errs, err)
+	if n.network != nil {
+		err := n.network.Cleanup()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	return errors.Join(errs...)

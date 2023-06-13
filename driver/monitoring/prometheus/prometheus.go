@@ -100,7 +100,7 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 				continue
 			}
 
-			log.Printf("started PrometheusDockerNode on %s", url)
+			log.Printf("started Prometheus on %s", url)
 
 			// listen for new Nodes
 			net.RegisterListener(prometheus)
