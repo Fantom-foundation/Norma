@@ -212,7 +212,7 @@ func TestContainer_Exec(t *testing.T) {
 
 func TestContainer_SendSignal(t *testing.T) {
 	cli, cont := startRunningContainer(t, nil)
-	if err := cont.SendSignal("SIGKILL"); err != nil {
+	if err := cont.SendSignal(SigKill); err != nil {
 		t.Fatalf("error: %v", err)
 	}
 	// check the container is stopped

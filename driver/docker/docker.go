@@ -20,6 +20,13 @@ import (
 // projectLabel is the label used to identify objects created by norma.
 const objectsLabel = "norma"
 
+// Signal represents a signal that can be sent to a Docker container.
+type Signal string
+
+// SigHup is the SIGHUP signal.
+var SigHup Signal = "SIGHUP"
+var SigKill Signal = "SIGKILL"
+
 // Client provides means to spawn Docker containers capable of hosting
 // services like the go-opera client.
 type Client struct {
@@ -52,7 +59,7 @@ type ContainerConfig struct {
 	ShutdownTimeout *time.Duration
 	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
 	Environment     map[string]string
-	Entrypoint      []string
+	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
 	Network         *Network // Docker network to join, nil to join bridge network
 }
 
@@ -116,7 +123,6 @@ func (c *Client) Close() error {
 // services reachable from outside the Docker container (e.g. by the
 // application running this code).
 func (c *Client) Start(config *ContainerConfig) (*Container, error) {
-
 	envVars := []string{}
 	for key, value := range config.Environment {
 		envVars = append(envVars, fmt.Sprintf("%s=%s", key, value))
@@ -166,9 +172,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 // CreateBridgeNetwork creates a new Docker bridge network.
 func (c *Client) CreateBridgeNetwork() (*Network, error) {
 	// generate random name for network
-	rs := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(rs)
-	name := fmt.Sprintf("norma_network_%d", r.Int())
+	name := fmt.Sprintf("norma_network_%d", rand.Int())
 
 	// create new network
 	resp, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
@@ -283,11 +287,14 @@ func (c *Container) StreamLog() (io.ReadCloser, error) {
 }
 
 // SendSignal sends a signal to the container.
-func (c *Container) SendSignal(signal string) error {
-	return c.client.cli.ContainerKill(context.Background(), c.id, signal)
+func (c *Container) SendSignal(signal Signal) error {
+	return c.client.cli.ContainerKill(context.Background(), c.id, string(signal))
 }
 
 // Exec executes a command in the container.
+// This method is blocking until the command has finished.
+// The output of the command is returned as a string (stdout + stderr).
+// The command is tokenized and interpreted in shell's exec form.
 func (c *Container) Exec(cmd []string) (string, error) {
 	// Create a container exec instance
 	execConfig := types.ExecConfig{
@@ -367,10 +374,7 @@ func (c *Client) listNetworks() ([]types.NetworkResource, error) {
 
 // listContainers returns a list of all containers on the Docker host filtered by label.
 func (c *Client) listContainers() ([]types.Container, error) {
-	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{
-		All:     true,
-		Filters: filters.NewArgs(getObjectsLabelFilter()),
-	})
+	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 }
 
 // getObjectsLabelFilter returns a filter for the objects label.
