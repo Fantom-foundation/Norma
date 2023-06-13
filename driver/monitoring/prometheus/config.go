@@ -1,5 +1,12 @@
 package prometheusmon
 
+import (
+	"bytes"
+	"text/template"
+
+	"github.com/Fantom-foundation/Norma/driver"
+)
+
 // promCfg is the default PrometheusDockerNode configuration.
 const promCfg = `
 global:
@@ -17,11 +24,37 @@ scrape_configs:
 const promTargetCfgTmpl = `
 [
   {
-    "targets": ["%s:%d"],
+    "targets": ["{{.Host}}:{{.Port}}"],
     "labels": {
       "job": "opera",
-      "label": "%s"
+      "label": "{{.Label}}"
     }
   }
 ]
 `
+
+// promTargetConfig is the PrometheusDockerNode target configuration.
+type promTargetConfig struct {
+	Host  string
+	Port  int
+	Label string
+}
+
+// renderConfigForNode renders the PrometheusDockerNode configuration for a node.
+func renderConfigForNode(node driver.Node) (string, error) {
+	cfg := promTargetConfig{
+		Host:  node.Hostname(),
+		Port:  node.MetricsPort(),
+		Label: node.GetLabel(),
+	}
+	tmpl, err := template.New("promTargetCfg").Parse(promTargetCfgTmpl)
+	if err != nil {
+		return "", err
+	}
+	var configBuffer bytes.Buffer
+	err = tmpl.Execute(&configBuffer, cfg)
+	if err != nil {
+		return "", err
+	}
+	return configBuffer.String(), nil
+}

@@ -122,8 +122,11 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 
 // AddNode adds a new target to the PrometheusDockerNode configuration to be observed.
 func (p *PrometheusDockerNode) AddNode(node driver.Node) error {
-	cfg := fmt.Sprintf("%s", fmt.Sprintf(promTargetCfgTmpl, node.Hostname(), node.MetricsPort(), node.GetLabel()))
-	_, err := p.container.Exec(
+	cfg, err := renderConfigForNode(node)
+	if err != nil {
+		return err
+	}
+	_, err = p.container.Exec(
 		[]string{"sh", "-c", fmt.Sprintf("echo '%s' > /etc/prometheus/opera-%s.json", cfg, node.Hostname())})
 	if err != nil {
 		return err

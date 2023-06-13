@@ -303,8 +303,7 @@ func (n *LocalNetwork) Shutdown() error {
 
 	// Fourth, shut down the docker network.
 	if n.network != nil {
-		err := n.network.Cleanup()
-		if err != nil {
+		if err := n.network.Cleanup(); err != nil {
 			errs = append(errs, err)
 		}
 	}
