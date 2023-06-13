@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"reflect"
 	"syscall"
 	"testing"
 
@@ -48,6 +49,7 @@ func TestExecutor_RunSingleNodeScenario(t *testing.T) {
 	// In this scenario, a node is expected to be created and shut down.
 	gomock.InOrder(
 		net.EXPECT().CreateNode(gomock.Any()).Return(node, nil),
+		net.EXPECT().RemoveNode(node),
 		node.EXPECT().Stop(),
 		node.EXPECT().Cleanup(),
 	)
@@ -83,11 +85,13 @@ func TestExecutor_RunMultipleNodeScenario(t *testing.T) {
 	// In this scenario, two nodes are created and stopped.
 	gomock.InOrder(
 		net.EXPECT().CreateNode(gomock.Any()).Return(node1, nil),
+		net.EXPECT().RemoveNode(newIs(node1)),
 		node1.EXPECT().Stop(),
 		node1.EXPECT().Cleanup(),
 	)
 	gomock.InOrder(
 		net.EXPECT().CreateNode(gomock.Any()).Return(node2, nil),
+		net.EXPECT().RemoveNode(newIs(node2)),
 		node2.EXPECT().Stop(),
 		node2.EXPECT().Cleanup(),
 	)
@@ -206,4 +210,21 @@ func New[T any](value T) *T {
 	res := new(T)
 	*res = value
 	return res
+}
+
+type is[T any] struct {
+	x T
+}
+
+func (e *is[T]) Matches(a any) bool {
+	x, ok := a.(T)
+	return ok && reflect.ValueOf(e.x) == reflect.ValueOf(x)
+}
+
+func (e *is[T]) String() string {
+	return fmt.Sprintf("is %v", e.x)
+}
+
+func newIs[T any](node T) *is[T] {
+	return &is[T]{node}
 }

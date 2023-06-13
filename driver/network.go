@@ -12,6 +12,9 @@ type Network interface {
 	// nodes to the network as needed.
 	CreateNode(config *NodeConfig) (Node, error)
 
+	// RemoveNode removes node from the network
+	RemoveNode(Node) error
+
 	// CreateApplication creates a new application in this network, ready to
 	// produce load as defined by its configuration.
 	CreateApplication(config *ApplicationConfig) (Application, error)
