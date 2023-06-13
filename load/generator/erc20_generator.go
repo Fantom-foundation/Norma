@@ -2,13 +2,11 @@ package generator
 
 import (
 	"context"
-	"crypto/ecdsa"
 	crand "crypto/rand"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"math/rand"
@@ -17,16 +15,23 @@ import (
 
 // NewERC20GeneratorFactory provides a factory of tx generators transferring ERC20 tokens.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20GeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey, chainID *big.Int) (*ERC20GeneratorFactory, error) {
-	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryPrivateKey, chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
-	}
+func NewERC20GeneratorFactory(rpcUrl URL, primaryAccount *Account) (*ERC20GeneratorFactory, error) {
 	rpcClient, err := ethclient.Dial(string(rpcUrl))
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the ERC20; %v", err)
 	}
 	defer rpcClient.Close()
+
+	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
+	}
+	nonce, err := primaryAccount.getNextNonce(rpcClient)
+	if err != nil {
+		return nil, err
+	}
+	txOpts.Nonce = big.NewInt(int64(nonce))
+
 	// Deploy the ERC20 contract to be used by generators created using the factory
 	contractAddress, _, _, err := abi.DeployERC20(txOpts, rpcClient)
 	if err != nil {
@@ -36,16 +41,14 @@ func NewERC20GeneratorFactory(rpcUrl URL, primaryPrivateKey *ecdsa.PrivateKey, c
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate recipients addresses; %v", err)
 	}
-	err = waitUntilContractStartExisting(contractAddress, rpcClient)
-	if err != nil {
+	if err = primaryAccount.WaitUntilAllTxsApplied(rpcClient); err != nil {
 		return nil, err
 	}
 	return &ERC20GeneratorFactory{
-		rpcUrl:            rpcUrl,
-		primaryPrivateKey: primaryPrivateKey,
-		chainID:           chainID,
-		contractAddress:   contractAddress,
-		recipients:        recipients,
+		rpcUrl:          rpcUrl,
+		primaryAccount:  primaryAccount,
+		contractAddress: contractAddress,
+		recipients:      recipients,
 	}, nil
 }
 
@@ -63,12 +66,11 @@ func generateRecipientsAddresses() ([]common.Address, error) {
 // ERC20GeneratorFactory is a factory of tx generators transferring tokens of one ERC20 contract.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type ERC20GeneratorFactory struct {
-	rpcUrl            URL
-	primaryPrivateKey *ecdsa.PrivateKey
-	chainID           *big.Int
-	contractAddress   common.Address
-	sentTxs           uint64
-	recipients        []common.Address
+	rpcUrl          URL
+	primaryAccount  *Account
+	contractAddress common.Address
+	sentTxs         uint64
+	recipients      []common.Address
 }
 
 // Create a new generator to be used by one worker thread.
@@ -108,7 +110,7 @@ func (f *ERC20GeneratorFactory) Create() (TransactionGenerator, error) {
 	}
 
 	// prepare options to generate transactions with
-	txOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, f.chainID)
+	txOpts, err := bind.NewKeyedTransactorWithChainID(privateKey, f.primaryAccount.chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
@@ -128,37 +130,31 @@ func (f *ERC20GeneratorFactory) Create() (TransactionGenerator, error) {
 }
 
 func (f *ERC20GeneratorFactory) primeGeneratorAccount(rpcClient *ethclient.Client, workerAddress common.Address, erc20Contract *abi.ERC20) error {
-	primaryAddress := crypto.PubkeyToAddress(f.primaryPrivateKey.PublicKey)
-	primaryNonce, err := rpcClient.PendingNonceAt(context.Background(), primaryAddress)
-	if err != nil {
-		return fmt.Errorf("failed to get nonce of primary account: %s", err)
-	}
 
 	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
 	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.chainID, f.primaryPrivateKey, workerAddress, workerBudget, primaryNonce)
+	err := transferValue(rpcClient, f.primaryAccount, workerAddress, workerBudget)
 	if err != nil {
 		return fmt.Errorf("failed to tranfer from primary account to generator account: %v", err)
 	}
 
 	// prepare options to generate transactions with
-	txOpts, err := bind.NewKeyedTransactorWithChainID(f.primaryPrivateKey, f.chainID)
+	txOpts, err := bind.NewKeyedTransactorWithChainID(f.primaryAccount.privateKey, f.primaryAccount.chainID)
 	if err != nil {
 		return fmt.Errorf("failed to create txOpts; %v", err)
 	}
 
 	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
-	txOpts.Nonce = big.NewInt(int64(primaryNonce + 1))
+	nonce, err := f.primaryAccount.getNextNonce(rpcClient)
+	if err != nil {
+		return err
+	}
+	txOpts.Nonce = big.NewInt(int64(nonce))
 	_, err = erc20Contract.Mint(txOpts, workerAddress, big.NewInt(1_000000000000000000))
 	if err != nil {
 		return fmt.Errorf("failed to mint ERC-20; %v", err)
 	}
 
-	// wait until required updates are on the chain
-	err = waitUntilAccountNonceIsAtLeast(primaryAddress, primaryNonce+2, rpcClient)
-	if err != nil {
-		return fmt.Errorf("waiting for chain changes failed; %v", err)
-	}
 	return nil
 }
 
@@ -190,6 +186,16 @@ func (f *ERC20GeneratorFactory) GetAmountOfReceivedTxs() (uint64, error) {
 		totalReceived += recipientBalance.Uint64()
 	}
 	return totalReceived, nil
+}
+
+// WaitForInit blocks until the initialization is finished in the latest block of the chain
+func (f *ERC20GeneratorFactory) WaitForInit() error {
+	rpcClient, err := ethclient.Dial(string(f.rpcUrl))
+	if err != nil {
+		return fmt.Errorf("failed to connect to RPC to wait until generator is initialized; %v", err)
+	}
+	defer rpcClient.Close()
+	return f.primaryAccount.WaitUntilAllTxsApplied(rpcClient)
 }
 
 // ERC20Generator is a txs generator transferring ERC20 tokens.

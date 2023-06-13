@@ -37,6 +37,11 @@ func NewAppController(generatorFactory generator.TransactionGeneratorFactory, sh
 		go worker.Run()
 	}
 
+	// wait until all changes are on the chain
+	if err := generatorFactory.WaitForInit(); err != nil {
+		return nil, fmt.Errorf("failed to wait for generator on-chain init; %s", err)
+	}
+
 	txsCounter, ok := generatorFactory.(generator.TransactionGeneratorFactoryWithStats)
 	return &AppController{
 		shaper:              shaper,

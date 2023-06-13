@@ -49,20 +49,6 @@ func (mr *MockNodeMockRecorder) Cleanup() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockNode)(nil).Cleanup))
 }
 
-// GetHttpServiceUrl mocks base method.
-func (m *MockNode) GetServiceUrl(arg0 *network.ServiceDescription) *URL {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServiceUrl", arg0)
-	ret0, _ := ret[0].(*URL)
-	return ret0
-}
-
-// GetHttpServiceUrl indicates an expected call of GetHttpServiceUrl.
-func (mr *MockNodeMockRecorder) GetHttpServiceUrl(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceUrl", reflect.TypeOf((*MockNode)(nil).GetServiceUrl), arg0)
-}
-
 // GetLabel mocks base method.
 func (m *MockNode) GetLabel() string {
 	m.ctrl.T.Helper()
@@ -92,18 +78,18 @@ func (mr *MockNodeMockRecorder) GetNodeID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeID", reflect.TypeOf((*MockNode)(nil).GetNodeID))
 }
 
-// GetWebsocketServiceUrl mocks base method.
-func (m *MockNode) GetWebsocketServiceUrl(service *network.ServiceDescription) *URL {
+// GetServiceUrl mocks base method.
+func (m *MockNode) GetServiceUrl(arg0 *network.ServiceDescription) *URL {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWebsocketServiceUrl", service)
+	ret := m.ctrl.Call(m, "GetServiceUrl", arg0)
 	ret0, _ := ret[0].(*URL)
 	return ret0
 }
 
-// GetWebsocketServiceUrl indicates an expected call of GetWebsocketServiceUrl.
-func (mr *MockNodeMockRecorder) GetWebsocketServiceUrl(service interface{}) *gomock.Call {
+// GetServiceUrl indicates an expected call of GetServiceUrl.
+func (mr *MockNodeMockRecorder) GetServiceUrl(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebsocketServiceUrl", reflect.TypeOf((*MockNode)(nil).GetWebsocketServiceUrl), service)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceUrl", reflect.TypeOf((*MockNode)(nil).GetServiceUrl), arg0)
 }
 
 // IsRunning mocks base method.

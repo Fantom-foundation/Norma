@@ -99,6 +99,20 @@ func (mr *MockTransactionGeneratorFactoryMockRecorder) Create() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionGeneratorFactory)(nil).Create))
 }
 
+// WaitForInit mocks base method.
+func (m *MockTransactionGeneratorFactory) WaitForInit() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForInit")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WaitForInit indicates an expected call of WaitForInit.
+func (mr *MockTransactionGeneratorFactoryMockRecorder) WaitForInit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForInit", reflect.TypeOf((*MockTransactionGeneratorFactory)(nil).WaitForInit))
+}
+
 // MockTransactionGeneratorFactoryWithStats is a mock of TransactionGeneratorFactoryWithStats interface.
 type MockTransactionGeneratorFactoryWithStats struct {
 	ctrl     *gomock.Controller
@@ -164,6 +178,20 @@ func (m *MockTransactionGeneratorFactoryWithStats) GetAmountOfSentTxs() uint64 {
 func (mr *MockTransactionGeneratorFactoryWithStatsMockRecorder) GetAmountOfSentTxs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAmountOfSentTxs", reflect.TypeOf((*MockTransactionGeneratorFactoryWithStats)(nil).GetAmountOfSentTxs))
+}
+
+// WaitForInit mocks base method.
+func (m *MockTransactionGeneratorFactoryWithStats) WaitForInit() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForInit")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WaitForInit indicates an expected call of WaitForInit.
+func (mr *MockTransactionGeneratorFactoryWithStatsMockRecorder) WaitForInit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForInit", reflect.TypeOf((*MockTransactionGeneratorFactoryWithStats)(nil).WaitForInit))
 }
 
 // MockTransactionCounts is a mock of TransactionCounts interface.

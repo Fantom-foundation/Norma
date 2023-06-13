@@ -5,8 +5,6 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/generator"
-	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
 	"testing"
 	"time"
 )
@@ -27,13 +25,13 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("websocket service is not available")
 	}
 
-	primaryPrivateKey, err := crypto.HexToECDSA(PrivateKey)
+	primaryAccount, err := generator.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("Counter", func(t *testing.T) {
-		counterGeneratorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryPrivateKey, big.NewInt(FakeNetworkID))
+		counterGeneratorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -41,7 +39,7 @@ func TestGenerators(t *testing.T) {
 	})
 
 	t.Run("ERC20", func(t *testing.T) {
-		erc20GeneratorFactory, err := generator.NewERC20GeneratorFactory(generator.URL(*rpcUrl), primaryPrivateKey, big.NewInt(FakeNetworkID))
+		erc20GeneratorFactory, err := generator.NewERC20GeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -55,6 +53,10 @@ func testGenerator(t *testing.T, factory generator.TransactionGeneratorFactoryWi
 		t.Fatal(err)
 	}
 	defer gen.Close()
+	err = factory.WaitForInit()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for i := 0; i < 10; i++ {
 		err = gen.SendTx()

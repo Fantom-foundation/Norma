@@ -8,8 +8,6 @@ import (
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
 	"testing"
 	"time"
 )
@@ -30,12 +28,12 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal("websocket service is not available")
 	}
 
-	primaryPrivateKey, err := crypto.HexToECDSA(PrivateKey)
+	primaryAccount, err := generator.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryPrivateKey, big.NewInt(FakeNetworkID))
+	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
 	if err != nil {
 		t.Fatal(err)
 	}
