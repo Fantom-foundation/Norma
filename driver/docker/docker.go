@@ -167,10 +167,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 // CreateBridgeNetwork creates a new Docker bridge network.
 func (c *Client) CreateBridgeNetwork() (*Network, error) {
 	// generate random name for network
-	// use fixed seed to make sure we get the same name every time
-	rs := rand.NewSource(42)
-	r := rand.New(rs)
-	name := fmt.Sprintf("norma_network_%d", r.Int())
+	name := fmt.Sprintf("norma_network_%d", rand.Int())
 
 	// create new network
 	resp, err := c.cli.NetworkCreate(context.Background(), name, types.NetworkCreate{
