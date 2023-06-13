@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// Account represents an account from which we can send transactions.
+// It sustains the nonce value - it allows multiple generators which use one Account
+// to produce multiple txs in one block.
 type Account struct {
 	privateKey *ecdsa.PrivateKey
 	address    common.Address
@@ -18,6 +21,7 @@ type Account struct {
 	nonce      uint64
 }
 
+// NewAccount provides a new Account instance
 func NewAccount(privateKeyHex string, chainID int64) (*Account, error) {
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
@@ -32,6 +36,7 @@ func NewAccount(privateKeyHex string, chainID int64) (*Account, error) {
 	}, nil
 }
 
+// getNextNonce provides a nonce to be used for next transactions sent using this account
 func (a *Account) getNextNonce(rpcClient *ethclient.Client) (uint64, error) {
 	current := a.nonce
 	if current == 0 {
@@ -45,6 +50,7 @@ func (a *Account) getNextNonce(rpcClient *ethclient.Client) (uint64, error) {
 	return current, nil
 }
 
+// WaitUntilAllTxsApplied blocks until all txs with nonces from getNextNonce are in the chain
 func (a *Account) WaitUntilAllTxsApplied(rpcClient *ethclient.Client) error {
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
