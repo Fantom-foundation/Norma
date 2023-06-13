@@ -2,8 +2,10 @@ package prometheusmon
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +22,7 @@ const prometheusImage = "prom/prometheus:v2.44.0"
 
 // PrometheusRunner is the interface for starting a prometheus instance.
 type PrometheusRunner interface {
-	StartPrometheus(net driver.Network, dn *docker.Network) (Prometheus, error)
+	Start(net driver.Network, dn *docker.Network) (Prometheus, error)
 }
 
 // Prometheus is the interface for a prometheus instance.
@@ -40,8 +42,8 @@ type PrometheusDocker struct {
 // PrometheusDockerRunner is a PrometheusRunner that starts a Prometheus instance in a Docker container.
 type PrometheusDockerRunner struct{}
 
-// StartPrometheus starts a Prometheus instance in a Docker container.
-func (p *PrometheusDockerRunner) StartPrometheus(net driver.Network, dn *docker.Network) (Prometheus, error) {
+// Start starts a Prometheus instance in a Docker container.
+func (p *PrometheusDockerRunner) Start(net driver.Network, dn *docker.Network) (Prometheus, error) {
 	timeout := 1 * time.Second
 
 	client, err := docker.NewClient()
@@ -84,8 +86,21 @@ func (p *PrometheusDockerRunner) StartPrometheus(net driver.Network, dn *docker.
 	url := fmt.Sprintf("http://localhost:%d", ports[0])
 	for i := 0; i < 15; i++ {
 		// send get request to url
-		_, err := http.Get(url)
+		resp, err := http.Get(url + "/-/ready")
 		if err == nil {
+			// check response status
+			if resp.StatusCode != http.StatusOK {
+				continue
+			}
+			// check response contains "Ready"
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				continue
+			}
+			if !strings.Contains(string(b), "Ready") {
+				continue
+			}
+
 			log.Printf("started PrometheusDocker on %s", url)
 
 			// listen for new Nodes
