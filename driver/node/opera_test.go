@@ -22,7 +22,7 @@ func TestOperaNode_StartAndStop(t *testing.T) {
 		t.Fatalf("failed to create a docker client: %v", err)
 	}
 	defer docker.Close()
-	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
@@ -40,7 +40,7 @@ func TestOperaNode_RpcServiceIsReadyAfterStartup(t *testing.T) {
 		t.Fatalf("failed to create a docker client: %v", err)
 	}
 	defer docker.Close()
-	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
@@ -64,7 +64,7 @@ func TestOperaNode_StreamLog(t *testing.T) {
 		_ = docker.Close()
 	})
 
-	node, err := StartOperaDockerNode(docker, &OperaNodeConfig{
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})

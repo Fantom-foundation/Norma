@@ -15,7 +15,7 @@ func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 		t.Fatalf("failed to create a docker client: %v", err)
 	}
 	defer docker.Close()
-	node, err := opera.StartOperaDockerNode(docker, &opera.OperaNodeConfig{
+	node, err := opera.StartOperaDockerNode(docker, nil, &opera.OperaNodeConfig{
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
