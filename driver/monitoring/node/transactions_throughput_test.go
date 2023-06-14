@@ -135,8 +135,8 @@ func TestTransactionsBellowMeasurableDiff(t *testing.T) {
 	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds, 0), Txs: 10})
 
 	series, _ := source.GetData("A")
-	if got, want := series.GetLatest().Value, float32(10/1e-9); got != want {
-		t.Errorf("througput does not match: %v != %v", got, want)
+	if got := series.GetLatest(); got != nil {
+		t.Errorf("there should be no value")
 	}
 }
 
@@ -158,7 +158,7 @@ func TestTransactionsZeroTransactionsBellowMeasurableDiff(t *testing.T) {
 	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds, 0), Txs: 0})
 
 	series, _ := source.GetData("A")
-	if got, want := series.GetLatest().Value, float32(0); got != want {
-		t.Errorf("througput does not match: %v != %v", got, want)
+	if got := series.GetLatest(); got != nil {
+		t.Errorf("there should be no value")
 	}
 }
