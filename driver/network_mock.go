@@ -89,6 +89,20 @@ func (mr *MockNetworkMockRecorder) RegisterListener(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterListener", reflect.TypeOf((*MockNetwork)(nil).RegisterListener), arg0)
 }
 
+// RemoveNode mocks base method.
+func (m *MockNetwork) RemoveNode(arg0 Node) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveNode", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveNode indicates an expected call of RemoveNode.
+func (mr *MockNetworkMockRecorder) RemoveNode(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockNetwork)(nil).RemoveNode), arg0)
+}
+
 // Shutdown mocks base method.
 func (m *MockNetwork) Shutdown() error {
 	m.ctrl.T.Helper()

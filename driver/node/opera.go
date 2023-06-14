@@ -168,3 +168,17 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 	}
 	return rpcClient.Call(nil, "admin_addPeer", id)
 }
+
+// RemovePeer informs the client instance represented by the OperaNode
+// that the input node is no more available in the network.
+func (n *OperaNode) RemovePeer(id driver.NodeID) error {
+	url := n.GetServiceUrl(&OperaRpcService)
+	if url == nil {
+		return fmt.Errorf("node does not export an RPC server")
+	}
+	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+	if err != nil {
+		return err
+	}
+	return rpcClient.Call(nil, "admin_removePeer", id)
+}

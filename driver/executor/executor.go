@@ -175,6 +175,9 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			if instance == nil {
 				return nil
 			}
+			if err := net.RemoveNode(*instance); err != nil {
+				return err
+			}
 			if err := (*instance).Stop(); err != nil {
 				return err
 			}
