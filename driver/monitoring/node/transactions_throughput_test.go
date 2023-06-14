@@ -116,3 +116,49 @@ func TestTransactionsCsvExport(t *testing.T) {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
 }
+
+func TestTransactionsBellowMeasurableDiff(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	net := driver.NewMockNetwork(ctrl)
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+
+	seconds := time.Now().Unix()
+
+	// time diff bellow measurable diff
+	source.OnBlock("A", monitoring.Block{Height: 10, Time: time.Unix(seconds, 0), Txs: 10})
+	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds, 0), Txs: 10})
+
+	series, _ := source.GetData("A")
+	if got := series.GetLatest(); got != nil {
+		t.Errorf("there should be no value")
+	}
+}
+
+func TestTransactionsZeroTransactionsBellowMeasurableDiff(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	net := driver.NewMockNetwork(ctrl)
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	writer := monitoring.NewMockWriterChain(ctrl)
+	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+
+	seconds := time.Now().Unix()
+
+	// time diff bellow measurable diff
+	source.OnBlock("A", monitoring.Block{Height: 10, Time: time.Unix(seconds, 0), Txs: 0})
+	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds, 0), Txs: 0})
+
+	series, _ := source.GetData("A")
+	if got := series.GetLatest(); got != nil {
+		t.Errorf("there should be no value")
+	}
+}

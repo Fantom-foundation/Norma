@@ -69,8 +69,11 @@ func (s *TransactionsThroughputSource) OnBlock(node monitoring.Node, block monit
 	}
 
 	timeDiff := block.Time.Sub(prevTime).Nanoseconds()
-	txs := float64(block.Txs) * 1e9 / float64(timeDiff)
-	if err := s.series[node].Append(monitoring.BlockNumber(block.Height), float32(txs)); err != nil {
-		log.Printf("error to add to the series: %s", err)
+	// prevent NaN or Inf: when the time difference is bellow measured value, skip the block.
+	if timeDiff != 0 {
+		txs := float64(block.Txs) * 1e9 / float64(timeDiff)
+		if err := s.series[node].Append(monitoring.BlockNumber(block.Height), float32(txs)); err != nil {
+			log.Printf("error to add to the series: %s", err)
+		}
 	}
 }
