@@ -215,7 +215,7 @@ func TestLocalNetwork_CanRemoveNode(t *testing.T) {
 	for N := 1; N <= 3; N++ {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 
-			net, err := NewLocalNetwork(&config)
+			net, err := NewLocalNetwork(&config, &prometheusmon.MockPrometheusRunner{})
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}

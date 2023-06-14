@@ -1,8 +1,11 @@
 package prometheusmon
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -21,16 +24,46 @@ func TestPrometheusCanBeRun(t *testing.T) {
 	}
 }
 
+func TestPrometheusCanBeShutdown(t *testing.T) {
+	prom := startPrometheus(t, nil, nil)
+	err := prom.Shutdown()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	// test prometheus is not running
+	_, err = http.Get(prom.GetUrl() + "/-/ready")
+	if err == nil {
+		t.Errorf("prometheus is still running")
+	}
+}
+
 func TestNodeCanBeAdded(t *testing.T) {
 	dn := createDockerNetwork(t)
 	prom := startPrometheus(t, nil, dn)
 	opera := startOperaNode(t, dn)
-	// test node is added
+	// add node
 	if err := prom.AddNode(opera); err != nil {
 		t.Fatalf("error: %v", err)
 	}
-
-	// TODO: CHECK NODE WAS ADDED
+	// wait for prometheus to reload config
+	time.Sleep(5 * time.Second)
+	// verify node is added by calling prometheus API
+	resp, err := http.Get(prom.GetUrl() + "/api/v1/targets")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+	// check response contains the node's label
+	rawResponse, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if !bytes.Contains(rawResponse, []byte(opera.GetLabel())) {
+		t.Fatalf("expected response to contain %s", opera.GetLabel())
+	}
 }
 
 // startPrometheus starts a prometheus node and returns it.

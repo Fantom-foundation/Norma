@@ -2,10 +2,8 @@ package prometheusmon
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -87,19 +85,11 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 	// wait until the prometheus inside the Container is ready. (15 seconds max)
 	// this is necessary for SIGHUP signal to be delivered correctly
 	for i := 0; i < 15; i++ {
-		// send get request to `<url>/-/ready` which contains status
+		// send get request to `<url>/-/ready` which contains status, from prometheus docs:
+		// "The readiness endpoint returns a 200 OK HTTP status code if Prometheus is ready to serve traffic."
 		resp, err := http.Get(prometheus.GetUrl() + "/-/ready")
 		if err == nil {
-			// check response status
 			if resp.StatusCode != http.StatusOK {
-				continue
-			}
-			// check response contains "Ready"
-			b, err := io.ReadAll(resp.Body)
-			if err != nil {
-				continue
-			}
-			if !strings.Contains(string(b), "Ready") {
 				continue
 			}
 
