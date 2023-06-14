@@ -32,6 +32,9 @@ jobs:
     - name: Fetch Docker test-image
       run: docker image pull hello-world
 
+    - name: Fetch Docker alpine-image
+      run: docker image pull alpine
+
     - name: Build Docker Image
       working-directory: ./
       run: docker build . -t opera

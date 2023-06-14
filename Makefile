@@ -7,6 +7,9 @@ all: build-opera-docker-image norma
 pull-hello-world-image:
 	docker image pull hello-world
 
+pull-alpine-image:
+	docker image pull alpine
+
 build-opera-docker-image:
 	docker build . -t opera
 
@@ -26,7 +29,7 @@ generate-mocks: # requires installed mockgen
 norma: build-opera-docker-image
 	go build -o $(BUILD_DIR)/norma ./driver/norma
 
-test: pull-hello-world-image build-opera-docker-image
+test: pull-hello-world-image pull-alpine-image build-opera-docker-image
 	go test ./... -v
 
 clean:

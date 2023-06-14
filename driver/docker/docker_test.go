@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"log"
 	"os"
@@ -197,6 +198,33 @@ func TestContainer_StreamManyReaders(t *testing.T) {
 	}
 }
 
+func TestContainer_Exec(t *testing.T) {
+	_, cont := startRunningContainer(t)
+	testString := "Hello world!"
+	out, err := cont.Exec([]string{"sh", "-c", "echo " + testString})
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if !strings.Contains(out, testString) {
+		t.Errorf("expected %s, got %s", testString, out)
+	}
+}
+
+func TestContainer_SendSignal(t *testing.T) {
+	cli, cont := startRunningContainer(t)
+	if err := cont.SendSignal(SigKill); err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	// check the container is stopped
+	info, err := cli.cli.ContainerInspect(context.Background(), cont.id)
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if info.State.Running {
+		t.Errorf("expected container to be Killed")
+	}
+}
+
 func containerExists(t *testing.T, cli *Client, id string) bool {
 	// test the container exists
 	var exists bool
@@ -224,6 +252,30 @@ func startContainer(t *testing.T) (*Client, *Container) {
 	timeout := time.Second
 	cont, err := cli.Start(&ContainerConfig{
 		ImageName:       "hello-world",
+		ShutdownTimeout: &timeout,
+	})
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = cont.Cleanup()
+		_ = cli.Close()
+	})
+
+	return cli, cont
+}
+
+func startRunningContainer(t *testing.T) (*Client, *Container) {
+	cli, err := NewClient()
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+
+	timeout := time.Second
+	cont, err := cli.Start(&ContainerConfig{
+		ImageName:       "alpine",                            // use minimal linux image
+		Entrypoint:      []string{"tail", "-f", "/dev/null"}, // keep container running
 		ShutdownTimeout: &timeout,
 	})
 	if err != nil {
