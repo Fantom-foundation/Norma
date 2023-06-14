@@ -5,22 +5,22 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/docker"
 )
 
-type MockPrometheusRunner struct{}
-
 type MockPrometheus struct{}
 
-func (m *MockPrometheusRunner) Start(_ driver.Network, _ *docker.Network) (PrometheusNode, error) {
-	return &MockPrometheus{}, nil
+type MockPrometheusNode struct{}
+
+func (m *MockPrometheus) Start(_ driver.Network, _ *docker.Network) (PrometheusNode, error) {
+	return &MockPrometheusNode{}, nil
 }
 
-func (m *MockPrometheus) AddNode(_ driver.Node) error {
+func (m *MockPrometheusNode) AddNode(_ driver.Node) error {
 	return nil
 }
 
-func (m *MockPrometheus) Shutdown() error {
+func (m *MockPrometheusNode) Shutdown() error {
 	return nil
 }
 
-func (m *MockPrometheus) GetUrl() string {
+func (m *MockPrometheusNode) GetUrl() string {
 	return ""
 }
