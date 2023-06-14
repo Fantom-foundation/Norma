@@ -30,11 +30,14 @@ type PrometheusNode interface {
 	AddNode(node driver.Node) error
 	// Shutdown shuts down the PrometheusNode instance.
 	Shutdown() error
+	// GetUrl returns the URL of the PrometheusNode instance.
+	GetUrl() string
 }
 
 // PrometheusDockerNode is a PrometheusNode instance running in a Docker container.
 type PrometheusDockerNode struct {
 	container *docker.Container
+	port      network.Port
 	net       driver.Network
 }
 
@@ -71,6 +74,7 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 	prometheus := &PrometheusDockerNode{
 		container: container,
 		net:       net,
+		port:      ports[0],
 	}
 
 	// initialize the config
@@ -82,10 +86,9 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 
 	// wait until the prometheus inside the Container is ready. (15 seconds max)
 	// this is necessary for SIGHUP signal to be delivered correctly
-	url := fmt.Sprintf("http://localhost:%d", ports[0])
 	for i := 0; i < 15; i++ {
 		// send get request to `<url>/-/ready` which contains status
-		resp, err := http.Get(url + "/-/ready")
+		resp, err := http.Get(prometheus.GetUrl() + "/-/ready")
 		if err == nil {
 			// check response status
 			if resp.StatusCode != http.StatusOK {
@@ -100,14 +103,17 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 				continue
 			}
 
-			log.Printf("started Prometheus on %s", url)
+			log.Printf("started Prometheus on %s", prometheus.GetUrl())
 
-			// listen for new Nodes
-			net.RegisterListener(prometheus)
+			// register the prometheus instance as a listener
+			if net != nil {
+				// listen for new Nodes
+				net.RegisterListener(prometheus)
 
-			// get nodes that have been started before this instance creation
-			for _, node := range prometheus.net.GetActiveNodes() {
-				prometheus.AfterNodeCreation(node)
+				// get nodes that have been started before this instance creation
+				for _, node := range prometheus.net.GetActiveNodes() {
+					prometheus.AfterNodeCreation(node)
+				}
 			}
 
 			return prometheus, nil
@@ -137,8 +143,15 @@ func (p *PrometheusDockerNode) AddNode(node driver.Node) error {
 
 // Shutdown shuts down the PrometheusDockerNode instance.
 func (p *PrometheusDockerNode) Shutdown() error {
-	p.net.UnregisterListener(p)
+	if p.net != nil {
+		p.net.UnregisterListener(p)
+	}
 	return p.container.Cleanup()
+}
+
+// GetUrl returns the URL of the PrometheusDockerNode instance.
+func (p *PrometheusDockerNode) GetUrl() string {
+	return fmt.Sprintf("http://localhost:%d", p.port)
 }
 
 func (p *PrometheusDockerNode) AfterNodeCreation(node driver.Node) {

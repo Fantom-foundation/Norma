@@ -20,3 +20,7 @@ func (m *MockPrometheus) AddNode(_ driver.Node) error {
 func (m *MockPrometheus) Shutdown() error {
 	return nil
 }
+
+func (m *MockPrometheus) GetUrl() string {
+	return ""
+}
