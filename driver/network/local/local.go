@@ -94,9 +94,7 @@ func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.Prometheus) 
 		}
 	}
 
-	// Start PrometheusDockerNode monitoring. We keep the PrometheusDockerNode container running
-	// after the network is shut down to allow for manual inspection of the
-	// metrics.
+	// Start Prometheus monitoring.
 	prom, err := pr.Start(net, dn)
 	if err != nil {
 		errs = append(errs, err)
