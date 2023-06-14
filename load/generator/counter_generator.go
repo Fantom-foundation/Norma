@@ -98,10 +98,10 @@ func (f *CounterGeneratorFactory) Create() (TransactionGenerator, error) {
 	// adjust txOpts for the runtime to avoid slow loading of gasPrice/nonce from RPC for each tx
 	txOpts.Nonce = big.NewInt(int64(nonce))
 	txOpts.GasLimit = 50000 // IncrementCounter method call takes 43426 of gas
-	// use static gasPrice - multiply recommended gas price by two to have some levy
-	// for the cases the min gas price is increased by the network,
+	// use static gasPrice - increase the recommended gas price by two a certain factor
+	// to have some levy for the cases the min gas price is increased by the network,
 	// and we do not have to query the gas price before every transaction.
-	txOpts.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(int64(2)))
+	txOpts.GasPrice = gasPrice.Mul(gasPrice, big.NewInt(int64(4)))
 
 	gen := &CounterGenerator{
 		rpcClient:       rpcClient,
@@ -119,8 +119,8 @@ func (f *CounterGeneratorFactory) primeGeneratorAccount(rpcClient *ethclient.Cli
 		return fmt.Errorf("failed to get nonce of primary account: %s", err)
 	}
 
-	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
+	// transfer budget (1000 FTM) to worker's account - finances to cover transaction fees
+	workerBudget := big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1_000000000000000000))
 	err = transferValue(rpcClient, f.chainID, f.primaryPrivateKey, address, workerBudget, primaryNonce)
 	if err != nil {
 		return fmt.Errorf("failed to tranfer from primary account to generator account: %v", err)

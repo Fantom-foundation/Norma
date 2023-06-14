@@ -209,3 +209,55 @@ func TestLocalNetwork_NotifiesListenersOnAppStartup(t *testing.T) {
 		t.Errorf("creation of app failed: %v", err)
 	}
 }
+
+func TestLocalNetwork_CanRemoveNode(t *testing.T) {
+	config := driver.NetworkConfig{NumberOfValidators: 1}
+	for N := 1; N <= 3; N++ {
+		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
+
+			net, err := NewLocalNetwork(&config)
+			if err != nil {
+				t.Fatalf("failed to create new local network: %v", err)
+			}
+			t.Cleanup(func() { _ = net.Shutdown() })
+
+			nodes := make([]driver.Node, 0, N)
+			for i := 0; i < N; i++ {
+				node, err := net.CreateNode(&driver.NodeConfig{
+					Name: fmt.Sprintf("T-%d", i),
+				})
+				if err != nil {
+					t.Errorf("failed to create node: %s", err)
+				}
+				nodes = append(nodes, node)
+			}
+
+			// remove nodes one by one
+			for _, node := range nodes {
+				if err := net.RemoveNode(node); err != nil {
+					t.Errorf("cannot remove node: %s", err)
+				}
+
+				id, err := node.GetNodeID()
+				if err != nil {
+					t.Errorf("cannot get node ID: %s", err)
+				}
+
+				_, exists := net.nodes[id]
+				if exists {
+					t.Errorf("node %s was not removed", id)
+				}
+			}
+
+			// removed nodes are only detached from the network, but still running - i.e. they can be turned off
+			for _, node := range nodes {
+				if err := node.Stop(); err != nil {
+					t.Errorf("failed to stop node: %v", err)
+				}
+				if err := node.Cleanup(); err != nil {
+					t.Errorf("failed to cleanup node: %v", err)
+				}
+			}
+		})
+	}
+}

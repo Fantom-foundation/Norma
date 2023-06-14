@@ -1,0 +1,49 @@
+# This scenario simulates a network with growing number
+# of nodes. It deploys one application and sends rather high
+# number of transactions. It observes if the throughput of the network
+# is growing.
+
+# The name of the scenario
+name: Various Number of Nodes
+
+# The duration of the scenario's runtime, in seconds.
+duration: 600
+
+# The number of validator nodes in the network.
+num_validators: 1
+
+# The network scenario to exercise. 
+nodes:
+  # Gradually increase the number of nodes 
+  - name: A
+    start: 0          # start time
+    end: 600            # termination time
+    instances: 0
+
+  - name: B
+    start: 120          # start time
+    end: 600            # termination time
+    instances: 4
+
+  - name: C
+    start: 240          # start time
+    end: 600            # termination time
+    instances: 5
+
+  - name: D
+    start: 360          # start time
+    end: 600            # termination time
+    instances: 10
+
+  - name: E
+    start: 480          # start time
+    end: 600            # termination time
+    instances: 10
+
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: counter
+    accounts: 20       # accounts generating txs
+    rate:
+      constant: 2000     # Tx/s
