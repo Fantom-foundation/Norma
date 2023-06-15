@@ -19,8 +19,9 @@ func init() {
 			Description: "Transaction throughput standard moving average",
 		}
 
+		currentPeriod := period // capture current value of the period
 		smaFactory := func(input monitoring.BlockSeries[float32]) monitoring.BlockSeries[float32] {
-			return monitoring.NewSMASeries[monitoring.BlockNumber, float32](input, period)
+			return monitoring.NewSMASeries[monitoring.BlockNumber, float32](input, currentPeriod)
 		}
 		metricsFactory := func(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.BlockSeries[float32]] {
 			return newNodeBlockSeriesTransformation(monitor, TransactionThroughputSMA, TransactionsThroughput, smaFactory)
