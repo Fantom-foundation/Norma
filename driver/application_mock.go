@@ -7,7 +7,7 @@ package driver
 import (
 	reflect "reflect"
 
-	generator "github.com/Fantom-foundation/Norma/load/generator"
+	app "github.com/Fantom-foundation/Norma/load/app"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -49,10 +49,10 @@ func (mr *MockApplicationMockRecorder) Config() *gomock.Call {
 }
 
 // GetTransactionCounts mocks base method.
-func (m *MockApplication) GetTransactionCounts() (generator.TransactionCounts, bool) {
+func (m *MockApplication) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactionCounts")
-	ret0, _ := ret[0].(generator.TransactionCounts)
+	ret0, _ := ret[0].(app.TransactionCountsProvider)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }

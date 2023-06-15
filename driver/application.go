@@ -1,6 +1,6 @@
 package driver
 
-import "github.com/Fantom-foundation/Norma/load/generator"
+import "github.com/Fantom-foundation/Norma/load/app"
 
 //go:generate mockgen -source application.go -destination application_mock.go -package driver
 
@@ -17,5 +17,5 @@ type Application interface {
 	// GetTransactionCounts returns information about expected and received transactions
 	// if this information is available for this application.
 	// If the information is not available, second argument returns false.
-	GetTransactionCounts() (generator.TransactionCounts, bool)
+	GetTransactionCounts() (app.TransactionCountsProvider, bool)
 }

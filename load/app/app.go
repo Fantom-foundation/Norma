@@ -1,40 +1,32 @@
-package generator
+package app
 
 import (
-	"io"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-//go:generate mockgen -source generator.go -destination generator_mock.go -package generator
+//go:generate mockgen -source app.go -destination app_mock.go -package app
 
-// URL is a mere alias type for a string supposed to encode a URL.
-type URL string
+type Application interface {
+	// CreateGenerator creates a new transaction generator for given application
+	CreateGenerator(rpcClient *ethclient.Client) (TransactionGenerator, error)
+
+	WaitUntilGeneratorsCreated(rpcClient *ethclient.Client) error
+}
 
 // TransactionGenerator produces a stream of transactions to generate traffic on the chain.
 // Generators are not thread-safe.
 type TransactionGenerator interface {
-	// SendTx generates a new tx and send it to the RPC
-	SendTx() error
-
-	io.Closer
+	GenerateTx() (*types.Transaction, error)
 }
 
-type TransactionGeneratorFactory interface {
-	// Create and return a new generator instance
-	Create() (TransactionGenerator, error)
-
-	// WaitForInit blocks until generators initialization is finished in the latest block of the chain
-	// Should be called after a batch of Create calls, before the generators will start to be used.
-	WaitForInit() error
+type ApplicationProvidingTxCount interface {
+	Application
+	TransactionCountsProvider
 }
 
-type TransactionGeneratorFactoryWithStats interface {
-	TransactionGeneratorFactory
-	TransactionCounts
-}
-
-// TransactionCounts should be implemented by an instance that can provide the number of received
-// and expected transactions.
-type TransactionCounts interface {
+// TransactionCountsProvider should be implemented by an Application that can provide the number of received txs.
+type TransactionCountsProvider interface {
 	// GetAmountOfSentTxs returns the number of transactions originally sent to an application.
 	// This number of transactions was not necessarily received by the application as the transactions
 	// could be filtered out by any layers between the RPC endpoint and actual block processing,
@@ -47,5 +39,5 @@ type TransactionCounts interface {
 	// as the transactions could be filtered out by any layers between the RPC endpoint and actual block processing,
 	// or the client was not able to process requested amount of transactions and the transactions could not reach
 	// the block processing.
-	GetAmountOfReceivedTxs() (uint64, error)
+	GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error)
 }

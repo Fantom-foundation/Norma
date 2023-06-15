@@ -1,10 +1,12 @@
-package generator_test
+package app_test
 
 import (
+	"context"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
-	"github.com/Fantom-foundation/Norma/load/generator"
+	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"testing"
 	"time"
 )
@@ -25,54 +27,53 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("websocket service is not available")
 	}
 
-	primaryAccount, err := generator.NewAccount(PrivateKey, FakeNetworkID)
+	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	if err != nil {
+		t.Fatal("unable to connect the the rpc")
+	}
+
+	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Run("Counter", func(t *testing.T) {
-		counterGeneratorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
-		if err != nil {
-			t.Fatal(err)
-		}
-		testGenerator(t, counterGeneratorFactory)
-	})
-
 	t.Run("ERC20", func(t *testing.T) {
-		erc20GeneratorFactory, err := generator.NewERC20GeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
+		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testGenerator(t, erc20GeneratorFactory)
+		testGenerator(t, erc20app, rpcClient)
 	})
 }
 
-func testGenerator(t *testing.T, factory generator.TransactionGeneratorFactoryWithStats) {
-	gen, err := factory.Create()
+func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient *ethclient.Client) {
+	gen, err := app.CreateGenerator(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer gen.Close()
-	err = factory.WaitForInit()
+	err = app.WaitUntilGeneratorsCreated(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < 10; i++ {
-		err = gen.SendTx()
+		tx, err := gen.GenerateTx()
 		if err != nil {
+			t.Fatal(err)
+		}
+		if err := rpcClient.SendTransaction(context.Background(), tx); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
-	countSent := factory.GetAmountOfSentTxs()
+	countSent := app.GetAmountOfSentTxs()
 	if countSent != 10 {
 		t.Errorf("unexpected amount of txs sent (%d)", countSent)
 	}
 
-	countInChain, err := factory.GetAmountOfReceivedTxs()
+	countInChain, err := app.GetAmountOfReceivedTxs(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}

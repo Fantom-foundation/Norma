@@ -3,8 +3,10 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/load/generator"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 	"time"
 )
@@ -15,34 +17,30 @@ import (
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
 	shaper              shaper.Shaper
-	txsCounter          generator.TransactionCounts
+	txsCounter          app.TransactionCountsProvider
 	txsCounterSupported bool
 	trigger             chan struct{}
 }
 
-func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, accounts int) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, generators int, txOutput chan<- *types.Transaction, rpcClient *ethclient.Client) (*AppController, error) {
 	trigger := make(chan struct{})
 
-	// initialize workers for individual accounts
-	for i := 0; i < accounts; i++ {
-		gen, err := generatorFactory.Create()
+	// initialize workers for individual generators
+	for i := 0; i < generators; i++ {
+		gen, err := application.CreateGenerator(rpcClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create load generator; %s", err)
+			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
 
-		worker := Worker{
-			generator: gen,
-			trigger:   trigger,
-		}
-		go worker.Run()
+		go runGeneratorLoop(gen, trigger, txOutput)
 	}
 
 	// wait until all changes are on the chain
-	if err := generatorFactory.WaitForInit(); err != nil {
-		return nil, fmt.Errorf("failed to wait for generator on-chain init; %s", err)
+	if err := application.WaitUntilGeneratorsCreated(rpcClient); err != nil {
+		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
 	}
 
-	txsCounter, ok := generatorFactory.(generator.TransactionGeneratorFactoryWithStats)
+	txsCounter, ok := application.(app.ApplicationProvidingTxCount)
 	return &AppController{
 		shaper:              shaper,
 		txsCounter:          txsCounter,
@@ -84,6 +82,6 @@ func (ac *AppController) Run(ctx context.Context) error {
 // of application managed by this application controller.
 // If this application controller is not capable of providing such an information, this method returns
 // false in its second return argument.
-func (ac *AppController) GetTransactionCounts() (generator.TransactionCounts, bool) {
+func (ac *AppController) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
 	return ac.txsCounter, ac.txsCounterSupported
 }

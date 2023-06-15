@@ -6,7 +6,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
-	"github.com/Fantom-foundation/Norma/load/generator"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"sync"
 )
 
@@ -41,7 +41,7 @@ func init() {
 }
 
 // countGetter is a function that returns a value obtained from a transaction counter
-type countGetter func(generator.TransactionCounts) (int, error)
+type countGetter func(app.TransactionCountsProvider) (int, error)
 
 // TxsCounter allows for metering the number of transactions sent or received on an application (i.e. a smart contract).
 // It may happen that some applications are not able to count number of applications they have received.
@@ -61,7 +61,7 @@ type TxsCounter struct {
 // or the client was not able to process requested amount of transactions and the transactions could not reach
 // the block processing.
 func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
-	s := func(c generator.TransactionCounts) (int, error) {
+	s := func(c app.TransactionCountsProvider) (int, error) {
 		return int(c.GetAmountOfSentTxs()), nil
 	}
 	res := newTxsCounterSource(monitor, s, SentTransactions)
@@ -75,9 +75,10 @@ func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
 // or the client was not able to process requested amount of transactions and the transactions could not reach
 // the block processing.
 func NewReceivedTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
-	s := func(c generator.TransactionCounts) (int, error) {
-		txs, err := c.GetAmountOfReceivedTxs()
-		return int(txs), err
+	s := func(c app.TransactionCountsProvider) (int, error) {
+		//txs, err := c.GetAmountOfReceivedTxs() // TODO need to obtain rpcClient
+		//return int(txs), err
+		return 0, nil
 	}
 	res := newTxsCounterSource(monitor, s, ReceivedTransactions)
 

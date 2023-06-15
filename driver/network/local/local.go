@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/load/rpc"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 	"math/rand"
 	"sync"
@@ -12,8 +15,8 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
-	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 )
 
@@ -23,7 +26,7 @@ type LocalNetwork struct {
 	docker         *docker.Client
 	network        *docker.Network
 	config         driver.NetworkConfig
-	primaryAccount *generator.Account
+	primaryAccount *app.Account
 
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
@@ -48,6 +51,9 @@ type LocalNetwork struct {
 
 	// listenerMutex is synching access to listeners
 	listenerMutex sync.Mutex
+
+	// txs is a chanel transferring generated txs from apps to RPC nodes
+	txs chan *types.Transaction
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
@@ -62,7 +68,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	}
 
 	// Create chain account, which will be used for the initialization
-	primaryAccount, err := generator.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
+	primaryAccount, err := app.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +82,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 		nodes:          map[driver.NodeID]*node.OperaNode{},
 		apps:           []driver.Application{},
 		listeners:      map[driver.NetworkListener]bool{},
+		txs:            make(chan *types.Transaction),
 	}
 
 	// Start all validators.
@@ -134,6 +141,10 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 		listener.AfterNodeCreation(node)
 	}
 
+	if err := rpc.StartRpcWorkers(node, n.txs); err != nil {
+		return nil, fmt.Errorf("failed to start rpc workers for a new node; %v", err)
+	}
+
 	return node, nil
 }
 
@@ -182,7 +193,7 @@ func (a *localApplication) Start() error {
 	go func() {
 		err := a.controller.Run(ctx)
 		if err != nil {
-			log.Printf("Failed to run load generator: %v", err)
+			log.Printf("Failed to run load app: %v", err)
 		}
 	}()
 	return nil
@@ -196,7 +207,7 @@ func (a *localApplication) Stop() error {
 	return nil
 }
 
-func (a *localApplication) GetTransactionCounts() (generator.TransactionCounts, bool) {
+func (a *localApplication) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
 	return a.controller.GetTransactionCounts()
 }
 
@@ -216,14 +227,20 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), n.primaryAccount)
+	rpcClient, err := ethclient.Dial(string(*rpcUrl))
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
+		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
+	}
+	defer rpcClient.Close()
+
+	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts)
+	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts, n.txs, rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -242,6 +259,11 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 
 	return app, nil
+}
+
+// GetTxsChannel is temporary helper for unit tests which constructs an application manually
+func (n *LocalNetwork) GetTxsChannel() chan *types.Transaction {
+	return n.txs
 }
 
 func (n *LocalNetwork) GetActiveNodes() []driver.Node {

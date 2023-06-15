@@ -5,9 +5,10 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
-	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"testing"
 	"time"
 )
@@ -28,19 +29,24 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal("websocket service is not available")
 	}
 
-	primaryAccount, err := generator.NewAccount(PrivateKey, FakeNetworkID)
+	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	if err != nil {
+		t.Fatal("unable to connect the the rpc")
+	}
+
+	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), primaryAccount)
+	generatorFactory, err := app.NewERC20Application(rpcClient, primaryAccount)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
-	app, err := controller.NewAppController(generatorFactory, constantShaper, 5) // 5 parallel workers
+	app, err := controller.NewAppController(generatorFactory, constantShaper, 5, net.GetTxsChannel(), rpcClient) // 5 parallel workers
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +64,7 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	countInChain, err := generatorFactory.GetAmountOfReceivedTxs()
+	countInChain, err := generatorFactory.GetAmountOfReceivedTxs(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +85,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Errorf("cannot get txs counter")
 	}
 
-	if got, err := txsCounter.GetAmountOfReceivedTxs(); err != nil || got != countInChain {
+	if got, err := txsCounter.GetAmountOfReceivedTxs(rpcClient); err != nil || got != countInChain {
 		t.Errorf("number of transactions do not match: %d != %d", got, countInChain)
 	}
 
