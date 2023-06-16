@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 	"time"
 )
@@ -19,11 +18,18 @@ import (
 type AppController struct {
 	shaper         shaper.Shaper
 	countsProvider app.ApplicationProvidingTxCount
+	network        driver.Network
 	trigger        chan struct{}
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, generators int, txOutput chan<- *types.Transaction, rpcClient *ethclient.Client) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, generators int, network driver.Network) (*AppController, error) {
 	trigger := make(chan struct{})
+
+	rpcClient, err := network.DialRandomRpc()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial ranom RPC; %v", err)
+	}
+	defer rpcClient.Close()
 
 	// initialize workers for individual generators
 	for i := 0; i < generators; i++ {
@@ -32,7 +38,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
 
-		go runGeneratorLoop(gen, trigger, txOutput)
+		go runGeneratorLoop(gen, trigger, network)
 	}
 
 	// wait until all changes are on the chain
@@ -44,6 +50,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 	return &AppController{
 		shaper:         shaper,
 		countsProvider: countsProvider,
+		network:        network,
 		trigger:        trigger,
 	}, nil
 }
@@ -80,12 +87,19 @@ func (ac *AppController) Run(ctx context.Context) error {
 // GetTransactionCounts returns the object that provides the number of send and received transactions
 // of application managed by this application controller.
 // If this application controller is not capable of providing such an information, this method returns
-// false in its second return argument.
+// ErrDoesNotProvideTxCounts in its error return argument.
 func (ac *AppController) GetTransactionCounts() (app.TransactionCounts, error) {
 	if ac.countsProvider == nil {
 		return app.TransactionCounts{}, ErrDoesNotProvideTxCounts
 	}
-	return ac.countsProvider.GetTransactionCounts()
+
+	rpcClient, err := ac.network.DialRandomRpc()
+	if err != nil {
+		return app.TransactionCounts{}, fmt.Errorf("failed to dial ranom RPC; %v", err)
+	}
+	defer rpcClient.Close()
+
+	return ac.countsProvider.GetTransactionCounts(rpcClient)
 }
 
 var ErrDoesNotProvideTxCounts = errors.New("app does not provide tx counts")

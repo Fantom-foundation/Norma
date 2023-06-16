@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"time"
 )
 
 // transferValue transfer a financial value from account identified by given privateKey, to given toAddress.
 // It returns when the value is already available on the target account.
-func transferValue(rpcClient *ethclient.Client, from *Account, toAddress common.Address, value *big.Int) (err error) {
+func transferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int) (err error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return err
@@ -37,7 +36,7 @@ func createTx(from *Account, toAddress common.Address, value *big.Int, data []by
 }
 
 // waitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
-func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient *ethclient.Client) error {
+func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient RpcClient) error {
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
 		nonce, err := rpcClient.NonceAt(context.Background(), account, nil) // nonce at latest block

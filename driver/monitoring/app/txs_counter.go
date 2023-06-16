@@ -62,7 +62,7 @@ type TxsCounter struct {
 // the block processing.
 func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
 	s := func(c app.TransactionCounts) (int, error) {
-		return int(c.AmountOfSentTxs), nil
+		return int(c.SentTxs), nil
 	}
 	res := newTxsCounterSource(monitor, s, SentTransactions)
 
@@ -76,7 +76,7 @@ func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
 // the block processing.
 func NewReceivedTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
 	s := func(c app.TransactionCounts) (int, error) {
-		return int(c.AmountOfReceivedTxs), nil
+		return int(c.ReceivedTxs), nil
 	}
 	res := newTxsCounterSource(monitor, s, ReceivedTransactions)
 

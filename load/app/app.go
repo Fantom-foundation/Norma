@@ -1,17 +1,26 @@
 package app
 
 import (
+	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
+	"math/big"
 )
 
 //go:generate mockgen -source app.go -destination app_mock.go -package app
 
 type Application interface {
 	// CreateGenerator creates a new transaction generator for given application
-	CreateGenerator(rpcClient *ethclient.Client) (TransactionGenerator, error)
+	CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error)
 
-	WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error
+	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
+}
+
+type RpcClient interface {
+	bind.ContractBackend
+	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
+	Close()
 }
 
 // TransactionGenerator produces a stream of transactions to generate traffic on the chain.
@@ -22,23 +31,23 @@ type TransactionGenerator interface {
 
 type ApplicationProvidingTxCount interface {
 	Application
-	GetTransactionCounts() (TransactionCounts, error)
+	GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error)
 }
 
 // TransactionCounts should be implemented by an instance that can provide the number of received
 // and expected transactions.
 type TransactionCounts struct {
-	// AmountOfSentTxs represents the number of transactions originally sent to an application.
+	// SentTxs represents the number of transactions originally sent to an application.
 	// This number of transactions was not necessarily received by the application as the transactions
 	// could be filtered out by any layers between the RPC endpoint and actual block processing,
 	// or the client was not able to process requested amount of transactions and the transactions could not reach
 	// the block processing.
-	AmountOfSentTxs uint64
+	SentTxs uint64
 
-	// AmountOfReceivedTxs represents the number of transactions received by an application.
+	// ReceivedTxs represents the number of transactions received by an application.
 	// This number of transactions may be smaller than the number of actually sent transactions
 	// as the transactions could be filtered out by any layers between the RPC endpoint and actual block processing,
 	// or the client was not able to process requested amount of transactions and the transactions could not reach
 	// the block processing.
-	AmountOfReceivedTxs uint64
+	ReceivedTxs uint64
 }

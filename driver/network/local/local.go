@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/load/rpc"
+	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
@@ -52,8 +52,7 @@ type LocalNetwork struct {
 	// listenerMutex is synching access to listeners
 	listenerMutex sync.Mutex
 
-	// txs is a chanel transferring generated txs from apps to RPC nodes
-	txs chan *types.Transaction
+	rpcWorkerPool *rpc.RpcWorkerPool
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
@@ -82,8 +81,11 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 		nodes:          map[driver.NodeID]*node.OperaNode{},
 		apps:           []driver.Application{},
 		listeners:      map[driver.NetworkListener]bool{},
-		txs:            make(chan *types.Transaction),
+		rpcWorkerPool:  rpc.NewRpcWorkerPool(),
 	}
+
+	// Let the RPC pool to start RPC workers when a node start.
+	net.RegisterListener(net.rpcWorkerPool)
 
 	// Start all validators.
 	nodeConfig := node.OperaNodeConfig{
@@ -141,10 +143,6 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 		listener.AfterNodeCreation(node)
 	}
 
-	if err := rpc.StartRpcWorkers(node, n.txs); err != nil {
-		return nil, fmt.Errorf("failed to start rpc workers for a new node; %v", err)
-	}
-
 	return node, nil
 }
 
@@ -173,6 +171,19 @@ func (n *LocalNetwork) RemoveNode(node driver.Node) error {
 	n.nodesMutex.Unlock()
 
 	return nil
+}
+
+func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
+	n.rpcWorkerPool.SendTransaction(tx)
+}
+
+func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
+	nodes := n.GetActiveNodes()
+	rpcUrl := nodes[rand.Intn(len(nodes))].GetServiceUrl(&node.OperaWsService)
+	if rpcUrl == nil {
+		return nil, fmt.Errorf("websocket service is not available")
+	}
+	return ethclient.Dial(string(*rpcUrl))
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to
@@ -240,7 +251,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts, n.txs, rpcClient)
+	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts, n)
 	if err != nil {
 		return nil, err
 	}
@@ -259,11 +270,6 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 
 	return app, nil
-}
-
-// GetTxsChannel is a helper for unit tests which constructs an application manually
-func (n *LocalNetwork) GetTxsChannel() chan<- *types.Transaction {
-	return n.txs
 }
 
 func (n *LocalNetwork) GetActiveNodes() []driver.Node {

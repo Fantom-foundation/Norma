@@ -33,8 +33,8 @@ func TestApplicationRegistered(t *testing.T) {
 			Accounts: i + 1,
 		})
 		application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{
-			AmountOfSentTxs:     uint64(i * 10),
-			AmountOfReceivedTxs: uint64(i * 20),
+			SentTxs:     uint64(i * 10),
+			ReceivedTxs: uint64(i * 20),
 		}, nil)
 
 		arr, exists := apps[monitoring.App(appName)]
@@ -115,8 +115,8 @@ func TestApplicationPrinted(t *testing.T) {
 		Accounts: 999,
 	})
 	application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{
-		AmountOfSentTxs:     uint64(15),
-		AmountOfReceivedTxs: uint64(16),
+		SentTxs:     uint64(15),
+		ReceivedTxs: uint64(16),
 	}, nil)
 
 	csvFile1, _ := os.CreateTemp(t.TempDir(), "file.csv")

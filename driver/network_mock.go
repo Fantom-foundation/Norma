@@ -7,6 +7,8 @@ package driver
 import (
 	reflect "reflect"
 
+	app "github.com/Fantom-foundation/Norma/load/app"
+	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -63,6 +65,21 @@ func (mr *MockNetworkMockRecorder) CreateNode(config interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNode", reflect.TypeOf((*MockNetwork)(nil).CreateNode), config)
 }
 
+// DialRandomRpc mocks base method.
+func (m *MockNetwork) DialRandomRpc() (app.RpcClient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DialRandomRpc")
+	ret0, _ := ret[0].(app.RpcClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DialRandomRpc indicates an expected call of DialRandomRpc.
+func (mr *MockNetworkMockRecorder) DialRandomRpc() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialRandomRpc", reflect.TypeOf((*MockNetwork)(nil).DialRandomRpc))
+}
+
 // GetActiveNodes mocks base method.
 func (m *MockNetwork) GetActiveNodes() []Node {
 	m.ctrl.T.Helper()
@@ -101,6 +118,18 @@ func (m *MockNetwork) RemoveNode(arg0 Node) error {
 func (mr *MockNetworkMockRecorder) RemoveNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNode", reflect.TypeOf((*MockNetwork)(nil).RemoveNode), arg0)
+}
+
+// SendTransaction mocks base method.
+func (m *MockNetwork) SendTransaction(tx *types.Transaction) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendTransaction", tx)
+}
+
+// SendTransaction indicates an expected call of SendTransaction.
+func (mr *MockNetworkMockRecorder) SendTransaction(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTransaction", reflect.TypeOf((*MockNetwork)(nil).SendTransaction), tx)
 }
 
 // Shutdown mocks base method.

@@ -1,5 +1,10 @@
 package driver
 
+import (
+	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/ethereum/go-ethereum/core/types"
+)
+
 //go:generate mockgen -source network.go -destination network_mock.go -package driver
 
 // Network abstracts an execution environment for running scenarios.
@@ -33,6 +38,10 @@ type Network interface {
 	// Shutdown stops all applications and nodes in the network and frees
 	// any potential other resources.
 	Shutdown() error
+
+	SendTransaction(tx *types.Transaction)
+
+	DialRandomRpc() (app.RpcClient, error)
 }
 
 // NetworkConfig is a collection of network parameters to be used by factories

@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -10,15 +9,36 @@ import (
 	"log"
 )
 
-func StartRpcWorkers(newNode driver.Node, txs <-chan *types.Transaction) error {
+type RpcWorkerPool struct {
+	txs chan *types.Transaction
+}
+
+func NewRpcWorkerPool() *RpcWorkerPool {
+	return &RpcWorkerPool{
+		txs: make(chan *types.Transaction),
+	}
+}
+
+func (p RpcWorkerPool) SendTransaction(tx *types.Transaction) {
+	p.txs <- tx
+}
+
+func (p RpcWorkerPool) AfterNodeCreation(newNode driver.Node) {
 	rpcUrl := newNode.GetServiceUrl(&node.OperaWsService)
 	if rpcUrl == nil {
-		return fmt.Errorf("websocket service is not available for node %s", newNode.GetLabel())
+		return
 	}
-
 	for i := 0; i < 10; i++ {
-		go runRpcSenderLoop(*rpcUrl, txs)
+		go runRpcSenderLoop(*rpcUrl, p.txs)
 	}
+}
+
+func (p RpcWorkerPool) AfterApplicationCreation(application driver.Application) {
+	// ignored
+}
+
+func (p RpcWorkerPool) Close() error {
+	close(p.txs)
 	return nil
 }
 

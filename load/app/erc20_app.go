@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"math/rand"
 	"sync/atomic"
@@ -17,7 +16,7 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient *ethclient.Client, primaryAccount *Account) (*ERC20Application, error) {
+func NewERC20Application(rpcClient RpcClient, primaryAccount *Account) (*ERC20Application, error) {
 
 	// Deploy the ERC20 contract to be used by generators created using the factory
 	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
@@ -51,7 +50,6 @@ func NewERC20Application(rpcClient *ethclient.Client, primaryAccount *Account) (
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
 		recipients:      recipients,
-		rpcClient:       rpcClient,
 	}, nil
 }
 
@@ -73,12 +71,11 @@ type ERC20Application struct {
 	primaryAccount  *Account
 	contractAddress common.Address
 	recipients      []common.Address
-	rpcClient       *ethclient.Client // only for GetTransactionCounts TODO remove
 	sentTxs         uint64
 }
 
 // CreateGenerator creates a new transaction app for the app.
-func (f *ERC20Application) CreateGenerator(rpcClient *ethclient.Client) (TransactionGenerator, error) {
+func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
 	workerAccount, err := GenerateAccount(f.primaryAccount.chainID.Int64())
@@ -128,13 +125,13 @@ func (f *ERC20Application) CreateGenerator(rpcClient *ethclient.Client) (Transac
 	}, nil
 }
 
-func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error {
+func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
 	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.getCurrentNonce(), rpcClient)
 }
 
-func (f *ERC20Application) GetTransactionCounts() (TransactionCounts, error) {
+func (f *ERC20Application) GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error) {
 	// get a representation of the deployed contract
-	ERC20Contract, err := contract.NewERC20(f.contractAddress, f.rpcClient)
+	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
 	if err != nil {
 		return TransactionCounts{}, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
 	}
@@ -147,8 +144,8 @@ func (f *ERC20Application) GetTransactionCounts() (TransactionCounts, error) {
 		totalReceived += recipientBalance.Uint64()
 	}
 	return TransactionCounts{
-		AmountOfReceivedTxs: totalReceived,
-		AmountOfSentTxs:     atomic.LoadUint64(&f.sentTxs),
+		ReceivedTxs: totalReceived,
+		SentTxs:     atomic.LoadUint64(&f.sentTxs),
 	}, nil
 }
 
