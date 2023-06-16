@@ -68,16 +68,14 @@ func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient 
 
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
-	countSent := app.GetAmountOfSentTxs()
-	if countSent != 10 {
-		t.Errorf("unexpected amount of txs sent (%d)", countSent)
-	}
-
-	countInChain, err := app.GetAmountOfReceivedTxs(rpcClient)
+	counts, err := app.GetTransactionCounts()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countInChain != 10 {
-		t.Errorf("unexpected amount of txs in chain (%d)", countInChain)
+	if counts.AmountOfSentTxs != 10 {
+		t.Errorf("unexpected amount of txs sent (%d)", counts.AmountOfSentTxs)
+	}
+	if counts.AmountOfReceivedTxs != 10 {
+		t.Errorf("unexpected amount of txs in chain (%d)", counts.AmountOfReceivedTxs)
 	}
 }

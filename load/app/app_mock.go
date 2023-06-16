@@ -140,33 +140,19 @@ func (mr *MockApplicationProvidingTxCountMockRecorder) CreateGenerator(rpcClient
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenerator", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).CreateGenerator), rpcClient)
 }
 
-// GetAmountOfReceivedTxs mocks base method.
-func (m *MockApplicationProvidingTxCount) GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error) {
+// GetTransactionCounts mocks base method.
+func (m *MockApplicationProvidingTxCount) GetTransactionCounts() (TransactionCounts, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAmountOfReceivedTxs", rpcClient)
-	ret0, _ := ret[0].(uint64)
+	ret := m.ctrl.Call(m, "GetTransactionCounts")
+	ret0, _ := ret[0].(TransactionCounts)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAmountOfReceivedTxs indicates an expected call of GetAmountOfReceivedTxs.
-func (mr *MockApplicationProvidingTxCountMockRecorder) GetAmountOfReceivedTxs(rpcClient interface{}) *gomock.Call {
+// GetTransactionCounts indicates an expected call of GetTransactionCounts.
+func (mr *MockApplicationProvidingTxCountMockRecorder) GetTransactionCounts() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAmountOfReceivedTxs", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).GetAmountOfReceivedTxs), rpcClient)
-}
-
-// GetAmountOfSentTxs mocks base method.
-func (m *MockApplicationProvidingTxCount) GetAmountOfSentTxs() uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAmountOfSentTxs")
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// GetAmountOfSentTxs indicates an expected call of GetAmountOfSentTxs.
-func (mr *MockApplicationProvidingTxCountMockRecorder) GetAmountOfSentTxs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAmountOfSentTxs", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).GetAmountOfSentTxs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionCounts", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).GetTransactionCounts))
 }
 
 // WaitUntilGeneratorsCreated mocks base method.
@@ -181,56 +167,4 @@ func (m *MockApplicationProvidingTxCount) WaitUntilGeneratorsCreated(rpcClient *
 func (mr *MockApplicationProvidingTxCountMockRecorder) WaitUntilGeneratorsCreated(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilGeneratorsCreated", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).WaitUntilGeneratorsCreated), rpcClient)
-}
-
-// MockTransactionCountsProvider is a mock of TransactionCountsProvider interface.
-type MockTransactionCountsProvider struct {
-	ctrl     *gomock.Controller
-	recorder *MockTransactionCountsProviderMockRecorder
-}
-
-// MockTransactionCountsProviderMockRecorder is the mock recorder for MockTransactionCountsProvider.
-type MockTransactionCountsProviderMockRecorder struct {
-	mock *MockTransactionCountsProvider
-}
-
-// NewMockTransactionCountsProvider creates a new mock instance.
-func NewMockTransactionCountsProvider(ctrl *gomock.Controller) *MockTransactionCountsProvider {
-	mock := &MockTransactionCountsProvider{ctrl: ctrl}
-	mock.recorder = &MockTransactionCountsProviderMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTransactionCountsProvider) EXPECT() *MockTransactionCountsProviderMockRecorder {
-	return m.recorder
-}
-
-// GetAmountOfReceivedTxs mocks base method.
-func (m *MockTransactionCountsProvider) GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAmountOfReceivedTxs", rpcClient)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAmountOfReceivedTxs indicates an expected call of GetAmountOfReceivedTxs.
-func (mr *MockTransactionCountsProviderMockRecorder) GetAmountOfReceivedTxs(rpcClient interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAmountOfReceivedTxs", reflect.TypeOf((*MockTransactionCountsProvider)(nil).GetAmountOfReceivedTxs), rpcClient)
-}
-
-// GetAmountOfSentTxs mocks base method.
-func (m *MockTransactionCountsProvider) GetAmountOfSentTxs() uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAmountOfSentTxs")
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// GetAmountOfSentTxs indicates an expected call of GetAmountOfSentTxs.
-func (mr *MockTransactionCountsProviderMockRecorder) GetAmountOfSentTxs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAmountOfSentTxs", reflect.TypeOf((*MockTransactionCountsProvider)(nil).GetAmountOfSentTxs))
 }

@@ -39,14 +39,14 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	generatorFactory, err := app.NewERC20Application(rpcClient, primaryAccount)
+	application, err := app.NewERC20Application(rpcClient, primaryAccount)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
-	app, err := controller.NewAppController(generatorFactory, constantShaper, 5, net.GetTxsChannel(), rpcClient) // 5 parallel workers
+	app, err := controller.NewAppController(application, constantShaper, 5, net.GetTxsChannel(), rpcClient) // 5 parallel workers
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,33 +64,18 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	countInChain, err := generatorFactory.GetAmountOfReceivedTxs(rpcClient)
+	counts, err := application.GetTransactionCounts()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	countSent := generatorFactory.GetAmountOfSentTxs()
-	if countInChain != countSent {
-		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", countInChain, countSent)
+	if counts.AmountOfReceivedTxs != counts.AmountOfSentTxs {
+		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", counts.AmountOfReceivedTxs, counts.AmountOfSentTxs)
 	}
 
 	// in optimal case should be generated 30 txs per second
 	// as a tolerance for slow CI we require at least 20 txs
-	if countInChain < 20 || countInChain > 30 {
-		t.Errorf("unexpected amount of generated txs: %d", countInChain)
+	if counts.AmountOfReceivedTxs < 20 || counts.AmountOfReceivedTxs > 30 {
+		t.Errorf("unexpected amount of generated txs: %d", counts.AmountOfReceivedTxs)
 	}
-
-	txsCounter, ok := app.GetTransactionCounts()
-	if !ok {
-		t.Errorf("cannot get txs counter")
-	}
-
-	if got, err := txsCounter.GetAmountOfReceivedTxs(rpcClient); err != nil || got != countInChain {
-		t.Errorf("number of transactions do not match: %d != %d", got, countInChain)
-	}
-
-	if got := txsCounter.GetAmountOfSentTxs(); err != nil || got != countSent {
-		t.Errorf("number of transactions do not match: %d != %d", got, countSent)
-	}
-
 }

@@ -51,6 +51,7 @@ func NewERC20Application(rpcClient *ethclient.Client, primaryAccount *Account) (
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
 		recipients:      recipients,
+		rpcClient:       rpcClient,
 	}, nil
 }
 
@@ -72,6 +73,7 @@ type ERC20Application struct {
 	primaryAccount  *Account
 	contractAddress common.Address
 	recipients      []common.Address
+	rpcClient       *ethclient.Client // only for GetTransactionCounts TODO remove
 	sentTxs         uint64
 }
 
@@ -130,29 +132,24 @@ func (f *ERC20Application) WaitUntilGeneratorsCreated(rpcClient *ethclient.Clien
 	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.nonce, rpcClient)
 }
 
-// GetAmountOfSentTxs provides the amount of txs send from all generators of the app
-func (f *ERC20Application) GetAmountOfSentTxs() uint64 {
-	return atomic.LoadUint64(&f.sentTxs)
-}
-
-// GetAmountOfReceivedTxs provides the amount of relevant txs applied to the chain state
-// This is obtained as the total ERC20 balance of all recipient accounts.
-func (f *ERC20Application) GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error) {
-	// get a representation of the deployed contract, bound to worker's rpcClient
-	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
+func (f *ERC20Application) GetTransactionCounts() (TransactionCounts, error) {
+	// get a representation of the deployed contract
+	ERC20Contract, err := contract.NewERC20(f.contractAddress, f.rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
+		return TransactionCounts{}, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
 	}
-
 	totalReceived := uint64(0)
 	for _, recipient := range f.recipients {
 		recipientBalance, err := ERC20Contract.BalanceOf(nil, recipient)
 		if err != nil {
-			return 0, err
+			return TransactionCounts{}, err
 		}
 		totalReceived += recipientBalance.Uint64()
 	}
-	return totalReceived, nil
+	return TransactionCounts{
+		AmountOfReceivedTxs: totalReceived,
+		AmountOfSentTxs:     atomic.LoadUint64(&f.sentTxs),
+	}, nil
 }
 
 // ERC20Generator is a txs app transferring ERC20 tokens.

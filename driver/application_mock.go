@@ -49,11 +49,11 @@ func (mr *MockApplicationMockRecorder) Config() *gomock.Call {
 }
 
 // GetTransactionCounts mocks base method.
-func (m *MockApplication) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
+func (m *MockApplication) GetTransactionCounts() (app.TransactionCounts, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactionCounts")
-	ret0, _ := ret[0].(app.TransactionCountsProvider)
-	ret1, _ := ret[1].(bool)
+	ret0, _ := ret[0].(app.TransactionCounts)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 

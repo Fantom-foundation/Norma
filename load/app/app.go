@@ -22,22 +22,23 @@ type TransactionGenerator interface {
 
 type ApplicationProvidingTxCount interface {
 	Application
-	TransactionCountsProvider
+	GetTransactionCounts() (TransactionCounts, error)
 }
 
-// TransactionCountsProvider should be implemented by an Application that can provide the number of received txs.
-type TransactionCountsProvider interface {
-	// GetAmountOfSentTxs returns the number of transactions originally sent to an application.
+// TransactionCounts should be implemented by an instance that can provide the number of received
+// and expected transactions.
+type TransactionCounts struct {
+	// AmountOfSentTxs represents the number of transactions originally sent to an application.
 	// This number of transactions was not necessarily received by the application as the transactions
 	// could be filtered out by any layers between the RPC endpoint and actual block processing,
 	// or the client was not able to process requested amount of transactions and the transactions could not reach
 	// the block processing.
-	GetAmountOfSentTxs() uint64
+	AmountOfSentTxs uint64
 
-	// GetAmountOfReceivedTxs returns the number of transactions received by an application.
+	// AmountOfReceivedTxs represents the number of transactions received by an application.
 	// This number of transactions may be smaller than the number of actually sent transactions
 	// as the transactions could be filtered out by any layers between the RPC endpoint and actual block processing,
 	// or the client was not able to process requested amount of transactions and the transactions could not reach
 	// the block processing.
-	GetAmountOfReceivedTxs(rpcClient *ethclient.Client) (uint64, error)
+	AmountOfReceivedTxs uint64
 }

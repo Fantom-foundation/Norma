@@ -32,11 +32,10 @@ func TestApplicationRegistered(t *testing.T) {
 			Rate:     0,
 			Accounts: i + 1,
 		})
-		txsCount := app.NewMockTransactionCountsProvider(ctrl)
-		txsCount.EXPECT().GetAmountOfSentTxs().AnyTimes().Return(uint64(i * 10))
-		txsCount.EXPECT().GetAmountOfReceivedTxs(gomock.Any()).AnyTimes().Return(uint64(i*20), nil)
-
-		application.EXPECT().GetTransactionCounts().AnyTimes().Return(txsCount, true)
+		application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{
+			AmountOfSentTxs:     uint64(i * 10),
+			AmountOfReceivedTxs: uint64(i * 20),
+		}, nil)
 
 		arr, exists := apps[monitoring.App(appName)]
 		if !exists {
@@ -75,7 +74,7 @@ func TestApplicationRegistered(t *testing.T) {
 			}
 
 			if got, want := len(source.GetSubjects()), len(apps); got != want {
-				t.Errorf("amount of subjects do not mathc: %d != %d", got, want)
+				t.Errorf("amount of subjects do not match: %d != %d", got, want)
 			}
 
 			for subject := range apps {
@@ -85,7 +84,10 @@ func TestApplicationRegistered(t *testing.T) {
 				}
 
 				for i, point := range series.GetRange(0, 100000) {
-					txsCount, _ := apps[subject][i].GetTransactionCounts()
+					txsCount, err := apps[subject][i].GetTransactionCounts()
+					if err != nil {
+						t.Fatalf("failed to get txs counts; %v", err)
+					}
 					want, _ := source.getter(txsCount)
 					if point.Value != want {
 						t.Errorf("data series contain unexpected value: %v != %v", point.Value, want)
@@ -112,11 +114,10 @@ func TestApplicationPrinted(t *testing.T) {
 		Rate:     0,
 		Accounts: 999,
 	})
-	txsCount := app.NewMockTransactionCountsProvider(ctrl)
-	txsCount.EXPECT().GetAmountOfSentTxs().AnyTimes().Return(uint64(15))
-	txsCount.EXPECT().GetAmountOfReceivedTxs(gomock.Any()).AnyTimes().Return(uint64(16), nil)
-
-	application.EXPECT().GetTransactionCounts().AnyTimes().Return(txsCount, true)
+	application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{
+		AmountOfSentTxs:     uint64(15),
+		AmountOfReceivedTxs: uint64(16),
+	}, nil)
 
 	csvFile1, _ := os.CreateTemp(t.TempDir(), "file.csv")
 	writer1 := monitoring.NewWriterChain(csvFile1)
@@ -133,7 +134,7 @@ func TestApplicationPrinted(t *testing.T) {
 	}
 
 	for i, source := range []*TxsCounter{source1, source2} {
-		t.Run(fmt.Sprintf("%s", source.metric.Name), func(t *testing.T) {
+		t.Run(source.metric.Name, func(t *testing.T) {
 			// insert data
 			source.AfterApplicationCreation(application)
 
@@ -142,8 +143,6 @@ func TestApplicationPrinted(t *testing.T) {
 				t.Fatalf("cannot shutdown: %s", err)
 			}
 			_ = source.monitor.Writer().Close()
-
-			t.Skip("TODO: see TxsCounter rpcClient TODO") // TODO - missing rpcClient in TxsCounter
 
 			content, _ := os.ReadFile(csvFiles[i].Name())
 			if got, want := string(content), expected[i]; got != want {

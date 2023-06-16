@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
@@ -16,10 +17,9 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	shaper              shaper.Shaper
-	txsCounter          app.TransactionCountsProvider
-	txsCounterSupported bool
-	trigger             chan struct{}
+	shaper         shaper.Shaper
+	countsProvider app.ApplicationProvidingTxCount
+	trigger        chan struct{}
 }
 
 func NewAppController(application app.Application, shaper shaper.Shaper, generators int, txOutput chan<- *types.Transaction, rpcClient *ethclient.Client) (*AppController, error) {
@@ -40,12 +40,11 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
 	}
 
-	txsCounter, ok := application.(app.ApplicationProvidingTxCount)
+	countsProvider, _ := application.(app.ApplicationProvidingTxCount) // nil if not TxCount provider
 	return &AppController{
-		shaper:              shaper,
-		txsCounter:          txsCounter,
-		txsCounterSupported: ok,
-		trigger:             trigger,
+		shaper:         shaper,
+		countsProvider: countsProvider,
+		trigger:        trigger,
 	}, nil
 }
 
@@ -82,6 +81,11 @@ func (ac *AppController) Run(ctx context.Context) error {
 // of application managed by this application controller.
 // If this application controller is not capable of providing such an information, this method returns
 // false in its second return argument.
-func (ac *AppController) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
-	return ac.txsCounter, ac.txsCounterSupported
+func (ac *AppController) GetTransactionCounts() (app.TransactionCounts, error) {
+	if ac.countsProvider == nil {
+		return app.TransactionCounts{}, ErrDoesNotProvideTxCounts
+	}
+	return ac.countsProvider.GetTransactionCounts()
 }
+
+var ErrDoesNotProvideTxCounts = errors.New("app does not provide tx counts")

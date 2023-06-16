@@ -41,7 +41,7 @@ func init() {
 }
 
 // countGetter is a function that returns a value obtained from a transaction counter
-type countGetter func(app.TransactionCountsProvider) (int, error)
+type countGetter func(app.TransactionCounts) (int, error)
 
 // TxsCounter allows for metering the number of transactions sent or received on an application (i.e. a smart contract).
 // It may happen that some applications are not able to count number of applications they have received.
@@ -61,8 +61,8 @@ type TxsCounter struct {
 // or the client was not able to process requested amount of transactions and the transactions could not reach
 // the block processing.
 func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
-	s := func(c app.TransactionCountsProvider) (int, error) {
-		return int(c.GetAmountOfSentTxs()), nil
+	s := func(c app.TransactionCounts) (int, error) {
+		return int(c.AmountOfSentTxs), nil
 	}
 	res := newTxsCounterSource(monitor, s, SentTransactions)
 
@@ -75,10 +75,8 @@ func NewSentTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
 // or the client was not able to process requested amount of transactions and the transactions could not reach
 // the block processing.
 func NewReceivedTransactionsSource(monitor *monitoring.Monitor) *TxsCounter {
-	s := func(c app.TransactionCountsProvider) (int, error) {
-		//txs, err := c.GetAmountOfReceivedTxs() // TODO need to obtain rpcClient
-		//return int(txs), err
-		return 0, nil
+	s := func(c app.TransactionCounts) (int, error) {
+		return int(c.AmountOfReceivedTxs), nil
 	}
 	res := newTxsCounterSource(monitor, s, ReceivedTransactions)
 
@@ -144,8 +142,8 @@ func (s *TxsCounter) Shutdown() error {
 
 	var errs []error
 	for _, app := range s.applications {
-		txs, ok := app.GetTransactionCounts()
-		if ok {
+		txs, err := app.GetTransactionCounts()
+		if err == nil {
 			if val, err := s.getter(txs); err == nil {
 				series, exists := s.series[monitoring.App(app.Config().Name)]
 				if !exists {

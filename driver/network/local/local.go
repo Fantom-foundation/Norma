@@ -207,7 +207,7 @@ func (a *localApplication) Stop() error {
 	return nil
 }
 
-func (a *localApplication) GetTransactionCounts() (app.TransactionCountsProvider, bool) {
+func (a *localApplication) GetTransactionCounts() (app.TransactionCounts, error) {
 	return a.controller.GetTransactionCounts()
 }
 
