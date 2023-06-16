@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
+	"sync/atomic"
 )
 
 // Account represents an account from which we can send transactions.
@@ -49,7 +50,10 @@ func GenerateAccount(chainID int64) (*Account, error) {
 
 // getNextNonce provides a nonce to be used for next transactions sent using this account
 func (a *Account) getNextNonce() uint64 {
-	current := a.nonce
-	a.nonce = current + 1
-	return current
+	current := atomic.AddUint64(&a.nonce, 1)
+	return current - 1
+}
+
+func (a *Account) getCurrentNonce() uint64 {
+	return atomic.LoadUint64(&a.nonce)
 }

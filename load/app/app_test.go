@@ -51,7 +51,7 @@ func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient 
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = app.WaitUntilGeneratorsCreated(rpcClient)
+	err = app.WaitUntilApplicationIsDeployed(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}

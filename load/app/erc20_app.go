@@ -41,7 +41,7 @@ func NewERC20Application(rpcClient *ethclient.Client, primaryAccount *Account) (
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.nonce, rpcClient)
+	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +128,8 @@ func (f *ERC20Application) CreateGenerator(rpcClient *ethclient.Client) (Transac
 	}, nil
 }
 
-func (f *ERC20Application) WaitUntilGeneratorsCreated(rpcClient *ethclient.Client) error {
-	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.nonce, rpcClient)
+func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error {
+	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.getCurrentNonce(), rpcClient)
 }
 
 func (f *ERC20Application) GetTransactionCounts() (TransactionCounts, error) {

@@ -261,8 +261,8 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	return app, nil
 }
 
-// GetTxsChannel is temporary helper for unit tests which constructs an application manually
-func (n *LocalNetwork) GetTxsChannel() chan *types.Transaction {
+// GetTxsChannel is a helper for unit tests which constructs an application manually
+func (n *LocalNetwork) GetTxsChannel() chan<- *types.Transaction {
 	return n.txs
 }
 

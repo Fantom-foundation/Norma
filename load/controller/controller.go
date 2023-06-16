@@ -36,7 +36,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 	}
 
 	// wait until all changes are on the chain
-	if err := application.WaitUntilGeneratorsCreated(rpcClient); err != nil {
+	if err := application.WaitUntilApplicationIsDeployed(rpcClient); err != nil {
 		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
 	}
 

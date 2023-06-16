@@ -11,7 +11,7 @@ type Application interface {
 	// CreateGenerator creates a new transaction generator for given application
 	CreateGenerator(rpcClient *ethclient.Client) (TransactionGenerator, error)
 
-	WaitUntilGeneratorsCreated(rpcClient *ethclient.Client) error
+	WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error
 }
 
 // TransactionGenerator produces a stream of transactions to generate traffic on the chain.

@@ -11,7 +11,8 @@ func runGeneratorLoop(generator app.TransactionGenerator, trigger <-chan struct{
 		tx, err := generator.GenerateTx()
 		if err != nil {
 			log.Printf("failed to generate tx; %v", err)
+		} else {
+			output <- tx
 		}
-		output <- tx
 	}
 }

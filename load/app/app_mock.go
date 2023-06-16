@@ -51,9 +51,9 @@ func (mr *MockApplicationMockRecorder) CreateGenerator(rpcClient interface{}) *g
 }
 
 // WaitUntilGeneratorsCreated mocks base method.
-func (m *MockApplication) WaitUntilGeneratorsCreated(rpcClient *ethclient.Client) error {
+func (m *MockApplication) WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WaitUntilGeneratorsCreated", rpcClient)
+	ret := m.ctrl.Call(m, "WaitUntilApplicationIsDeployed", rpcClient)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -61,7 +61,7 @@ func (m *MockApplication) WaitUntilGeneratorsCreated(rpcClient *ethclient.Client
 // WaitUntilGeneratorsCreated indicates an expected call of WaitUntilGeneratorsCreated.
 func (mr *MockApplicationMockRecorder) WaitUntilGeneratorsCreated(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilGeneratorsCreated", reflect.TypeOf((*MockApplication)(nil).WaitUntilGeneratorsCreated), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilApplicationIsDeployed", reflect.TypeOf((*MockApplication)(nil).WaitUntilApplicationIsDeployed), rpcClient)
 }
 
 // MockTransactionGenerator is a mock of TransactionGenerator interface.
@@ -156,9 +156,9 @@ func (mr *MockApplicationProvidingTxCountMockRecorder) GetTransactionCounts() *g
 }
 
 // WaitUntilGeneratorsCreated mocks base method.
-func (m *MockApplicationProvidingTxCount) WaitUntilGeneratorsCreated(rpcClient *ethclient.Client) error {
+func (m *MockApplicationProvidingTxCount) WaitUntilApplicationIsDeployed(rpcClient *ethclient.Client) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WaitUntilGeneratorsCreated", rpcClient)
+	ret := m.ctrl.Call(m, "WaitUntilApplicationIsDeployed", rpcClient)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -166,5 +166,5 @@ func (m *MockApplicationProvidingTxCount) WaitUntilGeneratorsCreated(rpcClient *
 // WaitUntilGeneratorsCreated indicates an expected call of WaitUntilGeneratorsCreated.
 func (mr *MockApplicationProvidingTxCountMockRecorder) WaitUntilGeneratorsCreated(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilGeneratorsCreated", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).WaitUntilGeneratorsCreated), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilApplicationIsDeployed", reflect.TypeOf((*MockApplicationProvidingTxCount)(nil).WaitUntilApplicationIsDeployed), rpcClient)
 }
