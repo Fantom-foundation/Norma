@@ -74,7 +74,7 @@ type ERC20Application struct {
 	sentTxs         uint64
 }
 
-// CreateGenerator creates a new transaction app for the app.
+// CreateGenerator creates a new transaction generator for the app.
 func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
@@ -96,13 +96,11 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 		return nil, fmt.Errorf("failed to tranfer from primary account to app account: %v", err)
 	}
 
-	// prepare options to generate transactions with
+	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
 	txOpts, err := bind.NewKeyedTransactorWithChainID(f.primaryAccount.privateKey, f.primaryAccount.chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
-
-	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
 	txOpts.Nonce = big.NewInt(int64(f.primaryAccount.getNextNonce()))
 	_, err = erc20Contract.Mint(txOpts, workerAccount.address, big.NewInt(1_000000000000000000))
 	if err != nil {

@@ -37,6 +37,13 @@ func TestGenerators(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Run("Counter", func(t *testing.T) {
+		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testGenerator(t, counterApp, rpcClient)
+	})
 	t.Run("ERC20", func(t *testing.T) {
 		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount)
 		if err != nil {
