@@ -8,18 +8,17 @@ import (
 	"strings"
 	"time"
 
-	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
-	"golang.org/x/exp/constraints"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/constraints"
 )
 
 // Run with `go run ./driver/norma run <scenario.yml>`
@@ -48,7 +47,6 @@ var (
 )
 
 func run(ctx *cli.Context) (err error) {
-
 	db := strings.ToLower(ctx.String(DbImpl.Name))
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
@@ -80,13 +78,12 @@ func run(ctx *cli.Context) (err error) {
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators:    1,
 		StateDbImplementation: db,
-		KeepPrometheusRunning: ctx.Bool(keepPrometheusRunning.Name),
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
 	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
-	net, err := local.NewLocalNetwork(&netConfig, &prometheusmon.PrometheusDocker{})
+	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
 	}
@@ -120,6 +117,21 @@ func run(ctx *cli.Context) (err error) {
 	if err := monitoring.InstallAllRegisteredSources(monitor); err != nil {
 		return err
 	}
+
+	// Run prometheus.
+	fmt.Printf("Starting Prometheus ...\n")
+	prom, err := prometheusmon.Start(net, net.GetDockerNetwork())
+	if err != nil {
+		fmt.Printf("error starting Prometheus:\n%v", err)
+	}
+	defer func() {
+		if !ctx.Bool(keepPrometheusRunning.Name) && prom != nil {
+			fmt.Printf("Shutting down Prometheus ...\n")
+			if err := prom.Shutdown(); err != nil {
+				fmt.Printf("error during Prometheus shutdown:\n%v", err)
+			}
+		}
+	}()
 
 	// Run scenario.
 	fmt.Printf("Running '%s' ...\n", path)

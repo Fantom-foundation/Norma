@@ -7,7 +7,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 )
 
-// promCfg is the default PrometheusDockerNode configuration.
+// promCfg is the default Prometheus configuration.
 const promCfg = `
 global:
   scrape_interval: 5s
@@ -20,7 +20,7 @@ scrape_configs:
          - "/etc/prometheus/opera-*.json"
 `
 
-// promTargetCfgTmpl is the PrometheusDockerNode target configuration template.
+// promTargetCfgTmpl is the Prometheus target configuration template.
 const promTargetCfgTmpl = `
 [
   {
@@ -33,14 +33,14 @@ const promTargetCfgTmpl = `
 ]
 `
 
-// promTargetConfig is the PrometheusDockerNode target configuration.
+// promTargetConfig is the Prometheus target configuration.
 type promTargetConfig struct {
 	Host  string
 	Port  int
 	Label string
 }
 
-// renderConfigForNode renders the PrometheusDockerNode configuration for a node.
+// renderConfigForNode renders the Prometheus configuration for a node.
 func renderConfigForNode(node driver.Node) (string, error) {
 	cfg := promTargetConfig{
 		Host:  node.Hostname(),

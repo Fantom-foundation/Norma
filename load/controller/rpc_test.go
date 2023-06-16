@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
-	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/controller"
@@ -21,7 +20,7 @@ const FakeNetworkID = 0xfa3
 
 func TestTrafficGenerating(t *testing.T) {
 	// run local network of one node
-	net, err := local.NewLocalNetwork(&driver.NetworkConfig{NumberOfValidators: 1}, &prometheusmon.MockPrometheus{})
+	net, err := local.NewLocalNetwork(&driver.NetworkConfig{NumberOfValidators: 1})
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}

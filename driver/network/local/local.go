@@ -11,7 +11,6 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
-	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/controller"
@@ -50,12 +49,9 @@ type LocalNetwork struct {
 
 	// listenerMutex is synching access to listeners
 	listenerMutex sync.Mutex
-
-	// prometheus is the Prometheus monitoring service.
-	prometheus prometheusmon.PrometheusNode
 }
 
-func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.Prometheus) (*LocalNetwork, error) {
+func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	client, err := docker.NewClient()
 	if err != nil {
 		return nil, err
@@ -93,13 +89,6 @@ func NewLocalNetwork(config *driver.NetworkConfig, pr prometheusmon.Prometheus) 
 			net.validators = append(net.validators, validator)
 		}
 	}
-
-	// Start Prometheus monitoring.
-	prom, err := pr.Start(net, dn)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	net.prometheus = prom
 
 	// If starting the validators failed, the network statup should fail.
 	if len(errs) > 0 {
@@ -311,13 +300,6 @@ func (n *LocalNetwork) Shutdown() error {
 	}
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
-	// Third, shut down the prometheus node.
-	if !n.config.KeepPrometheusRunning && n.prometheus != nil {
-		if err := n.prometheus.Shutdown(); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
 	// Fourth, shut down the docker network.
 	if n.network != nil {
 		if err := n.network.Cleanup(); err != nil {
@@ -326,6 +308,11 @@ func (n *LocalNetwork) Shutdown() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+// GetDockerNetwork returns the underlying docker network.
+func (n *LocalNetwork) GetDockerNetwork() *docker.Network {
+	return n.network
 }
 
 func (n *LocalNetwork) getRandomValidator() (driver.Node, error) {

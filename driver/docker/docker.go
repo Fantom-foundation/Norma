@@ -191,7 +191,7 @@ func (c *Client) CreateBridgeNetwork() (*Network, error) {
 	}, nil
 }
 
-// Hostname returns the hostname of the Host. In this case it is the ID of the
+// Hostname returns the hostname of the Container. In this case it is the ID of the
 // Docker Container.
 func (c *Container) Hostname() string {
 	// return the truncated container ID

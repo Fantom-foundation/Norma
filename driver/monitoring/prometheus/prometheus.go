@@ -11,39 +11,21 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/network"
 )
 
-// PrometheusPort is the default port for the PrometheusDockerNode service.
+// PrometheusPort is the default port for the Prometheus service.
 const PrometheusPort = 9090
 
-// prometheusImage is the default Docker image for the PrometheusDockerNode service.
+// prometheusImage is the default Docker image for the Prometheus service.
 const prometheusImage = "prom/prometheus:v2.44.0"
 
-// Prometheus is the interface for starting a prometheus instance.
-type Prometheus interface {
-	Start(net driver.Network, dn *docker.Network) (PrometheusNode, error)
-}
-
-// PrometheusNode is the interface for a prometheus instance.
-type PrometheusNode interface {
-	// AddNode adds a new target to the PrometheusNode configuration to be observed.
-	AddNode(node driver.Node) error
-	// Shutdown shuts down the PrometheusNode instance.
-	Shutdown() error
-	// GetUrl returns the URL of the PrometheusNode instance.
-	GetUrl() string
-}
-
-// PrometheusDockerNode is a PrometheusNode instance running in a Docker container.
-type PrometheusDockerNode struct {
+// Prometheus is a Prometheus instance running in a Docker container.
+type Prometheus struct {
 	container *docker.Container
 	port      network.Port
 	net       driver.Network
 }
 
-// PrometheusDocker is a Prometheus that starts a PrometheusNode instance in a Docker container.
-type PrometheusDocker struct{}
-
-// Start starts a PrometheusNode instance in a Docker container.
-func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (PrometheusNode, error) {
+// Start starts a Prometheus instance in a Docker container.
+func Start(net driver.Network, dn *docker.Network) (*Prometheus, error) {
 	timeout := 1 * time.Second
 
 	client, err := docker.NewClient()
@@ -69,7 +51,7 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 		return nil, err
 	}
 
-	prometheus := &PrometheusDockerNode{
+	prometheus := &Prometheus{
 		container: container,
 		net:       net,
 		port:      ports[0],
@@ -95,15 +77,12 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 
 			log.Printf("started Prometheus on %s", prometheus.GetUrl())
 
-			// register the prometheus instance as a listener
-			if net != nil {
-				// listen for new Nodes
-				net.RegisterListener(prometheus)
+			// listen for new Nodes
+			net.RegisterListener(prometheus)
 
-				// get nodes that have been started before this instance creation
-				for _, node := range prometheus.net.GetActiveNodes() {
-					prometheus.AfterNodeCreation(node)
-				}
+			// get nodes that have been started before this instance creation
+			for _, node := range prometheus.net.GetActiveNodes() {
+				prometheus.AfterNodeCreation(node)
 			}
 
 			return prometheus, nil
@@ -116,8 +95,8 @@ func (p *PrometheusDocker) Start(net driver.Network, dn *docker.Network) (Promet
 	return nil, fmt.Errorf("prometheus instance is not ready")
 }
 
-// AddNode adds a new target to the PrometheusDockerNode configuration to be observed.
-func (p *PrometheusDockerNode) AddNode(node driver.Node) error {
+// AddNode adds a new target to the Prometheus configuration to be observed.
+func (p *Prometheus) AddNode(node driver.Node) error {
 	cfg, err := renderConfigForNode(node)
 	if err != nil {
 		return err
@@ -131,38 +110,36 @@ func (p *PrometheusDockerNode) AddNode(node driver.Node) error {
 	return p.reloadConfig()
 }
 
-// Shutdown shuts down the PrometheusDockerNode instance.
-func (p *PrometheusDockerNode) Shutdown() error {
-	if p.net != nil {
-		p.net.UnregisterListener(p)
-	}
+// Shutdown shuts down the Prometheus instance.
+func (p *Prometheus) Shutdown() error {
+	p.net.UnregisterListener(p)
 	return p.container.Cleanup()
 }
 
-// GetUrl returns the URL of the PrometheusDockerNode instance.
-func (p *PrometheusDockerNode) GetUrl() string {
+// GetUrl returns the URL of the Prometheus instance.
+func (p *Prometheus) GetUrl() string {
 	return fmt.Sprintf("http://localhost:%d", p.port)
 }
 
-func (p *PrometheusDockerNode) AfterNodeCreation(node driver.Node) {
+func (p *Prometheus) AfterNodeCreation(node driver.Node) {
 	if err := p.AddNode(node); err != nil {
-		log.Printf("failed to add node %s to PrometheusDockerNode: %s", node.Hostname(), err)
+		log.Printf("failed to add node %s to Prometheus: %s", node.Hostname(), err)
 	}
 }
 
-func (p *PrometheusDockerNode) AfterApplicationCreation(driver.Application) {
+func (p *Prometheus) AfterApplicationCreation(driver.Application) {
 	// ignored
 }
 
-// initializeConfig initializes the PrometheusDockerNode configuration file by echoing config content
+// initializeConfig initializes the Prometheus configuration file by echoing config content
 // into container's config location.
-func (p *PrometheusDockerNode) initializeConfig() error {
+func (p *Prometheus) initializeConfig() error {
 	_, err := p.container.Exec(
 		[]string{"sh", "-c", fmt.Sprintf("echo '%s' > /etc/prometheus/prometheus.yml", promCfg)})
 	return err
 }
 
-// reloadConfig reloads the PrometheusDockerNode configuration by sending "SIGHUP" signal.
-func (p *PrometheusDockerNode) reloadConfig() error {
+// reloadConfig reloads the Prometheus configuration by sending "SIGHUP" signal.
+func (p *Prometheus) reloadConfig() error {
 	return p.container.SendSignal(docker.SigHup)
 }
