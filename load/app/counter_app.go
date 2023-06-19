@@ -16,12 +16,20 @@ import (
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
 func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account) (*CounterApplication, error) {
+	// get price of gas from the network
+	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
+	}
+	// use greater gas price
+	gasPrice.Mul(gasPrice, big.NewInt(4)) // higher coefficient for the contract deploy
 
 	// Deploy the Counter contract to be used by tx generators
 	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
 	}
+	txOpts.GasPrice = gasPrice
 	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
 	contractAddress, _, _, err := contract.DeployCounter(txOpts, rpcClient)
 	if err != nil {
@@ -37,7 +45,7 @@ func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account) (*Count
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
 	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to wait until the Counter contract is deployed; %v", err)
 	}
 
 	return &CounterApplication{
@@ -66,23 +74,27 @@ func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGe
 		return nil, err
 	}
 
-	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.primaryAccount, workerAccount.address, workerBudget)
-	if err != nil {
-		return nil, fmt.Errorf("failed to tranfer from primary account to app account: %v", err)
-	}
-
-	// get price of gas
+	// get price of gas from the network
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
+	}
+	priorityGasPrice := big.NewInt(0)
+	regularGasPrice := big.NewInt(0)
+	priorityGasPrice.Mul(gasPrice, big.NewInt(4)) // greater gas price for init
+	regularGasPrice.Mul(gasPrice, big.NewInt(2))  // lower gas price for regular txs
+
+	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
+	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
+	err = transferValue(rpcClient, f.primaryAccount, workerAccount.address, workerBudget, priorityGasPrice)
+	if err != nil {
+		return nil, fmt.Errorf("failed to tranfer from primary account to app account: %v", err)
 	}
 
 	gen := &CounterGenerator{
 		abi:      f.abi,
 		sender:   workerAccount,
-		gasPrice: gasPrice,
+		gasPrice: regularGasPrice,
 		sentTxs:  &f.sentTxs,
 		contract: f.contractAddress,
 	}
