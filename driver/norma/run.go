@@ -8,17 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/constraints"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
+	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/constraints"
 )
 
 // Run with `go run ./driver/norma run <scenario.yml>`
@@ -29,6 +29,7 @@ var runCommand = cli.Command{
 	Usage:  "runs a scenario",
 	Flags: []cli.Flag{
 		&DbImpl,
+		&keepPrometheusRunning,
 	},
 }
 
@@ -38,10 +39,14 @@ var (
 		Usage: "select the DB implementation to use (geth or carmen)",
 		Value: "carmen",
 	}
+	keepPrometheusRunning = cli.BoolFlag{
+		Name:    "keep-prometheus-running",
+		Usage:   "if set, the Prometheus instance will not be shut down after the run is complete.",
+		Aliases: []string{"kpr"},
+	}
 )
 
 func run(ctx *cli.Context) (err error) {
-
 	db := strings.ToLower(ctx.String(DbImpl.Name))
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
@@ -112,6 +117,21 @@ func run(ctx *cli.Context) (err error) {
 	if err := monitoring.InstallAllRegisteredSources(monitor); err != nil {
 		return err
 	}
+
+	// Run prometheus.
+	fmt.Printf("Starting Prometheus ...\n")
+	prom, err := prometheusmon.Start(net, net.GetDockerNetwork())
+	if err != nil {
+		fmt.Printf("error starting Prometheus:\n%v", err)
+	}
+	defer func() {
+		if !ctx.Bool(keepPrometheusRunning.Name) && prom != nil {
+			fmt.Printf("Shutting down Prometheus ...\n")
+			if err := prom.Shutdown(); err != nil {
+				fmt.Printf("error during Prometheus shutdown:\n%v", err)
+			}
+		}
+	}()
 
 	// Run scenario.
 	fmt.Printf("Running '%s' ...\n", path)

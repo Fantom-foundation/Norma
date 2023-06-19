@@ -37,6 +37,9 @@ jobs:
     - name: Fetch Docker alpine-image
       run: docker image pull alpine
 
+    - name: Fetch Prometheus image
+      run: docker image pull prom/prometheus:v2.44.0
+
       # Cache of docker layers
     - uses: satackey/action-docker-layer-caching@v0.0.11
       continue-on-error: true

@@ -10,6 +10,9 @@ pull-hello-world-image:
 pull-alpine-image:
 	docker image pull alpine
 
+pull-prometheus-image:
+	docker image pull prom/prometheus:v2.44.0
+
 build-opera-docker-image:
 	docker build . -t opera
 
@@ -26,10 +29,10 @@ load/contracts/abi/ERC20.abi: load/contracts/ERC20.sol
 generate-mocks: # requires installed mockgen
 	go generate ./...
 
-norma: build-opera-docker-image
+norma: pull-prometheus-image build-opera-docker-image
 	go build -o $(BUILD_DIR)/norma ./driver/norma
 
-test: pull-hello-world-image pull-alpine-image build-opera-docker-image
+test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-opera-docker-image
 	go test ./... -v
 
 clean:

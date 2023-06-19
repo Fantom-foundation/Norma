@@ -2,6 +2,9 @@ package controller_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
@@ -9,8 +12,6 @@ import (
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"testing"
-	"time"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1

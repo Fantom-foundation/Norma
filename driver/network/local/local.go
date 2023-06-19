@@ -329,13 +329,19 @@ func (n *LocalNetwork) Shutdown() error {
 	}
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
-	// Third, shut down the network.
-	err := n.network.Cleanup()
-	if err != nil {
-		errs = append(errs, err)
+	// Third, shut down the docker network.
+	if n.network != nil {
+		if err := n.network.Cleanup(); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	return errors.Join(errs...)
+}
+
+// GetDockerNetwork returns the underlying docker network.
+func (n *LocalNetwork) GetDockerNetwork() *docker.Network {
+	return n.network
 }
 
 func (n *LocalNetwork) getRandomValidator() (driver.Node, error) {

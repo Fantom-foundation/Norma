@@ -63,6 +63,34 @@ func (mr *MockNodeMockRecorder) GetLabel() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabel", reflect.TypeOf((*MockNode)(nil).GetLabel))
 }
 
+// Hostname mocks base method.
+func (m *MockNode) Hostname() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Hostname")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Hostname returns the hostname of the host.
+func (mr *MockNodeMockRecorder) Hostname() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hostname", reflect.TypeOf((*MockNode)(nil).Hostname))
+}
+
+// MetricsPort mocks base method.
+func (m *MockNode) MetricsPort() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MetricsPort")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// MetricsPort returns the metrics port of the host.
+func (mr *MockNodeMockRecorder) MetricsPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetricsPort", reflect.TypeOf((*MockNode)(nil).MetricsPort))
+}
+
 // GetNodeID mocks base method.
 func (m *MockNode) GetNodeID() (NodeID, error) {
 	m.ctrl.T.Helper()
