@@ -111,10 +111,14 @@ func (n *OperaNode) GetLabel() string {
 	return n.label
 }
 
+// Hostname returns the hostname of the node.
+// The hostname is accessible only inside the Docker network.
 func (n *OperaNode) Hostname() string {
 	return n.host.Hostname()
 }
 
+// MetricsPort returns the port on which the node exports its metrics.
+// The port is accessible only inside the Docker network.
 func (n *OperaNode) MetricsPort() int {
 	return 6060
 }
