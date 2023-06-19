@@ -300,7 +300,7 @@ func (n *LocalNetwork) Shutdown() error {
 	}
 	n.nodes = map[driver.NodeID]*node.OperaNode{}
 
-	// Fourth, shut down the docker network.
+	// Third, shut down the docker network.
 	if n.network != nil {
 		if err := n.network.Cleanup(); err != nil {
 			errs = append(errs, err)
