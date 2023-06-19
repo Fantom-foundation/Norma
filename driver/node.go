@@ -16,7 +16,13 @@ type Node interface {
 	// to label data and should be unique within a single scenario run.
 	GetLabel() string
 
-	// Returns true if the node is still running, false if stopped.
+	// Hostname returns the hostname of the host.
+	Hostname() string
+
+	// MetricsPort returns the port on which the node exposes its metrics.
+	MetricsPort() int
+
+	// IsRunning returns true if the node is still running, false if stopped.
 	IsRunning() bool
 
 	// GetNodeID returns an enode identifying this node within the Norma network.
