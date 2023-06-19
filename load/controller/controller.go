@@ -2,8 +2,10 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/load/generator"
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"log"
 	"time"
@@ -14,35 +16,42 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	shaper              shaper.Shaper
-	txsCounter          generator.TransactionCounts
-	txsCounterSupported bool
-	trigger             chan struct{}
+	shaper         shaper.Shaper
+	countsProvider app.ApplicationProvidingTxCount
+	network        driver.Network
+	trigger        chan struct{}
 }
 
-func NewAppController(generatorFactory generator.TransactionGeneratorFactory, shaper shaper.Shaper, accounts int) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, generators int, network driver.Network) (*AppController, error) {
 	trigger := make(chan struct{})
 
-	// initialize workers for individual accounts
-	for i := 0; i < accounts; i++ {
-		gen, err := generatorFactory.Create()
+	rpcClient, err := network.DialRandomRpc()
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial ranom RPC; %v", err)
+	}
+	defer rpcClient.Close()
+
+	// initialize workers for individual generators
+	for i := 0; i < generators; i++ {
+		gen, err := application.CreateGenerator(rpcClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create load generator; %s", err)
+			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
 
-		worker := Worker{
-			generator: gen,
-			trigger:   trigger,
-		}
-		go worker.Run()
+		go runGeneratorLoop(gen, trigger, network)
 	}
 
-	txsCounter, ok := generatorFactory.(generator.TransactionGeneratorFactoryWithStats)
+	// wait until all changes are on the chain
+	if err := application.WaitUntilApplicationIsDeployed(rpcClient); err != nil {
+		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
+	}
+
+	countsProvider, _ := application.(app.ApplicationProvidingTxCount) // nil if not TxCount provider
 	return &AppController{
-		shaper:              shaper,
-		txsCounter:          txsCounter,
-		txsCounterSupported: ok,
-		trigger:             trigger,
+		shaper:         shaper,
+		countsProvider: countsProvider,
+		network:        network,
+		trigger:        trigger,
 	}, nil
 }
 
@@ -78,7 +87,19 @@ func (ac *AppController) Run(ctx context.Context) error {
 // GetTransactionCounts returns the object that provides the number of send and received transactions
 // of application managed by this application controller.
 // If this application controller is not capable of providing such an information, this method returns
-// false in its second return argument.
-func (ac *AppController) GetTransactionCounts() (generator.TransactionCounts, bool) {
-	return ac.txsCounter, ac.txsCounterSupported
+// ErrDoesNotProvideTxCounts in its error return argument.
+func (ac *AppController) GetTransactionCounts() (app.TransactionCounts, error) {
+	if ac.countsProvider == nil {
+		return app.TransactionCounts{}, ErrDoesNotProvideTxCounts
+	}
+
+	rpcClient, err := ac.network.DialRandomRpc()
+	if err != nil {
+		return app.TransactionCounts{}, fmt.Errorf("failed to dial ranom RPC; %v", err)
+	}
+	defer rpcClient.Close()
+
+	return ac.countsProvider.GetTransactionCounts(rpcClient)
 }
+
+var ErrDoesNotProvideTxCounts = errors.New("app does not provide tx counts")

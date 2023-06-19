@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/network/rpc"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
-	"math/big"
 	"math/rand"
 	"sync"
 
@@ -13,18 +15,18 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
+	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
-	"github.com/Fantom-foundation/Norma/load/generator"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // LocalNetwork is a Docker based network running each individual node
 // within its own, dedicated Docker Container.
 type LocalNetwork struct {
-	docker  *docker.Client
-	network *docker.Network
-	config  driver.NetworkConfig
+	docker         *docker.Client
+	network        *docker.Network
+	config         driver.NetworkConfig
+	primaryAccount *app.Account
 
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
@@ -49,6 +51,8 @@ type LocalNetwork struct {
 
 	// listenerMutex is synching access to listeners
 	listenerMutex sync.Mutex
+
+	rpcWorkerPool *rpc.RpcWorkerPool
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
@@ -62,15 +66,26 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 		return nil, err
 	}
 
+	// Create chain account, which will be used for the initialization
+	primaryAccount, err := app.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create the empty network.
 	net := &LocalNetwork{
-		docker:    client,
-		network:   dn,
-		config:    *config,
-		nodes:     map[driver.NodeID]*node.OperaNode{},
-		apps:      []driver.Application{},
-		listeners: map[driver.NetworkListener]bool{},
+		docker:         client,
+		network:        dn,
+		config:         *config,
+		primaryAccount: primaryAccount,
+		nodes:          map[driver.NodeID]*node.OperaNode{},
+		apps:           []driver.Application{},
+		listeners:      map[driver.NetworkListener]bool{},
+		rpcWorkerPool:  rpc.NewRpcWorkerPool(),
 	}
+
+	// Let the RPC pool to start RPC workers when a node start.
+	net.RegisterListener(net.rpcWorkerPool)
 
 	// Start all validators.
 	nodeConfig := node.OperaNodeConfig{
@@ -158,6 +173,19 @@ func (n *LocalNetwork) RemoveNode(node driver.Node) error {
 	return nil
 }
 
+func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
+	n.rpcWorkerPool.SendTransaction(tx)
+}
+
+func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
+	nodes := n.GetActiveNodes()
+	rpcUrl := nodes[rand.Intn(len(nodes))].GetServiceUrl(&node.OperaWsService)
+	if rpcUrl == nil {
+		return nil, fmt.Errorf("websocket service is not available")
+	}
+	return ethclient.Dial(string(*rpcUrl))
+}
+
 // reasureAccountPrivateKey is an account with tokens that can be used to
 // initiate test applications and accounts.
 const treasureAccountPrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -176,7 +204,7 @@ func (a *localApplication) Start() error {
 	go func() {
 		err := a.controller.Run(ctx)
 		if err != nil {
-			log.Printf("Failed to run load generator: %v", err)
+			log.Printf("Failed to run load app: %v", err)
 		}
 	}()
 	return nil
@@ -190,7 +218,7 @@ func (a *localApplication) Stop() error {
 	return nil
 }
 
-func (a *localApplication) GetTransactionCounts() (generator.TransactionCounts, bool) {
+func (a *localApplication) GetTransactionCounts() (app.TransactionCounts, error) {
 	return a.controller.GetTransactionCounts()
 }
 
@@ -210,19 +238,20 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
-	privateKey, err := crypto.HexToECDSA(treasureAccountPrivateKey)
+	rpcClient, err := ethclient.Dial(string(*rpcUrl))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}
+	defer rpcClient.Close()
 
-	generatorFactory, err := generator.NewCounterGeneratorFactory(generator.URL(*rpcUrl), privateKey, big.NewInt(fakeNetworkID))
+	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize tx generator; %v", err)
+		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
 	}
 
 	constantShaper := shaper.NewConstantShaper(config.Rate)
 
-	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts)
+	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts, n)
 	if err != nil {
 		return nil, err
 	}
