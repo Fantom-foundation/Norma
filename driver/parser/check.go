@@ -3,8 +3,13 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+const namePatternStr = "^[A-Za-z0-9-]+$"
+
+var namePattern = regexp.MustCompile(namePatternStr)
 
 // Check tests semantic constraints on the configuration of a scenario.
 func (s *Scenario) Check() error {
@@ -18,14 +23,26 @@ func (s *Scenario) Check() error {
 	if s.NumValidators != nil && *s.NumValidators <= 0 {
 		errs = append(errs, fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators))
 	}
+	names := map[string]bool{}
 	for _, node := range s.Nodes {
 		if err := node.Check(s); err != nil {
 			errs = append(errs, err)
 		}
+		if _, exists := names[node.Name]; exists {
+			errs = append(errs, fmt.Errorf("node names must be unique, %s encountered multiple times", node.Name))
+		} else {
+			names[node.Name] = true
+		}
 	}
+	names = map[string]bool{}
 	for _, application := range s.Applications {
 		if err := application.Check(s); err != nil {
 			errs = append(errs, err)
+		}
+		if _, exists := names[application.Name]; exists {
+			errs = append(errs, fmt.Errorf("application names must be unique, %s encountered multiple times", application.Name))
+		} else {
+			names[application.Name] = true
 		}
 	}
 	return errors.Join(errs...)
@@ -34,8 +51,8 @@ func (s *Scenario) Check() error {
 // Check tests semantic constraints on the node configuration of a scenario.
 func (n *Node) Check(scenario *Scenario) error {
 	errs := []error{}
-	if strings.TrimSpace(n.Name) == "" {
-		errs = append(errs, fmt.Errorf("node name must not be empty"))
+	if !namePattern.Match([]byte(n.Name)) {
+		errs = append(errs, fmt.Errorf("node name must match %v, got %v", namePatternStr, n.Name))
 	}
 	if n.Instances != nil && *n.Instances < 0 {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
@@ -49,26 +66,26 @@ func (n *Node) Check(scenario *Scenario) error {
 }
 
 // Check tests semantic constraints on the application configuration of a scenario.
-func (s *Application) Check(scenario *Scenario) error {
+func (a *Application) Check(scenario *Scenario) error {
 	errs := []error{}
 
-	if strings.TrimSpace(s.Name) == "" {
-		errs = append(errs, fmt.Errorf("applications must have a name"))
+	if !namePattern.Match([]byte(a.Name)) {
+		errs = append(errs, fmt.Errorf("application name must match %v, got %v", namePatternStr, a.Name))
 	}
 
-	if s.Instances != nil && *s.Instances < 0 {
-		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *s.Instances))
+	if a.Instances != nil && *a.Instances < 0 {
+		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *a.Instances))
 	}
 
-	if s.Accounts != nil && *s.Accounts < 1 {
-		errs = append(errs, fmt.Errorf("number of accounts must be >= 1, is %d", *s.Accounts))
+	if a.Accounts != nil && *a.Accounts < 1 {
+		errs = append(errs, fmt.Errorf("number of accounts must be >= 1, is %d", *a.Accounts))
 	}
 
-	if err := checkTimeInterval(s.Start, s.End, scenario.Duration); err != nil {
+	if err := checkTimeInterval(a.Start, a.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
 	}
 
-	if err := s.Rate.Check(scenario); err != nil {
+	if err := a.Rate.Check(scenario); err != nil {
 		errs = append(errs, err)
 	}
 

@@ -17,35 +17,35 @@ num_validators: 1
 
 # In the network there is a single application producing constant load.
 applications:
-  - name: counter
+  - name: phase-1
     start: 0          # start time
     end: 60            # termination time
     accounts: 5       # accounts generating txs
     rate:
       constant: 2000     # Tx/s
 
-  - name: counter
+  - name: phase-2
     start: 120          # start time
     end: 180            # termination time
     accounts: 10       # accounts generating txs
     rate:
       constant: 2000     # Tx/s
 
-  - name: counter
+  - name: phase-3
     start: 240          # start time
     end: 300            # termination time
     accounts: 20       # accounts generating txs
     rate:
       constant: 2000     # Tx/s
 
-  - name: counter
+  - name: phase-4
     start: 360          # start time
     end: 420            # termination time
     accounts: 50       # accounts generating txs
     rate:
       constant: 2000     # Tx/s
 
-  - name: counter
+  - name: phase-5
     start: 480          # start time
     end: 540            # termination time
     accounts: 100       # accounts generating txs
