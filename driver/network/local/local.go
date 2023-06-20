@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/network/rpc"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
 	"math/rand"
 	"sync"
+
+	"github.com/Fantom-foundation/Norma/driver/network/rpc"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -96,7 +97,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	for i := 0; i < config.NumberOfValidators; i++ {
 		// TODO: create nodes in parallel
 		*nodeConfig.ValidatorId = i + 1
-		nodeConfig.Label = fmt.Sprintf("Validator-%d", i+1)
+		nodeConfig.Label = fmt.Sprintf("_validator-%d", i+1)
 		validator, err := net.createNode(&nodeConfig)
 		if err != nil {
 			errs = append(errs, err)

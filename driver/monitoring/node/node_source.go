@@ -2,10 +2,11 @@ package nodemon
 
 import (
 	"errors"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -157,11 +158,7 @@ func (s *periodicNodeDataSource[T]) Shutdown() error {
 }
 
 func (s *periodicNodeDataSource[T]) AfterNodeCreation(node driver.Node) {
-	nodeId, err := node.GetNodeID()
-	if err != nil {
-		log.Printf("failed to obtain node ID of node, will not be able to track block height: %v", err)
-		return
-	}
+	nodeId := node.GetLabel()
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
 
