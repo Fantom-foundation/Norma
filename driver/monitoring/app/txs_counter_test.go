@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -19,13 +20,11 @@ func TestApplicationRegistered(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-
 	// generate test mock applications
 	size := 1000
 	appsCount := 11
 	apps := make(map[monitoring.App][]driver.Application, appsCount)
+	appsList := make([]driver.Application, 0)
 	for i := 0; i < size; i++ {
 		application := driver.NewMockApplication(ctrl)
 		appName := fmt.Sprintf("app-%d", i%appsCount)
@@ -38,6 +37,7 @@ func TestApplicationRegistered(t *testing.T) {
 			SentTxs:     uint64(i * 10),
 			ReceivedTxs: uint64(i * 20),
 		}, nil)
+		appsList = append(appsList, application)
 
 		arr, exists := apps[monitoring.App(appName)]
 		if !exists {
@@ -47,54 +47,66 @@ func TestApplicationRegistered(t *testing.T) {
 		arr = append(arr, application)
 		apps[monitoring.App(appName)] = arr
 	}
+	net.EXPECT().GetActiveApplications().AnyTimes().Return(appsList)
 
 	// simulate applications received
-	source1 := NewSentTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
-	source2 := NewReceivedTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to start monitor instance: %v", err)
+	}
+	err = errors.Join(
+		monitoring.InstallSourceFor(SentTransactions, monitor),
+		monitoring.InstallSourceFor(ReceivedTransactions, monitor),
+	)
+	if err != nil {
+		t.Fatalf("failed to install metric sources: %v", err)
+	}
 
-	for _, source := range []*TxsCounter{source1, source2} {
-		t.Run(fmt.Sprintf("%s", source.metric.Name), func(t *testing.T) {
+	// shutdown causes calculation of data
+	if err := monitor.Shutdown(); err != nil {
+		t.Fatalf("cannot shutdown: %s", err)
+	}
 
-			// fill-in data
-			for name := range apps {
-				for _, app := range apps[name] {
-					source.AfterApplicationCreation(app)
-				}
-			}
+	metrics := []monitoring.Metric[monitoring.App, monitoring.Series[int, int]]{
+		SentTransactions, ReceivedTransactions,
+	}
 
-			// shutdown causes calculation of data
-			if err := source.Shutdown(); err != nil {
-				t.Fatalf("cannot shutdown: %s", err)
-			}
+	for _, metric := range metrics {
+		t.Run(metric.Name, func(t *testing.T) {
 
 			// verify results
-			for _, subject := range source.GetSubjects() {
+			subjects := monitoring.GetSubjects(monitor, metric)
+			for _, subject := range subjects {
 				_, exists := apps[subject]
 				if !exists {
 					t.Errorf("subject does not exist within expected subjects: %v", subject)
 				}
 			}
 
-			if got, want := len(source.GetSubjects()), len(apps); got != want {
+			if got, want := len(subjects), len(apps); got != want {
 				t.Errorf("amount of subjects do not match: %d != %d", got, want)
 			}
 
-			for subject := range apps {
-				series, exists := source.GetData(subject)
+			for subject, app := range apps {
+				series, exists := monitoring.GetData(monitor, subject, metric)
 				if !exists {
 					t.Errorf("data for subject dos not exist: %v", subject)
+					continue
 				}
 
 				for i, point := range series.GetRange(0, 100000) {
-					txsCount, err := apps[subject][i].GetTransactionCounts()
+					txsCount, err := app[i].GetTransactionCounts()
 					if err != nil {
 						t.Fatalf("failed to get txs counts; %v", err)
 					}
-					want, _ := source.getter(txsCount)
+					want := int(txsCount.SentTxs)
+					if metric.Name == ReceivedTransactions.Name {
+						want = int(txsCount.ReceivedTxs)
+					}
 					if point.Value != want {
 						t.Errorf("data series contain unexpected value: %v != %v", point.Value, want)
 					}
-					if got, want := point.Position, apps[subject][i].Config().Accounts; got != want {
+					if got, want := point.Position, app[i].Config().Accounts; got != want {
 						t.Errorf("positions do not match: %v != %v", got, want)
 					}
 				}
@@ -120,37 +132,35 @@ func TestApplicationPrinted(t *testing.T) {
 		SentTxs:     uint64(15),
 		ReceivedTxs: uint64(16),
 	}, nil)
+	net.EXPECT().GetActiveApplications().AnyTimes().Return([]driver.Application{application})
 
-	csvFile1, _ := os.CreateTemp(t.TempDir(), "file.csv")
-	writer1 := monitoring.NewWriterChain(csvFile1)
-	source1 := NewSentTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer1))
+	outDir := t.TempDir()
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: outDir})
+	if err != nil {
+		t.Fatalf("failed to start monitoring instance for test: %v", err)
+	}
 
-	csvFile2, _ := os.CreateTemp(t.TempDir(), "file.csv")
-	writer2 := monitoring.NewWriterChain(csvFile2)
-	source2 := NewReceivedTransactionsSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer2))
+	err = errors.Join(
+		monitoring.InstallSourceFor(SentTransactions, monitor),
+		monitoring.InstallSourceFor(ReceivedTransactions, monitor),
+	)
+	if err != nil {
+		t.Fatalf("failed to install metric sources: %v", err)
+	}
 
-	csvFiles := []*os.File{csvFile1, csvFile2}
+	if err := monitor.Shutdown(); err != nil {
+		t.Fatalf("failed to shut down monitoring: %v", err)
+	}
+
+	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
+
 	expected := []string{
 		"SentTransactions, network, , app-666, , , 999, 15\n",
 		"ReceivedTransactions, network, , app-666, , , 999, 16\n",
 	}
-
-	for i, source := range []*TxsCounter{source1, source2} {
-		t.Run(source.metric.Name, func(t *testing.T) {
-			// insert data
-			source.AfterApplicationCreation(application)
-
-			// shutdown causes calculation of data
-			if err := source.Shutdown(); err != nil {
-				t.Fatalf("cannot shutdown: %s", err)
-			}
-			_ = source.monitor.Writer().Close()
-
-			content, _ := os.ReadFile(csvFiles[i].Name())
-			if got, want := string(content), expected[i]; !strings.Contains(got, want) {
-				t.Errorf("unexpected export: %v != %v", got, want)
-			}
-		})
+	for _, line := range expected {
+		if got, want := string(content), line; !strings.Contains(got, want) {
+			t.Errorf("unexpected export: %v != %v", got, want)
+		}
 	}
-
 }

@@ -80,6 +80,20 @@ func (mr *MockNetworkMockRecorder) DialRandomRpc() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialRandomRpc", reflect.TypeOf((*MockNetwork)(nil).DialRandomRpc))
 }
 
+// GetActiveApplications mocks base method.
+func (m *MockNetwork) GetActiveApplications() []Application {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveApplications")
+	ret0, _ := ret[0].([]Application)
+	return ret0
+}
+
+// GetActiveApplications indicates an expected call of GetActiveApplications.
+func (mr *MockNetworkMockRecorder) GetActiveApplications() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveApplications", reflect.TypeOf((*MockNetwork)(nil).GetActiveApplications))
+}
+
 // GetActiveNodes mocks base method.
 func (m *MockNetwork) GetActiveNodes() []Node {
 	m.ctrl.T.Helper()

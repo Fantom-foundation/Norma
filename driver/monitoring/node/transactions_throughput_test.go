@@ -20,10 +20,11 @@ func TestTransactionsThroughputSource(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 
 	now := time.Now()
 	seconds := now.Unix()
@@ -73,10 +74,11 @@ func TestTransactionsTimeDiffBelowSec(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 
 	seconds := time.Now().Unix()
 	nsDiff := int64(50)
@@ -103,17 +105,24 @@ func TestTransactionsCsvExport(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	csvFile, _ := os.CreateTemp(t.TempDir(), "file.csv")
-	writer := monitoring.NewWriterChain(csvFile)
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	config := monitoring.MonitorConfig{OutputDir: t.TempDir()}
+	monitor, err := monitoring.NewMonitor(net, config)
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 
 	seconds := time.Now().Unix()
 
 	// time diff only 50ns
 	source.OnBlock("A", monitoring.Block{Height: 10, Time: time.Unix(seconds, 0), Txs: 10})
 	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds+1, 0), Txs: 10})
-	_ = writer.Close()
-	content, _ := os.ReadFile(csvFile.Name())
+
+	if err := monitor.Shutdown(); err != nil {
+		t.Fatalf("failed to shut down monitoring: %v", err)
+	}
+
+	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
 	if got, want := string(content), "TransactionsThroughput, network, A, , , 11, , 10\n"; !strings.Contains(got, want) {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
@@ -126,9 +135,12 @@ func TestTransactionsBellowMeasurableDiff(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	config := monitoring.MonitorConfig{OutputDir: t.TempDir()}
+	monitor, err := monitoring.NewMonitor(net, config)
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 
 	seconds := time.Now().Unix()
 
@@ -149,9 +161,12 @@ func TestTransactionsZeroTransactionsBellowMeasurableDiff(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	config := monitoring.MonitorConfig{OutputDir: t.TempDir()}
+	monitor, err := monitoring.NewMonitor(net, config)
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 
 	seconds := time.Now().Unix()
 

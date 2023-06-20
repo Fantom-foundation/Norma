@@ -3,6 +3,8 @@ package monitoring
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/Fantom-foundation/Norma/driver"
 )
 
@@ -28,14 +30,27 @@ type MonitorConfig struct {
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
-func NewMonitor(network driver.Network, config MonitorConfig, writer WriterChain) *Monitor {
+func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) {
+	if config.OutputDir == "" {
+		config.OutputDir = "."
+	}
+	csvPath := config.OutputDir + "/measurements.csv"
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return nil, err
+	}
 	return &Monitor{
 		network:         network,
 		config:          config,
 		nodeLogProvider: NewNodeLogDispatcher(network),
 		sources:         map[string]source{},
-		writer:          writer,
-	}
+		writer:          NewWriterChain(csvFile),
+	}, nil
+}
+
+// GetMeasurementFileName returns the name of the file monitoring data is written to.
+func (m *Monitor) GetMeasurementFileName() string {
+	return m.config.OutputDir + "/measurements.csv"
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This

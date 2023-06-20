@@ -16,11 +16,10 @@ func TestMonitor_CreateAndShutdown(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	writer.EXPECT().Close().AnyTimes()
-
-	monitor := NewMonitor(net, MonitorConfig{}, writer)
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
 	if err := monitor.Shutdown(); err != nil {
 		t.Errorf("shutdown of empty monitor failed: %v", err)
 	}
@@ -42,11 +41,10 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 
 	metric := source.GetMetric()
 
-	writer := NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	writer.EXPECT().Close().AnyTimes()
-
-	monitor := NewMonitor(net, MonitorConfig{}, writer)
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
 	if IsSupported(monitor, metric) {
 		t.Errorf("empty monitor should not support any metric")
 	}
@@ -94,8 +92,11 @@ func TestMonitor_CsvExport(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	csvFile, _ := os.CreateTemp(t.TempDir(), "file.csv")
-	monitor := NewMonitor(net, MonitorConfig{}, NewWriterChain(csvFile))
+	outDir := t.TempDir()
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: outDir})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
 
 	monitor.Writer().Add(func() error {
 		_, _ = monitor.Writer().Write([]byte("Hello World"))
@@ -103,7 +104,7 @@ func TestMonitor_CsvExport(t *testing.T) {
 	})
 	_ = monitor.Shutdown()
 
-	content, _ := os.ReadFile(csvFile.Name())
+	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
 
 	if got, want := string(content), "metric,network,node,app,time,block,workers,value\nHello World"; got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)

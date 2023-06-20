@@ -285,6 +285,12 @@ func (n *LocalNetwork) GetActiveNodes() []driver.Node {
 	return res
 }
 
+func (n *LocalNetwork) GetActiveApplications() []driver.Application {
+	n.appsMutex.Lock()
+	defer n.appsMutex.Unlock()
+	return n.apps
+}
+
 func (n *LocalNetwork) RegisterListener(listener driver.NetworkListener) {
 	n.listenerMutex.Lock()
 	n.listeners[listener] = true

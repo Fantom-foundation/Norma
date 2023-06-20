@@ -27,6 +27,9 @@ type Network interface {
 	// GetActiveNodes obtains a list of active nodes in the network.
 	GetActiveNodes() []Node
 
+	// GetActiveApplications obtains a list of active apps in the network.
+	GetActiveApplications() []Application
+
 	// RegisterListener registers a listener to receive updates on network
 	// changes, for instance, to update monitoring information. Registering
 	// the same listener more than once will have no effect.

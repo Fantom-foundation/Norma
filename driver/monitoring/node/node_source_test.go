@@ -65,11 +65,11 @@ func TestNodeSourceRetrievesSensorData(t *testing.T) {
 	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
 	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader("")), nil)
 
-	writer := mon.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	writer.EXPECT().Close().AnyTimes()
-
-	source := newPeriodicNodeDataSource[int](testNodeMetric, mon.NewMonitor(net, mon.MonitorConfig{}, writer), 50*time.Millisecond, &testSensorFactory{}, export.DirectConverter[int]{})
+	monitor, err := mon.NewMonitor(net, mon.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to start monitor instance: %v", err)
+	}
+	source := newPeriodicNodeDataSource[int](testNodeMetric, monitor, 50*time.Millisecond, &testSensorFactory{}, export.DirectConverter[int]{})
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()

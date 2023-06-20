@@ -21,11 +21,12 @@ func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-
-	source1 := NewBlockTimeSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
-	source2 := NewBlockProcessingTimeSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source1 := NewBlockTimeSource(monitor)
+	source2 := NewBlockProcessingTimeSource(monitor)
 
 	// simulate data received to metric
 	testNodeSource(t, source1)
@@ -51,11 +52,13 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
 
 	reg := monitoring.NewNodeLogDispatcher(net)
-	source := NewBlockTimeSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	source := NewBlockTimeSource(monitor)
 	reg.RegisterLogListener(source)
 
 	// pre-existing node with some blocks
