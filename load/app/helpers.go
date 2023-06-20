@@ -11,11 +11,7 @@ import (
 
 // transferValue transfer a financial value from account identified by given privateKey, to given toAddress.
 // It returns when the value is already available on the target account.
-func transferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int) (err error) {
-	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
-	if err != nil {
-		return err
-	}
+func transferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int, gasPrice *big.Int) (err error) {
 	signedTx, err := createTx(from, toAddress, value, nil, gasPrice, 21000)
 	if err != nil {
 		return err
@@ -37,9 +33,11 @@ func createTx(from *Account, toAddress common.Address, value *big.Int, data []by
 
 // waitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
 func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient RpcClient) error {
+	var nonce uint64
+	var err error
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
-		nonce, err := rpcClient.NonceAt(context.Background(), account, nil) // nonce at latest block
+		nonce, err = rpcClient.NonceAt(context.Background(), account, nil) // nonce at latest block
 		if err != nil {
 			return fmt.Errorf("failed to check address nonce; %v", err)
 		}
@@ -47,5 +45,5 @@ func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 			return nil
 		}
 	}
-	return fmt.Errorf("nonce not achieved before timeout")
+	return fmt.Errorf("nonce not achieved before timeout (awaited %d, current %d)", awaitedNonce, nonce)
 }
