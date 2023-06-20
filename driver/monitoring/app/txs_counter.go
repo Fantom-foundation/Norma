@@ -3,11 +3,12 @@ package app
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"github.com/Fantom-foundation/Norma/load/app"
-	"sync"
 )
 
 var (
@@ -104,6 +105,11 @@ func newTxsCounterSource(monitor *monitoring.Monitor, sensor countGetter, metric
 	}
 
 	monitor.Network().RegisterListener(res)
+
+	for _, app := range monitor.Network().GetActiveApplications() {
+		res.AfterApplicationCreation(app)
+	}
+
 	monitor.Writer().Add(func() error {
 		return export.AddAppSeriesSource[int, int](monitor.Writer(), res, export.DirectConverter[int]{}, export.DirectConverter[int]{})
 	})

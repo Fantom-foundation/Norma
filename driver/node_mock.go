@@ -63,34 +63,6 @@ func (mr *MockNodeMockRecorder) GetLabel() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLabel", reflect.TypeOf((*MockNode)(nil).GetLabel))
 }
 
-// Hostname mocks base method.
-func (m *MockNode) Hostname() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Hostname")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Hostname returns the hostname of the host.
-func (mr *MockNodeMockRecorder) Hostname() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hostname", reflect.TypeOf((*MockNode)(nil).Hostname))
-}
-
-// MetricsPort mocks base method.
-func (m *MockNode) MetricsPort() int {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MetricsPort")
-	ret0, _ := ret[0].(int)
-	return ret0
-}
-
-// MetricsPort returns the metrics port of the host.
-func (mr *MockNodeMockRecorder) MetricsPort() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetricsPort", reflect.TypeOf((*MockNode)(nil).MetricsPort))
-}
-
 // GetNodeID mocks base method.
 func (m *MockNode) GetNodeID() (NodeID, error) {
 	m.ctrl.T.Helper()
@@ -120,6 +92,20 @@ func (mr *MockNodeMockRecorder) GetServiceUrl(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceUrl", reflect.TypeOf((*MockNode)(nil).GetServiceUrl), arg0)
 }
 
+// Hostname mocks base method.
+func (m *MockNode) Hostname() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Hostname")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Hostname indicates an expected call of Hostname.
+func (mr *MockNodeMockRecorder) Hostname() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hostname", reflect.TypeOf((*MockNode)(nil).Hostname))
+}
+
 // IsRunning mocks base method.
 func (m *MockNode) IsRunning() bool {
 	m.ctrl.T.Helper()
@@ -132,6 +118,20 @@ func (m *MockNode) IsRunning() bool {
 func (mr *MockNodeMockRecorder) IsRunning() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockNode)(nil).IsRunning))
+}
+
+// MetricsPort mocks base method.
+func (m *MockNode) MetricsPort() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MetricsPort")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// MetricsPort indicates an expected call of MetricsPort.
+func (mr *MockNodeMockRecorder) MetricsPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetricsPort", reflect.TypeOf((*MockNode)(nil).MetricsPort))
 }
 
 // Stop mocks base method.

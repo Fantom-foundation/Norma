@@ -31,10 +31,10 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 	})
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-
-	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer)
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
 	numNodes = 0
 	source := newNumNodesSource(monitor, 50*time.Millisecond)
 

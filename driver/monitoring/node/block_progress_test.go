@@ -53,11 +53,11 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	net.EXPECT().UnregisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().Return([]driver.Node{node1, node2}).AnyTimes()
 
-	writer := mon.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
-	writer.EXPECT().Close().AnyTimes()
-
-	source := newNodeBlockHeightSource(mon.NewMonitor(net, mon.MonitorConfig{}, writer), 50*time.Millisecond)
+	monitor, err := mon.NewMonitor(net, mon.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+	source := newNodeBlockHeightSource(monitor, 50*time.Millisecond)
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()

@@ -107,7 +107,7 @@ func run(ctx *cli.Context) (err error) {
 			fmt.Printf("error during monitor shutdown:\n%v", err)
 		}
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
-		fmt.Printf("Raw data was expored to %v/%v\n", outputDir, monitoring.MeasurementsFileName)
+		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
 	}()
 
 	// Install monitoring sensory.

@@ -74,6 +74,15 @@ func InstallAllRegisteredSources(monitor *Monitor) error {
 	return errors.Join(errs...)
 }
 
+// InstallSourceFor installs a data source for the given metric in the given monitor.
+func InstallSourceFor[S any, T any](metric Metric[S, T], monitor *Monitor) error {
+	installer, exists := sourceInstallers[metric.Name]
+	if !exists {
+		return fmt.Errorf("no definition registered for metric %s", metric.Name)
+	}
+	return installer.installIn(monitor)
+}
+
 // sourceInstallers is the internal global registry of metric sources.
 var sourceInstallers = map[string]sourceInstaller{}
 

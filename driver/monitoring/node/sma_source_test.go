@@ -19,12 +19,12 @@ func TestSMASource(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().Return([]driver.Node{}).AnyTimes()
 
-	writer := monitoring.NewMockWriterChain(ctrl)
-	writer.EXPECT().Add(gomock.Any()).AnyTimes()
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
 
-	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer)
-
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	source := NewTransactionsThroughputSource(monitor)
 	sf := sourceFactory[monitoring.Node, monitoring.BlockSeries[float32]]{TransactionsThroughput, source}
 	if err := monitoring.InstallSource[monitoring.Node, monitoring.BlockSeries[float32]](monitor, &sf); err != nil {
 		t.Fatalf("failed to install source: %v", err)
@@ -92,11 +92,12 @@ func TestSMACsvExport(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	csvFile, _ := os.CreateTemp(t.TempDir(), "file.csv")
-	writer := monitoring.NewWriterChain(csvFile)
-
-	monitor := monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer)
-	source := NewTransactionsThroughputSource(monitoring.NewMonitor(net, monitoring.MonitorConfig{}, writer))
+	config := monitoring.MonitorConfig{OutputDir: t.TempDir()}
+	monitor, err := monitoring.NewMonitor(net, config)
+	if err != nil {
+		t.Fatalf("failed to start monitor instance: %v", err)
+	}
+	source := NewTransactionsThroughputSource(monitor)
 	sf := sourceFactory[monitoring.Node, monitoring.BlockSeries[float32]]{TransactionsThroughput, source}
 	if err := monitoring.InstallSource[monitoring.Node, monitoring.BlockSeries[float32]](monitor, &sf); err != nil {
 		t.Fatalf("failed to install source: %v", err)
@@ -117,9 +118,12 @@ func TestSMACsvExport(t *testing.T) {
 	// time diff only 50ns
 	source.OnBlock("A", monitoring.Block{Height: 10, Time: time.Unix(seconds, 0), Txs: 10})
 	source.OnBlock("A", monitoring.Block{Height: 11, Time: time.Unix(seconds+1, 0), Txs: 10})
-	_ = writer.Close()
 
-	content, _ := os.ReadFile(csvFile.Name())
+	if err := monitor.Shutdown(); err != nil {
+		t.Fatalf("failed to shut down monitoring: %v", err)
+	}
+
+	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
 	if got, want := string(content),
 		"TransactionsThroughput, network, A, , , 11, , 10\n"+
 			"TransactionThroughputSMA_2, network, A, , , 11, , 10\n"; !strings.Contains(got, want) {

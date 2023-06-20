@@ -8,8 +8,6 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 )
 
-const MeasurementsFileName = "measurements.csv"
-
 // Monitor instances are handling the life-cycle of sets of data sources for a
 // a configurable set of metrics. Instances are to be created using the
 // NewMonitor() factory below and required to be shut down in the end.
@@ -33,7 +31,10 @@ type MonitorConfig struct {
 
 // NewMonitor creates a new Monitor instance without any registered sources.
 func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) {
-	csvPath := config.OutputDir + "/" + MeasurementsFileName
+	if config.OutputDir == "" {
+		config.OutputDir = "."
+	}
+	csvPath := config.OutputDir + "/measurements.csv"
 	csvFile, err := os.Create(csvPath)
 	if err != nil {
 		return nil, err
@@ -45,6 +46,11 @@ func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) 
 		sources:         map[string]source{},
 		writer:          NewWriterChain(csvFile),
 	}, nil
+}
+
+// GetMeasurementFileName returns the name of the file monitoring data is written to.
+func (m *Monitor) GetMeasurementFileName() string {
+	return m.config.OutputDir + "/measurements.csv"
 }
 
 // Shutdown disconnects all sources, stopping the collection of data. This
