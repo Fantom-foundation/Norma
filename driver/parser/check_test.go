@@ -173,15 +173,19 @@ func TestRateCheck_InvalidWaveIsDetected(t *testing.T) {
 	}
 }
 
-func TestApplication_MissingNameIsDetected(t *testing.T) {
+func TestApplication_InvalidNameIsDetected(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{}
-	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "application name must match") {
 		t.Errorf("missing name was not detected")
 	}
 	app.Name = "  "
-	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "application name must match") {
 		t.Errorf("missing name was not detected")
+	}
+	app.Name = "_something_with_underscores_"
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "application name must match") {
+		t.Errorf("invalid name was not detected")
 	}
 }
 
@@ -241,14 +245,18 @@ func TestApplication_DetectsShapeIssue(t *testing.T) {
 	}
 }
 
-func TestNode_MissingNameIsDetected(t *testing.T) {
+func TestNode_InvalidNameIsDetected(t *testing.T) {
 	scenario := Scenario{}
 	node := Node{}
-	if err := node.Check(&scenario); err == nil || !strings.Contains(err.Error(), "node name must not be empty") {
+	if err := node.Check(&scenario); err == nil || !strings.Contains(err.Error(), "node name must match") {
 		t.Errorf("missing name was not detected")
 	}
 	node.Name = "   "
-	if err := node.Check(&scenario); err == nil || !strings.Contains(err.Error(), "node name must not be empty") {
+	if err := node.Check(&scenario); err == nil || !strings.Contains(err.Error(), "node name must match") {
+		t.Errorf("missing name was not detected")
+	}
+	node.Name = "_something_with_underscores_"
+	if err := node.Check(&scenario); err == nil || !strings.Contains(err.Error(), "node name must match") {
 		t.Errorf("missing name was not detected")
 	}
 }
@@ -308,13 +316,43 @@ func TestScenario_NegativeNumberOfValidatorsIsDetected(t *testing.T) {
 	}
 }
 
+func TestScenario_NodeNameCollisionIsDetected(t *testing.T) {
+	scenario := Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes: []Node{
+			{Name: "A"},
+			{Name: "B"},
+			{Name: "A"},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "node names must be unique") {
+		t.Errorf("node name collision was not detected")
+	}
+}
+
+func TestScenario_ApplicationNameCollisionIsDetected(t *testing.T) {
+	scenario := Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Applications: []Application{
+			{Name: "A"},
+			{Name: "B"},
+			{Name: "A"},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "application names must be unique") {
+		t.Errorf("application name collision was not detected")
+	}
+}
+
 func TestScenario_NodeIssuesAreDetected(t *testing.T) {
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
 		Nodes:    []Node{{}},
 	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "node name must not be empty") {
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "node name must match") {
 		t.Errorf("node issue was not detected")
 	}
 }
@@ -325,7 +363,7 @@ func TestScenario_ApplicationIssuesAreDetected(t *testing.T) {
 		Duration:     60,
 		Applications: []Application{{}},
 	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "applications must have a name") {
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "application name must match") {
 		t.Errorf("application issue was not detected")
 	}
 }
