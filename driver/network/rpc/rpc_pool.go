@@ -28,7 +28,7 @@ func (p RpcWorkerPool) AfterNodeCreation(newNode driver.Node) {
 	if rpcUrl == nil {
 		return
 	}
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 150; i++ {
 		go runRpcSenderLoop(*rpcUrl, p.txs)
 	}
 }
