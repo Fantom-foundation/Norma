@@ -47,3 +47,25 @@ func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 	}
 	return fmt.Errorf("nonce not achieved before timeout (awaited %d, current %d)", awaitedNonce, nonce)
 }
+
+// getGasPrice obtains optimal gasPrice for priority (initializing) and for regular transactions
+func getGasPrice(rpcClient RpcClient) (*big.Int, *big.Int, error) {
+	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to suggest gas price; %v", err)
+	}
+	var priorityPrice, regularPrice big.Int
+	priorityPrice.Mul(gasPrice, big.NewInt(4)) // greater gas price for init
+	regularPrice.Mul(gasPrice, big.NewInt(2))  // lower gas price for regular txs
+	return &priorityPrice, &regularPrice, nil
+}
+
+// fundSendingAccount transfers budget (1000 FTM) to worker's account - finances to cover transaction fees
+func fundSendingAccount(rpcClient RpcClient, from *Account, fundedAddress common.Address, gasPrice *big.Int) error {
+	workerBudget := big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1_000000000000000000))
+	err := transferValue(rpcClient, from, fundedAddress, workerBudget, gasPrice)
+	if err != nil {
+		return fmt.Errorf("failed to fund app account: %v", err)
+	}
+	return nil
+}

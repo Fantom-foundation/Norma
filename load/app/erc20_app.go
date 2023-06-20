@@ -98,20 +98,14 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 	}
 
 	// get price of gas from the network
-	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
+	priorityGasPrice, regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
+		return nil, err
 	}
-	priorityGasPrice := big.NewInt(0)
-	regularGasPrice := big.NewInt(0)
-	priorityGasPrice.Mul(gasPrice, big.NewInt(4)) // greater gas price for init
-	regularGasPrice.Mul(gasPrice, big.NewInt(2))  // lower gas price for regular txs
 
-	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.primaryAccount, workerAccount.address, workerBudget, priorityGasPrice)
-	if err != nil {
-		return nil, fmt.Errorf("failed to tranfer from primary account to app account: %v", err)
+	// transfer finances to cover transaction fees
+	if err = fundSendingAccount(rpcClient, f.primaryAccount, workerAccount.address, priorityGasPrice); err != nil {
+		return nil, err
 	}
 
 	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
