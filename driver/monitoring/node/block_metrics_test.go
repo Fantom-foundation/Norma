@@ -1,13 +1,14 @@
 package nodemon
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/golang/mock/gomock"
 	"io"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/golang/mock/gomock"
 )
 
 func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
@@ -38,9 +39,9 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	node2 := driver.NewMockNode(ctrl)
 	node3 := driver.NewMockNode(ctrl)
 
-	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node1TestId), nil)
-	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node2TestId), nil)
-	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(monitoring.Node3TestId), nil)
+	node1.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node1TestId))
+	node2.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node2TestId))
+	node3.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node3TestId))
 
 	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
 	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)

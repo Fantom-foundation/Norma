@@ -37,9 +37,9 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	node2 := driver.NewMockNode(ctrl)
 	node3 := driver.NewMockNode(ctrl)
 
-	node1.EXPECT().GetNodeID().AnyTimes().Return(node1Id, nil)
-	node2.EXPECT().GetNodeID().AnyTimes().Return(node2Id, nil)
-	node3.EXPECT().GetNodeID().AnyTimes().Return(node3Id, nil)
+	node1.EXPECT().GetLabel().AnyTimes().Return(string(node1Id))
+	node2.EXPECT().GetLabel().AnyTimes().Return(string(node2Id))
+	node3.EXPECT().GetLabel().AnyTimes().Return(string(node3Id))
 
 	node1.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url)
 	node2.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url)

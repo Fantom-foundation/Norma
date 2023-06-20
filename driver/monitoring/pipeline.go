@@ -26,6 +26,7 @@ type writerChain struct {
 }
 
 func NewWriterChain(w io.WriteCloser) WriterChain {
+	w.Write([]byte("metric,network,node,app,time,block,workers,value\n"))
 	return &writerChain{
 		w,
 		make([]func() error, 0, 50),

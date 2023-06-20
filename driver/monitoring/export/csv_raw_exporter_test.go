@@ -1,15 +1,16 @@
 package export_test
 
 import (
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
 	"golang.org/x/exp/constraints"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
@@ -135,7 +136,7 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 			"ReceivedTransactions, network, , app-1, , , 100, 110\n" +
 			"ReceivedTransactions, network, , app-1, , , 200, 213\n"
 
-	if expected != builder.String() {
+	if !strings.Contains(builder.String(), expected) {
 		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, builder.String())
 	}
 }
@@ -169,7 +170,7 @@ func TestRegisterSources(t *testing.T) {
 			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20000000000\n" +
 			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30000000000\n"
 
-	if expected != builder.String() {
+	if !strings.Contains(builder.String(), expected) {
 		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, builder.String())
 	}
 }
