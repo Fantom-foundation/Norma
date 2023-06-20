@@ -2,12 +2,14 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/golang/mock/gomock"
-	"os"
-	"testing"
 )
 
 func TestApplicationRegistered(t *testing.T) {
@@ -145,7 +147,7 @@ func TestApplicationPrinted(t *testing.T) {
 			_ = source.monitor.Writer().Close()
 
 			content, _ := os.ReadFile(csvFiles[i].Name())
-			if got, want := string(content), expected[i]; got != want {
+			if got, want := string(content), expected[i]; !strings.Contains(got, want) {
 				t.Errorf("unexpected export: %v != %v", got, want)
 			}
 		})

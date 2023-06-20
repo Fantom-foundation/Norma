@@ -105,7 +105,7 @@ func TestMonitor_CsvExport(t *testing.T) {
 
 	content, _ := os.ReadFile(csvFile.Name())
 
-	if got, want := string(content), "Hello World"; got != want {
+	if got, want := string(content), "metric,network,node,app,time,block,workers,value\nHello World"; got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
 }

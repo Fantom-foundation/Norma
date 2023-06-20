@@ -1,12 +1,13 @@
 package monitoring
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
 	"io"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 )
 
 func TestRegisterLogParser(t *testing.T) {
@@ -17,9 +18,9 @@ func TestRegisterLogParser(t *testing.T) {
 	node2 := driver.NewMockNode(ctrl)
 	node3 := driver.NewMockNode(ctrl)
 
-	node1.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(Node1TestId), nil)
-	node2.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(Node2TestId), nil)
-	node3.EXPECT().GetNodeID().AnyTimes().Return(driver.NodeID(Node3TestId), nil)
+	node1.EXPECT().GetLabel().AnyTimes().Return(string(Node1TestId))
+	node2.EXPECT().GetLabel().AnyTimes().Return(string(Node2TestId))
+	node3.EXPECT().GetLabel().AnyTimes().Return(string(Node3TestId))
 
 	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(Node1TestLog)), nil)
 	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(Node2TestLog)), nil)

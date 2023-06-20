@@ -23,7 +23,7 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 		nodes := make([]driver.Node, 0, numNodes)
 		for i := 0; i < numNodes; i++ {
 			node := driver.NewMockNode(ctrl)
-			node.EXPECT().GetNodeID().Return(driver.NodeID(fmt.Sprintf("%d", i)), nil).AnyTimes()
+			node.EXPECT().GetLabel().Return(fmt.Sprintf("%d", i)).AnyTimes()
 			node.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
 			nodes = append(nodes, node)
 		}

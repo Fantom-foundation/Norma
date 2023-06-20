@@ -2,12 +2,14 @@ package nodemon
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestSMASource(t *testing.T) {
@@ -120,7 +122,7 @@ func TestSMACsvExport(t *testing.T) {
 	content, _ := os.ReadFile(csvFile.Name())
 	if got, want := string(content),
 		"TransactionsThroughput, network, A, , , 11, , 10\n"+
-			"TransactionThroughputSMA_2, network, A, , , 11, , 10\n"; got != want {
+			"TransactionThroughputSMA_2, network, A, , , 11, , 10\n"; !strings.Contains(got, want) {
 
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
