@@ -1,10 +1,11 @@
 package monitoring
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
 	"io"
 	"log"
 	"sync"
+
+	"github.com/Fantom-foundation/Norma/driver"
 )
 
 //go:generate mockgen -source node_log_provider.go -destination node_log_provider_mock.go -package monitoring
@@ -75,11 +76,7 @@ func (n *NodeLogDispatcher) UnregisterLogListener(listener LogListener) {
 }
 
 func (n *NodeLogDispatcher) AfterNodeCreation(node driver.Node) {
-	nodeId, err := node.GetNodeID()
-	if err != nil {
-		log.Printf("failed to obtain node ID of node, will not be able to track block Height: %v", err)
-		return
-	}
+	nodeId := node.GetLabel()
 	n.nodesLock.Lock()
 	defer n.nodesLock.Unlock()
 
