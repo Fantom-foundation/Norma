@@ -177,9 +177,28 @@ As a last step, charts can be plot from the data as usual, like this:
 <img width="2413" alt="image" src="https://github.com/Fantom-foundation/Norma/assets/7114574/5aeba3ec-a7ea-4b67-9aa4-12453bd149e6">
 
 
+## CPU Profile Data
 
+In addition to the Norma metrics, the `pprof` CPU proifile is collected every 10s from each node. The profiles are stored in the temp directory. The directory name is printed together with the Norma output, for instance:
 
+```
+Monitoring data was written to /tmp/norma_data_1852477583
+```
 
+The directory has the following structure:
+```
+/tmp/norma_data_<rand>
++ - cpu_profiles
+  + - <node-name>
+    + - <sample_number>.prof
+    | - <sample_number>.prof
+      ...
+```
+These files can be transfered to a developer's machine, and analysed by running
+
+```
+go tool pprof -http=":8000" <sample_number>.prof
+```
 
 ## Known Norma Restrictions
 
