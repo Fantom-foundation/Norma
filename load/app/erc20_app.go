@@ -84,31 +84,23 @@ type ERC20Application struct {
 
 // CreateGenerator creates a new transaction generator for the app.
 func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
-
-	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAccount(f.primaryAccount.chainID.Int64())
-	if err != nil {
-		return nil, err
-	}
-
-	// get a representation of the deployed contract for the initialization
-	erc20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
-	}
-
 	// get price of gas from the network
 	priorityGasPrice, regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	// transfer finances to cover transaction fees
-	if err = fundSendingAccount(rpcClient, f.primaryAccount, workerAccount.address, priorityGasPrice); err != nil {
+	// generate a new account for each worker - avoid account nonces related bottlenecks
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, priorityGasPrice)
+	if err != nil {
 		return nil, err
 	}
 
 	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
+	erc20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
+	}
 	txOpts, err := bind.NewKeyedTransactorWithChainID(f.primaryAccount.privateKey, f.primaryAccount.chainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)

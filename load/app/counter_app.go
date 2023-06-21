@@ -68,20 +68,15 @@ type CounterApplication struct {
 // CreateGenerator creates a new transaction generator for the app.
 func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 
-	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAccount(f.primaryAccount.chainID.Int64())
-	if err != nil {
-		return nil, err
-	}
-
 	// get price of gas from the network
 	priorityGasPrice, regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	// transfer finances to cover transaction fees
-	if err = fundSendingAccount(rpcClient, f.primaryAccount, workerAccount.address, priorityGasPrice); err != nil {
+	// generate a new account for each worker - avoid account nonces related bottlenecks
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, priorityGasPrice)
+	if err != nil {
 		return nil, err
 	}
 
