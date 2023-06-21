@@ -95,7 +95,7 @@ func testNodeSubjects[T any](t *testing.T, expected []monitoring.Node, source *B
 			if found {
 				break
 			}
-			time.Sleep(2 * 10 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 		if !found {
 			t.Errorf("Node %v not found in: %v", want, source.GetSubjects())
@@ -126,7 +126,7 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 			if found {
 				break
 			}
-			time.Sleep(2 * 10 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 
 		if !found {
