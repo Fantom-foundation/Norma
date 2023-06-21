@@ -68,27 +68,16 @@ type CounterApplication struct {
 // CreateGenerator creates a new transaction generator for the app.
 func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 
-	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAccount(f.primaryAccount.chainID.Int64())
+	// get price of gas from the network
+	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
-	// get price of gas from the network
-	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
+	// generate a new account for each worker - avoid account nonces related bottlenecks
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice)
 	if err != nil {
-		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
-	}
-	priorityGasPrice := big.NewInt(0)
-	regularGasPrice := big.NewInt(0)
-	priorityGasPrice.Mul(gasPrice, big.NewInt(4)) // greater gas price for init
-	regularGasPrice.Mul(gasPrice, big.NewInt(2))  // lower gas price for regular txs
-
-	// transfer budget (10 FTM) to worker's account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1_000000000000000000))
-	err = transferValue(rpcClient, f.primaryAccount, workerAccount.address, workerBudget, priorityGasPrice)
-	if err != nil {
-		return nil, fmt.Errorf("failed to tranfer from primary account to app account: %v", err)
+		return nil, err
 	}
 
 	gen := &CounterGenerator{
