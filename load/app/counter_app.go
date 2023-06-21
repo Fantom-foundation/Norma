@@ -69,13 +69,13 @@ type CounterApplication struct {
 func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 
 	// get price of gas from the network
-	priorityGasPrice, regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, priorityGasPrice)
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}

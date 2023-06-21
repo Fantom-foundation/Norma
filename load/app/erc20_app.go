@@ -85,13 +85,13 @@ type ERC20Application struct {
 // CreateGenerator creates a new transaction generator for the app.
 func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
 	// get price of gas from the network
-	priorityGasPrice, regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, priorityGasPrice)
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
-	txOpts.GasPrice = priorityGasPrice
+	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
 	txOpts.Nonce = big.NewInt(int64(f.primaryAccount.getNextNonce()))
 	_, err = erc20Contract.Mint(txOpts, workerAccount.address, big.NewInt(1_000000000000000000))
 	if err != nil {
