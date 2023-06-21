@@ -21,10 +21,21 @@ jobs:
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
+    - name: Install pandoc
+      run: brew install pandoc
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+
+    - name: Install R dependencies
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        working-directory: ./analysis/report
 
     - name: Set up Docker
       run: |

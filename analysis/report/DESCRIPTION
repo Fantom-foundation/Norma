@@ -1,0 +1,11 @@
+Package: normareport
+Title: The Norma Report Generation Package
+Version: 0.1
+Description: This package contains a set of scripts and R markdown templates
+    for generating reports based on collected Norma monitoring data. It is
+    mainly intended to be embedded into the Norma application and not for
+    external use.
+Imports:
+    rmarkdown,
+    tidyverse,
+    lubridate

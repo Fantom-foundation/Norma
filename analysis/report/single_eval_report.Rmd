@@ -1,0 +1,139 @@
+---
+title: "Norma Evaluation Summary"
+output: html_document
+date: "`r Sys.Date()`"
+params:
+    datafile: "measurements.csv"
+---
+
+```{r setup, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(lubridate)
+
+figure_dimensions = c(10, 4)
+
+# load monitoring data
+all_data <- read_csv(params$datafile)
+```
+
+This report summarizes the monitoring results of an execution of a Norma scenario.
+
+## Block Metrics
+
+This section covers per-Block metrics which are consistent throughout the network.
+
+### Gas per Block
+The following chart shows the Gas spent per block and a trend line showing long-term trends.
+
+
+```{r gas_spent_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockGasUsed") %>%    # filter metric of interrest
+    mutate(value = as.numeric(value))              # convert value into numeric values
+
+ggplot(data=data) +
+    geom_point(aes(x=block, y=value)) +               # the data points
+    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a smoothed out trend line
+    ggtitle("Gas per Block") +                        # chart title
+    xlab("Block Height") +                            # x-axis title
+    ylab("Gas spent") +                               # y-axis title
+    theme(plot.title = element_text(hjust = 0.5))     # center title
+```
+
+
+### Transactions per Block
+The following chart shows the number of Transactions per block and a trend line showing long-term trends.
+
+```{r transactions_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockNumberOfTransactions") %>%   # filter metric of interrest
+    mutate(value = as.numeric(value))                          # convert value into numeric values
+
+ggplot(data=data) +
+    geom_point(aes(x=block, y=value)) +               # the data points
+    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a smoothed out trend line
+    ggtitle("Transactions per Block") +               # chart title
+    xlab("Block Height") +                            # x-axis title
+    ylab("Number of Transactions") +                  # y-axis title
+    theme(plot.title = element_text(hjust = 0.5))     # center title
+```
+
+
+## Network Metrics
+
+This section covers metrics that are network wide properties.
+
+### Number of Nodes in the Network
+
+The number of nodes in the network over time.
+
+```{r nodes_in_network, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "NumberOfNodes") %>%      # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%          # convert UNIX time into a date
+    mutate(value = as.numeric(value))                 # convert value into numeric values
+
+ggplot(data=data) +
+    geom_point(aes(x=date, y=value)) +               # the data points
+    ggtitle("Nodes in Network") +                    # chart title
+    xlab("Time") +                                   # x-axis title
+    ylab("Number of Nodes") +                        # y-axis title
+    theme(plot.title = element_text(hjust = 0.5)) +  # center title
+    scale_x_datetime(date_labels = "%c")             # format of the X axis labels to print date and time
+```
+
+
+## Node Metrics
+
+This section covers metrics that are node specific.
+
+### Block Processing Time
+
+The following chart shows the time required by each node for processing each individual block.
+
+```{r block_processing_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockEventAndTxsProcessingTime") %>%  # filter metric of interrest
+    mutate(value = as.numeric(value))                              # convert value into numeric values
+
+ggplot(data=data) +
+    geom_point(aes(x=block, y=value/1e6, group=node, colour = factor(node))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour="Nodes") +                        # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
+```
+
+While the individual sample points may provide the highest level of detail, the smoothed out trend lines of the following plot may provide a cleaner comparison between the processing times of individual nodes.
+
+```{r block_processing_time_smooth, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+ggplot(data=data) +
+    geom_smooth(aes(x=block, y=value/1.e6, group=node, colour = factor(node))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour="Nodes") +                        # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
+```
+
+
+### Block Height per Node
+
+The following char shows the time at which nodes have reached a given block height.
+
+```{r block_height_per_node, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "NodeBlockHeight") %>%  # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%          # convert UNIX time into a date
+    mutate(value = as.numeric(value))               # convert value into numeric values
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("Block Height over Time") +                # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Block Height") +                             # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format of the X axis labels to print date and time
+```
