@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Fantom-foundation/Norma/analysis/report"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -108,6 +109,13 @@ func run(ctx *cli.Context) (err error) {
 		}
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
+
+		fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
+		if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
+			fmt.Printf("Report generation failed:\n%v", err)
+		} else {
+			fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
+		}
 	}()
 
 	// Install monitoring sensory.

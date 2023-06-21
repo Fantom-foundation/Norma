@@ -20,6 +20,7 @@ func main() {
 			&checkCommand,
 			&runCommand,
 			&purgeCommand,
+			&renderCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {

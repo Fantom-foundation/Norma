@@ -7,10 +7,11 @@ Project of integrating Carmen Storage and Tosca VM into go-opera.
 
 ## Requirements
 
-For building the project, the following tools are required:
+For building/running the project, the following tools are required:
 * Go: version 1.20 or later; we recommend to use your system's package manager; alternatively, you can follow Go's [installation manual](https://go.dev/doc/install) or; if you need to maintain multiple versions, [this tutorial](https://go.dev/doc/manage-install) describes how to do so
 * Docker: we recommend to use your system's package manager or the installation manuals listed in the [Using Docker](#using-docker) section below
 * GNU make, or compatible
+* [R](https://www.r-project.org/): make sure the command `Rscript` is available on your system.
 
 Optionally, before running `make generate-mocks`, make sure you installed:
 * GoMock: `go install github.com/golang/mock/mockgen@v1.6.0`
