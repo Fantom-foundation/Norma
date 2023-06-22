@@ -2,7 +2,6 @@ package nodemon
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"io"
 	"net/http"
 	"os"
@@ -33,7 +32,7 @@ func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
 }
 
 // NodeCpuProfile periodically collects CPU profiles from individual nodes.
-var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[string]]{
+var NodeCpuProfile = mon.Metric[mon.Node, mon.Series[mon.Time, string]]{
 	Name:        "NodeCpuProfile",
 	Description: "CpuProfile samples of a node at various times.",
 }
@@ -46,7 +45,7 @@ func init() {
 
 // NewNodeCpuProfileSource creates a new data source periodically collecting
 // CPU profiling data at configured sampling periods.
-func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.TimeSeries[string]] {
+func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.Series[mon.Time, string]] {
 	return newPeriodicNodeDataSource[string](
 		NodeCpuProfile,
 		monitor,
@@ -54,7 +53,6 @@ func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, m
 		&cpuProfileSensorFactory{
 			outputDir: monitor.Config().OutputDir,
 		},
-		export.DirectConverter[string]{},
 	)
 }
 

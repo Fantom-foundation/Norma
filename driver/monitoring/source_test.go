@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	TestNodeMetric = Metric[Node, BlockSeries[int]]{
+	TestNodeMetric = Metric[Node, Series[BlockNumber, int]]{
 		Name:        "TestNodeMetric",
 		Description: "A test metric for unit tests.",
 	}
@@ -18,10 +18,10 @@ var (
 // tests. This is required since gomock is (yet) not supporting the generation
 // of generic mocks.
 type TestSource struct {
-	data map[Node]BlockSeries[int]
+	data map[Node]Series[BlockNumber, int]
 }
 
-func (s *TestSource) GetMetric() Metric[Node, BlockSeries[int]] {
+func (s *TestSource) GetMetric() Metric[Node, Series[BlockNumber, int]] {
 	return TestNodeMetric
 }
 
@@ -34,7 +34,7 @@ func (s *TestSource) GetSubjects() []Node {
 	return res
 }
 
-func (s *TestSource) GetData(node Node) (BlockSeries[int], bool) {
+func (s *TestSource) GetData(node Node) (Series[BlockNumber, int], bool) {
 	res, exists := s.data[node]
 	return res, exists
 }
@@ -48,16 +48,16 @@ func (s *TestSource) Shutdown() error {
 	return nil
 }
 
-func (s *TestSource) setData(node Node, data BlockSeries[int]) {
+func (s *TestSource) setData(node Node, data Series[BlockNumber, int]) {
 	if s.data == nil {
-		s.data = map[Node]BlockSeries[int]{}
+		s.data = map[Node]Series[BlockNumber, int]{}
 	}
 	s.data[node] = data
 }
 
 func TestTestSourceIsSource(t *testing.T) {
 	var source TestSource
-	var _ Source[Node, BlockSeries[int]] = &source
+	var _ Source[Node, Series[BlockNumber, int]] = &source
 }
 
 func TestTestSource_ListsCorrectSubjects(t *testing.T) {

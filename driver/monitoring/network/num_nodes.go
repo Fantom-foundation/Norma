@@ -2,15 +2,16 @@ package netmon
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 )
 
 // NumberOfNodes retains a time-series for the number of nodes in the network
 // run by Norma. This includes all types of nodes.
-var NumberOfNodes = mon.Metric[mon.Network, mon.TimeSeries[int]]{
+var NumberOfNodes = mon.Metric[mon.Network, mon.Series[mon.Time, int]]{
 	Name:        "NumberOfNodes",
 	Description: "The number of connected nodes at various times.",
 }
@@ -31,13 +32,13 @@ type numNodesSource struct {
 
 // NewNumNodesSource creates a new data source periodically collecting data on
 // the number of nodes in the network.
-func NewNumNodesSource(monitor *mon.Monitor) mon.Source[mon.Network, mon.TimeSeries[int]] {
+func NewNumNodesSource(monitor *mon.Monitor) mon.Source[mon.Network, mon.Series[mon.Time, int]] {
 	return newNumNodesSource(monitor, time.Second)
 }
 
 // newNumNodesSource creates a new data source periodically collecting data on
 // the number of nodes in the network.
-func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Network, mon.TimeSeries[int]] {
+func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Network, mon.Series[mon.Time, int]] {
 	stop := make(chan bool)
 	done := make(chan bool)
 
@@ -61,13 +62,14 @@ func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mo
 	}()
 
 	monitor.Writer().Add(func() error {
-		return export.AddNetworkTimeSeriesSource[int](monitor.Writer(), res, export.DirectConverter[int]{})
+		source := (mon.Source[mon.Network, mon.Series[mon.Time, int]])(res)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return res
 }
 
-func (s *numNodesSource) GetMetric() mon.Metric[mon.Network, mon.TimeSeries[int]] {
+func (s *numNodesSource) GetMetric() mon.Metric[mon.Network, mon.Series[mon.Time, int]] {
 	return NumberOfNodes
 }
 
@@ -75,7 +77,7 @@ func (s *numNodesSource) GetSubjects() []mon.Network {
 	return []mon.Network{{}}
 }
 
-func (s *numNodesSource) GetData(mon.Network) (mon.TimeSeries[int], bool) {
+func (s *numNodesSource) GetData(mon.Network) (mon.Series[mon.Time, int], bool) {
 	return &s.data, true
 }
 

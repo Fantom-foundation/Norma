@@ -10,7 +10,7 @@ func TestSourceRows_ForEachRow(t *testing.T) {
 	source.setData("A", seriesA)
 	source.setData("B", seriesB)
 
-	expectedRows := []Row[Node, BlockNumber, int, BlockSeries[int]]{
+	expectedRows := []Row[Node, BlockNumber, int, Series[BlockNumber, int]]{
 		{TestNodeMetric, "A", 0, 1},
 		{TestNodeMetric, "A", 1, 2},
 		{TestNodeMetric, "B", 0, 3},
@@ -18,13 +18,13 @@ func TestSourceRows_ForEachRow(t *testing.T) {
 		{TestNodeMetric, "B", 2, 5},
 	}
 
-	sr := SourceRowsForEacher[Node, BlockNumber, int, BlockSeries[int]]{&source}
+	sr := SourceRowsForEacher[Node, BlockNumber, int, Series[BlockNumber, int]]{&source}
 	var i int
-	sr.ForEachRow(func(row Row[Node, BlockNumber, int, BlockSeries[int]]) {
+	sr.ForEachRow(func(row Row[Node, BlockNumber, int, Series[BlockNumber, int]]) {
 		if row != expectedRows[i] {
 			t.Errorf("rows do not match: %v != %v", row, expectedRows[i])
 		}
 		i++
-	}, OrderedTypeComparator[Node]{})
+	})
 
 }

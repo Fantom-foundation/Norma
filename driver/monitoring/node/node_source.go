@@ -26,7 +26,7 @@ type SensorFactory[T any] interface {
 // periodicNodeDataSource is a generic data source periodically querying
 // node-associated sensors for data.
 type periodicNodeDataSource[T any] struct {
-	metric   mon.Metric[mon.Node, mon.TimeSeries[T]]
+	metric   mon.Metric[mon.Node, mon.Series[mon.Time, T]]
 	monitor  *mon.Monitor
 	period   time.Duration
 	factory  SensorFactory[T]
@@ -39,23 +39,21 @@ type periodicNodeDataSource[T any] struct {
 // NewPeriodicNodeDataSource creates a new data source managing per-node sensor
 // instances for a given metric and periodically collecting data from those.
 func NewPeriodicNodeDataSource[T any](
-	metric mon.Metric[mon.Node, mon.TimeSeries[T]],
+	metric mon.Metric[mon.Node, mon.Series[mon.Time, T]],
 	monitor *mon.Monitor,
 	factory SensorFactory[T],
-	converter export.Converter[T],
-) mon.Source[mon.Node, mon.TimeSeries[T]] {
-	return newPeriodicNodeDataSource(metric, monitor, time.Second, factory, converter)
+) mon.Source[mon.Node, mon.Series[mon.Time, T]] {
+	return newPeriodicNodeDataSource(metric, monitor, time.Second, factory)
 }
 
 // newPeriodicNodeDataSource is the same as NewPeriodicNodeDataSource but with
 // a customizable sampling periode.
 func newPeriodicNodeDataSource[T any](
-	metric mon.Metric[mon.Node, mon.TimeSeries[T]],
+	metric mon.Metric[mon.Node, mon.Series[mon.Time, T]],
 	monitor *mon.Monitor,
 	period time.Duration,
 	factory SensorFactory[T],
-	converter export.Converter[T],
-) mon.Source[mon.Node, mon.TimeSeries[T]] {
+) mon.Source[mon.Node, mon.Series[mon.Time, T]] {
 	stop := make(chan bool)
 	done := make(chan error)
 
@@ -76,7 +74,8 @@ func newPeriodicNodeDataSource[T any](
 	}
 
 	monitor.Writer().Add(func() error {
-		return export.AddNodeTimeSeriesSource[T](monitor.Writer(), res, converter)
+		source := (mon.Source[mon.Node, mon.Series[mon.Time, T]])(res)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return res
@@ -123,7 +122,7 @@ func startCollector[T any](
 	return res
 }
 
-func (s *periodicNodeDataSource[T]) GetMetric() mon.Metric[mon.Node, mon.TimeSeries[T]] {
+func (s *periodicNodeDataSource[T]) GetMetric() mon.Metric[mon.Node, mon.Series[mon.Time, T]] {
 	return s.metric
 }
 
@@ -137,7 +136,7 @@ func (s *periodicNodeDataSource[T]) GetSubjects() []mon.Node {
 	return res
 }
 
-func (s *periodicNodeDataSource[T]) GetData(node mon.Node) (mon.TimeSeries[T], bool) {
+func (s *periodicNodeDataSource[T]) GetData(node mon.Node) (mon.Series[mon.Time, T], bool) {
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
 	res, exists := s.data[node]

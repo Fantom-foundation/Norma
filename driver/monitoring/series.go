@@ -20,13 +20,3 @@ type Series[K constraints.Ordered, T any] interface {
 	// was collected.
 	GetLatest() *DataPoint[K, T]
 }
-
-// TimeSeries is a data Series using time-stamps as the index type.
-type TimeSeries[T any] interface {
-	Series[Time, T]
-}
-
-// BlockSeries is a data Series using block numbers as the index type.
-type BlockSeries[T any] interface {
-	Series[BlockNumber, T]
-}

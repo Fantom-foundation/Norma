@@ -53,11 +53,11 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 		t.Errorf("empty monitor should not report available subjects")
 	}
 
-	factory := &genericSourceFactory[Node, BlockSeries[int]]{
+	factory := &genericSourceFactory[Node, Series[BlockNumber, int]]{
 		TestNodeMetric,
-		func(*Monitor) Source[Node, BlockSeries[int]] { return &source },
+		func(*Monitor) Source[Node, Series[BlockNumber, int]] { return &source },
 	}
-	InstallSource[Node, BlockSeries[int]](monitor, factory)
+	InstallSource[Node, Series[BlockNumber, int]](monitor, factory)
 
 	if !IsSupported(monitor, metric) {
 		t.Errorf("registered metric is not supported")

@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
@@ -20,7 +18,7 @@ import (
 // So we need to write our own fake sensors for this test.
 
 var (
-	testNodeMetric = mon.Metric[mon.Node, mon.TimeSeries[int]]{
+	testNodeMetric = mon.Metric[mon.Node, mon.Series[mon.Time, int]]{
 		Name:        "TestNodeMetric",
 		Description: "A test metric for this unit test.",
 	}
@@ -69,7 +67,7 @@ func TestNodeSourceRetrievesSensorData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start monitor instance: %v", err)
 	}
-	source := newPeriodicNodeDataSource[int](testNodeMetric, monitor, 50*time.Millisecond, &testSensorFactory{}, export.DirectConverter[int]{})
+	source := newPeriodicNodeDataSource[int](testNodeMetric, monitor, 50*time.Millisecond, &testSensorFactory{})
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()
