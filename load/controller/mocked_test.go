@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/common/transact"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
@@ -20,7 +21,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	workers := 2
 	mockedGenerator := app.NewMockTransactionGenerator(mockCtrl)
 
-	mockedRpcClient := app.NewMockRpcClient(mockCtrl)
+	mockedRpcClient := transact.NewMockRpcClient(mockCtrl)
 	mockedRpcClient.EXPECT().Close()
 
 	mockedNetwork := driver.NewMockNetwork(mockCtrl)

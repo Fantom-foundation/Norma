@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/common/transact"
 	"log"
 	"math/rand"
 	"sync"
@@ -27,7 +28,7 @@ type LocalNetwork struct {
 	docker         *docker.Client
 	network        *docker.Network
 	config         driver.NetworkConfig
-	primaryAccount *app.Account
+	primaryAccount *transact.Account
 
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
@@ -68,7 +69,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	}
 
 	// Create chain account, which will be used for the initialization
-	primaryAccount, err := app.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
+	primaryAccount, err := transact.NewAccount(treasureAccountPrivateKey, fakeNetworkID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +179,7 @@ func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
 	n.rpcWorkerPool.SendTransaction(tx)
 }
 
-func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
+func (n *LocalNetwork) DialRandomRpc() (transact.RpcClient, error) {
 	nodes := n.GetActiveNodes()
 	rpcUrl := nodes[rand.Intn(len(nodes))].GetServiceUrl(&node.OperaWsService)
 	if rpcUrl == nil {

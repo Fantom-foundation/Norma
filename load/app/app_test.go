@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/common/transact"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
@@ -32,7 +33,7 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
+	primaryAccount, err := transact.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}

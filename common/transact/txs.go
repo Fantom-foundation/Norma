@@ -1,4 +1,4 @@
-package app
+package transact
 
 import (
 	"context"
@@ -9,30 +9,30 @@ import (
 	"time"
 )
 
-// transferValue transfer a financial value from account identified by given privateKey, to given toAddress.
+// TransferValue transfer a financial value from account identified by given privateKey, to given toAddress.
 // It returns when the value is already available on the target account.
-func transferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int, gasPrice *big.Int) (err error) {
-	signedTx, err := createTx(from, toAddress, value, nil, gasPrice, 21000)
+func TransferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int, gasPrice *big.Int) (err error) {
+	signedTx, err := CreateTx(from, toAddress, value, nil, gasPrice, 21000)
 	if err != nil {
 		return err
 	}
 	return rpcClient.SendTransaction(context.Background(), signedTx)
 }
 
-func createTx(from *Account, toAddress common.Address, value *big.Int, data []byte, gasPrice *big.Int, gasLimit uint64) (*types.Transaction, error) {
+func CreateTx(from *Account, toAddress common.Address, value *big.Int, data []byte, gasPrice *big.Int, gasLimit uint64) (*types.Transaction, error) {
 	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    from.getNextNonce(),
+		Nonce:    from.GetNextNonce(),
 		GasPrice: gasPrice,
 		Gas:      gasLimit,
 		To:       &toAddress,
 		Value:    value,
 		Data:     data,
 	})
-	return types.SignTx(tx, types.NewEIP155Signer(from.chainID), from.privateKey)
+	return types.SignTx(tx, types.NewEIP155Signer(from.ChainID), from.PrivateKey)
 }
 
-// waitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
-func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient RpcClient) error {
+// WaitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
+func WaitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient RpcClient) error {
 	var nonce uint64
 	var err error
 	for i := 0; i < 300; i++ {
@@ -48,8 +48,8 @@ func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 	return fmt.Errorf("nonce not achieved before timeout (awaited %d, current %d)", awaitedNonce, nonce)
 }
 
-// getGasPrice obtains optimal gasPrice for regular transactions
-func getGasPrice(rpcClient RpcClient) (*big.Int, error) {
+// GetGasPrice obtains optimal gasPrice for regular transactions
+func GetGasPrice(rpcClient RpcClient) (*big.Int, error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
@@ -59,7 +59,7 @@ func getGasPrice(rpcClient RpcClient) (*big.Int, error) {
 	return &regularPrice, nil
 }
 
-func getPriorityGasPrice(regularGasPrice *big.Int) *big.Int {
+func GetPriorityGasPrice(regularGasPrice *big.Int) *big.Int {
 	var priorityPrice big.Int
 	priorityPrice.Mul(regularGasPrice, big.NewInt(2)) // greater gas price for init
 	return &priorityPrice

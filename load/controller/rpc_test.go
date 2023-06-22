@@ -2,6 +2,7 @@ package controller_test
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/common/transact"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
+	primaryAccount, err := transact.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}

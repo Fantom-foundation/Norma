@@ -1,4 +1,4 @@
-package app
+package transact
 
 import (
 	"crypto/ecdsa"
@@ -13,9 +13,9 @@ import (
 // It sustains the nonce value - it allows multiple generators which use one Account
 // to produce multiple txs in one block.
 type Account struct {
-	privateKey *ecdsa.PrivateKey
-	address    common.Address
-	chainID    *big.Int
+	PrivateKey *ecdsa.PrivateKey
+	Address    common.Address
+	ChainID    *big.Int
 	nonce      uint64
 }
 
@@ -27,9 +27,9 @@ func NewAccount(privateKeyHex string, chainID int64) (*Account, error) {
 	}
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 	return &Account{
-		privateKey: privateKey,
-		address:    address,
-		chainID:    big.NewInt(chainID),
+		PrivateKey: privateKey,
+		Address:    address,
+		ChainID:    big.NewInt(chainID),
 		nonce:      0,
 	}, nil
 }
@@ -42,34 +42,34 @@ func GenerateAccount(chainID int64) (*Account, error) {
 	}
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 	return &Account{
-		privateKey: privateKey,
-		address:    address,
-		chainID:    big.NewInt(chainID),
+		PrivateKey: privateKey,
+		Address:    address,
+		ChainID:    big.NewInt(chainID),
 		nonce:      0,
 	}, nil
 }
 
 // GenerateAndFundAccount creates a new Account with a random private key and transfer finances to cover txs fees
 func GenerateAndFundAccount(sourceAccount *Account, rpcClient RpcClient, regularGasPrice *big.Int) (*Account, error) {
-	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
-	account, err := GenerateAccount(sourceAccount.chainID.Int64())
+	priorityGasPrice := GetPriorityGasPrice(regularGasPrice)
+	account, err := GenerateAccount(sourceAccount.ChainID.Int64())
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate account; %v", err)
 	}
 	// transfers 1000 FTM to the new account - finances to cover transaction fees
 	workerBudget := big.NewInt(0).Mul(big.NewInt(1000), big.NewInt(1_000000000000000000))
-	if err := transferValue(rpcClient, sourceAccount, account.address, workerBudget, priorityGasPrice); err != nil {
+	if err := TransferValue(rpcClient, sourceAccount, account.Address, workerBudget, priorityGasPrice); err != nil {
 		return nil, fmt.Errorf("failed to fund account: %v", err)
 	}
 	return account, nil
 }
 
-// getNextNonce provides a nonce to be used for next transactions sent using this account
-func (a *Account) getNextNonce() uint64 {
+// GetNextNonce provides a nonce to be used for next transactions sent using this account
+func (a *Account) GetNextNonce() uint64 {
 	current := atomic.AddUint64(&a.nonce, 1)
 	return current - 1
 }
 
-func (a *Account) getCurrentNonce() uint64 {
+func (a *Account) GetCurrentNonce() uint64 {
 	return atomic.LoadUint64(&a.nonce)
 }

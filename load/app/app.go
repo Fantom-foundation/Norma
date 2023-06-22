@@ -1,26 +1,17 @@
 package app
 
 import (
-	"context"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/Fantom-foundation/Norma/common/transact"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
 )
 
 //go:generate mockgen -source app.go -destination app_mock.go -package app
 
 type Application interface {
 	// CreateGenerator creates a new transaction generator for given application
-	CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error)
+	CreateGenerator(rpcClient transact.RpcClient) (TransactionGenerator, error)
 
-	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
-}
-
-type RpcClient interface {
-	bind.ContractBackend
-	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
-	Close()
+	WaitUntilApplicationIsDeployed(rpcClient transact.RpcClient) error
 }
 
 // TransactionGenerator produces a stream of transactions to generate traffic on the chain.
@@ -31,7 +22,7 @@ type TransactionGenerator interface {
 
 type ApplicationProvidingTxCount interface {
 	Application
-	GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error)
+	GetTransactionCounts(rpcClient transact.RpcClient) (TransactionCounts, error)
 }
 
 // TransactionCounts should be implemented by an instance that can provide the number of received
