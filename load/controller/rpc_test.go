@@ -35,6 +35,7 @@ func TestTrafficGenerating(t *testing.T) {
 	if err != nil {
 		t.Fatal("unable to connect the the rpc")
 	}
+	t.Cleanup(func() { rpcClient.Close() })
 
 	primaryAccount, err := transact.NewAccount(PrivateKey, FakeNetworkID)
 	if err != nil {

@@ -26,6 +26,12 @@ load/contracts/abi/ERC20.abi: load/contracts/ERC20.sol
 	cd load/generator; solc -o ../contracts/abi --overwrite --pretty-json --optimize --abi --bin ../contracts/ERC20.sol
 	abigen --type ERC20 --pkg abi --abi load/contracts/abi/ERC20.abi --bin load/contracts/abi/ERC20.bin --out load/contracts/abi/ERC20.go
 
+driver/network/rules/abi/NodeDriverAuth.go: driver/network/rules/abi/NodeDriverAuth.abi
+	abigen --type NodeDriverAuth --pkg abi --abi driver/network/rules/abi/NodeDriverAuth.abi --out driver/network/rules/abi/NodeDriverAuth.go
+
+driver/network/rules/abi/NodeDriver.go: driver/network/rules/abi/NodeDriver.abi
+	abigen --type NodeDriver --pkg abi --abi driver/network/rules/abi/NodeDriver.abi --out driver/network/rules/abi/NodeDriver.go
+
 generate-mocks: # requires installed mockgen
 	go generate ./...
 
