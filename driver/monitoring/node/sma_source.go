@@ -2,10 +2,11 @@ package nodemon
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"golang.org/x/exp/constraints"
-	"sync"
 )
 
 func init() {
@@ -14,16 +15,16 @@ func init() {
 
 		// TransactionThroughputSMA is a metric that aggregates output from another series and computes
 		// Simple Moving Average.
-		TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.BlockSeries[float32]]{
+		TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{
 			Name:        fmt.Sprintf("TransactionsThroughputSMA_%d", period),
 			Description: "Transaction throughput standard moving average",
 		}
 
 		currentPeriod := period // capture current value of the period
-		smaFactory := func(input monitoring.BlockSeries[float32]) monitoring.BlockSeries[float32] {
+		smaFactory := func(input monitoring.Series[monitoring.BlockNumber, float32]) monitoring.Series[monitoring.BlockNumber, float32] {
 			return monitoring.NewSMASeries[monitoring.BlockNumber, float32](input, currentPeriod)
 		}
-		metricsFactory := func(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.BlockSeries[float32]] {
+		metricsFactory := func(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]] {
 			return newNodeBlockSeriesTransformation(monitor, TransactionThroughputSMA, TransactionsThroughput, smaFactory)
 		}
 
@@ -69,13 +70,14 @@ func NewNodeSeriesTransformation[K constraints.Ordered, T any, X monitoring.Seri
 // newNodeBlockSeriesTransformation creates the same instance as public NewNodeSeriesTransformation but typed to the BlockSeries as a Series.
 func newNodeBlockSeriesTransformation[T any](
 	monitor *monitoring.Monitor,
-	metric monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]],
-	source monitoring.Metric[monitoring.Node, monitoring.BlockSeries[T]],
-	seriesFactory func(monitoring.BlockSeries[T]) monitoring.BlockSeries[T]) monitoring.Source[monitoring.Node, monitoring.BlockSeries[T]] {
+	metric monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]],
+	source monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]],
+	seriesFactory func(monitoring.Series[monitoring.BlockNumber, T]) monitoring.Series[monitoring.BlockNumber, T]) monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]] {
 
-	res := NewNodeSeriesTransformation[monitoring.BlockNumber, T, monitoring.BlockSeries[T]](monitor, metric, source, seriesFactory)
+	res := NewNodeSeriesTransformation[monitoring.BlockNumber, T, monitoring.Series[monitoring.BlockNumber, T]](monitor, metric, source, seriesFactory)
 	monitor.Writer().Add(func() error {
-		return export.AddNodeBlockSeriesSource[T](monitor.Writer(), res, export.DirectConverter[T]{})
+		source := (monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]])(res)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return res

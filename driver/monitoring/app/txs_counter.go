@@ -111,7 +111,8 @@ func newTxsCounterSource(monitor *monitoring.Monitor, sensor countGetter, metric
 	}
 
 	monitor.Writer().Add(func() error {
-		return export.AddAppSeriesSource[int, int](monitor.Writer(), res, export.DirectConverter[int]{}, export.DirectConverter[int]{})
+		source := (monitoring.Source[monitoring.App, monitoring.Series[int, int]])(res)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return res

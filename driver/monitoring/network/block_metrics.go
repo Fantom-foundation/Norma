@@ -2,21 +2,22 @@ package netmon
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"log"
 	"sync"
+
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 )
 
 var (
 	// BlockNumberOfTransactions is a metric capturing number of transactions for each block of a node.
-	BlockNumberOfTransactions = monitoring.Metric[monitoring.Network, monitoring.BlockSeries[int]]{
+	BlockNumberOfTransactions = monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]]{
 		Name:        "BlockNumberOfTransactions",
 		Description: "The number of transactions processed in a block",
 	}
 
 	// BlockGasUsed is a metric capturing Gas used for each block of a node.
-	BlockGasUsed = monitoring.Metric[monitoring.Network, monitoring.BlockSeries[int]]{
+	BlockGasUsed = monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]]{
 		Name:        "BlockGasUsed",
 		Description: "The gas used in a block",
 	}
@@ -34,7 +35,7 @@ func init() {
 
 // BlockNetworkMetricSource is a metric source that captures block properties where the Metric is the subject
 type BlockNetworkMetricSource[T any] struct {
-	metric           monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]]
+	metric           monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]]
 	getBlockProperty func(b monitoring.Block) T
 	monitor          *monitoring.Monitor
 	series           *monitoring.SyncedSeries[monitoring.BlockNumber, T]
@@ -59,12 +60,12 @@ func NewGasUsedSource(monitor *monitoring.Monitor) *BlockNetworkMetricSource[int
 }
 
 // newNumberOfTransactionsSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
-func newNumberOfTransactionsSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+func newNumberOfTransactionsSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]] {
 	return NewNumberOfTransactionsSource(monitor)
 }
 
 // newGasUsedSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
-func newGasUsedSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.BlockSeries[int]] {
+func newGasUsedSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]] {
 	return NewGasUsedSource(monitor)
 }
 
@@ -72,7 +73,7 @@ func newGasUsedSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.
 func newBlockNetworkMetricsSource[T any](
 	monitor *monitoring.Monitor,
 	getBlockProperty func(b monitoring.Block) T,
-	metric monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]]) *BlockNetworkMetricSource[T] {
+	metric monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]]) *BlockNetworkMetricSource[T] {
 
 	m := &BlockNetworkMetricSource[T]{
 		metric:           metric,
@@ -85,13 +86,14 @@ func newBlockNetworkMetricsSource[T any](
 
 	monitor.NodeLogProvider().RegisterLogListener(m)
 	monitor.Writer().Add(func() error {
-		return export.AddNetworkBlockSeriesSource[T](monitor.Writer(), m, export.DirectConverter[T]{})
+		source := (monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]])(m)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return m
 }
 
-func (s *BlockNetworkMetricSource[T]) GetMetric() monitoring.Metric[monitoring.Network, monitoring.BlockSeries[T]] {
+func (s *BlockNetworkMetricSource[T]) GetMetric() monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]] {
 	return s.metric
 }
 
@@ -100,7 +102,7 @@ func (s *BlockNetworkMetricSource[T]) GetSubjects() []monitoring.Network {
 	return []monitoring.Network{item}
 }
 
-func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.BlockSeries[T], bool) {
+func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.Series[monitoring.BlockNumber, T], bool) {
 	return s.series, true
 }
 
