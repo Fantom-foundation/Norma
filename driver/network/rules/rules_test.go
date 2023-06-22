@@ -18,14 +18,20 @@ import (
 	"time"
 )
 
+// run with --deepNetworkRulesTest=true flag to check if the rules are applied to the chain (takes more than 10 minutes)
+var deepTestingFlag = flag.String("deepNetworkRulesTest", "false", "run more time consuming tests")
+
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
 const FakeNetworkID = 0xfa3
-const TestingPatch = "{\"Dag\":{\"MaxFreeParents\":9}}"
-const ExpectedMaxFreeParents = 9
-
-var deepTestingFlag = flag.String("deepTest", "false", "run more time consuming tests")
+const TestingPatchJson = "{\"Dag\":{\"MaxFreeParents\":123}}"
 
 var nodeDriverAddress = common.HexToAddress("0xd100a01e00000000000000000000000000000000")
+
+var newNetworkRules = rules.NetworkRules{
+	Dag: &rules.DagRules{
+		MaxFreeParents: 123,
+	},
+}
 
 func TestSettingNetworkRules(t *testing.T) {
 	// run local network of one node
@@ -56,24 +62,24 @@ func TestSettingNetworkRules(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = rules.SetNetworkRules(rpcClient, ownerAccount, TestingPatch)
+	err = rules.SetNetworkRules(rpcClient, ownerAccount, newNetworkRules)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := waitUntilEventOnChain(rpcClient, initialBlockNumber, TestingPatch); err != nil {
+	if err := waitUntilEventOnChain(rpcClient, initialBlockNumber, TestingPatchJson); err != nil {
 		t.Fatalf("failed to wait for UpdateNetworkRules event; %v", err)
 	}
 
 	if *deepTestingFlag == "true" { // run with --deepTest=true
 		// make sure the change is applied - consumes more than 10 minutes, until a new epoch
-		if err := waitUntilRulesChanged(string(*rpcUrl), ExpectedMaxFreeParents); err != nil {
+		if err := waitUntilRulesChanged(string(*rpcUrl), newNetworkRules); err != nil {
 			t.Fatalf("failed to wait for NetworkRules change; %v", err)
 		}
 	}
 }
 
-func waitUntilEventOnChain(rpcClient transact.RpcClient, startBlock uint64, awaitedPatch string) error {
+func waitUntilEventOnChain(rpcClient transact.RpcClient, startBlock uint64, awaitedPatchJson string) error {
 	driverContract, err := abi.NewNodeDriver(nodeDriverAddress, rpcClient)
 	if err != nil {
 		return fmt.Errorf("failed to get NodeDriver contract representation; %v", err)
@@ -84,7 +90,7 @@ func waitUntilEventOnChain(rpcClient transact.RpcClient, startBlock uint64, awai
 			return fmt.Errorf("failed to filter UpdateNetworkRules events; %v", err)
 		}
 		for iterator.Next() {
-			if string(iterator.Event.Diff) == awaitedPatch {
+			if string(iterator.Event.Diff) == awaitedPatchJson {
 				return nil // succeed
 			}
 		}
@@ -96,32 +102,24 @@ func waitUntilEventOnChain(rpcClient transact.RpcClient, startBlock uint64, awai
 	return fmt.Errorf("expected event not on chain before timeout")
 }
 
-func waitUntilRulesChanged(rpcUrl string, expectedMaxFreeParents uint32) error {
+func waitUntilRulesChanged(rpcUrl string, expected rules.NetworkRules) error {
 	connection, err := rpc.DialContext(context.Background(), rpcUrl)
 	if err != nil {
 		return err
 	}
 	defer connection.Close()
 
-	var result rulesRLP
+	var result rules.NetworkRules
 	for i := 0; i < 1000; i++ {
 		err = connection.CallContext(context.Background(), &result, "ftm_getRules", "latest")
 		if err != nil {
 			return fmt.Errorf("failed to obtain network rules from the network; %v", err)
 		}
-		if result.Dag.MaxFreeParents == expectedMaxFreeParents {
+		if result.Dag.MaxFreeParents == expected.Dag.MaxFreeParents {
 			return nil // succeed
 		}
 		fmt.Printf("waiting until new rules are applied...\n")
 		time.Sleep(1 * time.Second)
 	}
 	return fmt.Errorf("network rules not set before timeout; result = %v", result)
-}
-
-type rulesRLP struct {
-	Dag struct {
-		MaxParents     uint32
-		MaxFreeParents uint32
-		MaxExtraData   uint32
-	}
 }
