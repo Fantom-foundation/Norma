@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/common/transact"
+	"github.com/Fantom-foundation/Norma/driver/network/rules"
 	"log"
 	"math/rand"
 	"sync"
@@ -186,6 +187,16 @@ func (n *LocalNetwork) DialRandomRpc() (transact.RpcClient, error) {
 		return nil, fmt.Errorf("websocket service is not available")
 	}
 	return ethclient.Dial(string(*rpcUrl))
+}
+
+func (n *LocalNetwork) SetNetworkRules(rulesDiff rules.NetworkRules) error {
+	rpcClient, err := n.DialRandomRpc()
+	if err != nil {
+		return err
+	}
+	defer rpcClient.Close()
+
+	return rules.SetNetworkRules(rpcClient, n.primaryAccount, rulesDiff)
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to

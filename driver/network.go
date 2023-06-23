@@ -2,6 +2,7 @@ package driver
 
 import (
 	"github.com/Fantom-foundation/Norma/common/transact"
+	"github.com/Fantom-foundation/Norma/driver/network/rules"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -45,6 +46,8 @@ type Network interface {
 	SendTransaction(tx *types.Transaction)
 
 	DialRandomRpc() (transact.RpcClient, error)
+
+	SetNetworkRules(rulesDiff rules.NetworkRules) error
 }
 
 // NetworkConfig is a collection of network parameters to be used by factories

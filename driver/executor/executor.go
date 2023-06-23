@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/network/rules"
 	"log"
 	"os"
 	"os/signal"
@@ -26,6 +27,9 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 	queue.add(toSingleEvent(endTime, "shutdown", func() error {
 		return nil
 	}))
+
+	// schedule network update (temporary)
+	scheduleNetworkRulesSet(queue, network)
 
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
@@ -228,4 +232,27 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 			log.Printf("cannot create application: %v", err)
 		}
 	}
+}
+
+func scheduleNetworkRulesSet(queue *eventQueue, net driver.Network) {
+	queue.add(toSingleEvent(0, "setting network rules", func() error {
+		return net.SetNetworkRules(rules.NetworkRules{
+			Blocks: &rules.BlocksRules{
+				MaxBlockGas: 500000000,
+			},
+			Economy: &rules.EconomyRules{
+				Gas: &rules.GasRulesRLPV1{
+					MaxEventGas: 100280000,
+				},
+				ShortGasPower: &rules.GasPowerRules{
+					AllocPerSec:    90000000,
+					MaxAllocPeriod: 3000000000000,
+				},
+				LongGasPower: &rules.GasPowerRules{
+					AllocPerSec:    45000000,
+					MaxAllocPeriod: 36000000000000,
+				},
+			},
+		})
+	}))
 }
