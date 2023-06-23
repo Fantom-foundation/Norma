@@ -64,13 +64,13 @@ var (
 		"chain_block_age 815212292\n"
 
 	expectedValues = []PrometheusLogValue{
-		{"chain_execution_count", counterPrometheusMetricType, 0, 231},
-		{"chain_execution", summaryPrometheusMetricType, 0.5, 7.8168292e+07},
-		{"chain_execution", summaryPrometheusMetricType, 0.75, 1.22758041e+08},
-		{"chain_execution", summaryPrometheusMetricType, 0.95, 1.991017745999998e+08},
-		{"chain_execution", summaryPrometheusMetricType, 0.99, 3.821057185599999e+08},
-		{"chain_execution", summaryPrometheusMetricType, 0.999, 4.4993e+08},
-		{"chain_execution", summaryPrometheusMetricType, 0.9999, 4.4993e+08},
-		{"chain_block_age", gaugePrometheusMetricType, 0, 815212292},
+		{PrometheusLogKey{"chain_execution_count", 0}, counterPrometheusMetricType, 231},
+		{PrometheusLogKey{"chain_execution", 0.5}, summaryPrometheusMetricType, 7.8168292e+07},
+		{PrometheusLogKey{"chain_execution", 0.75}, summaryPrometheusMetricType, 1.22758041e+08},
+		{PrometheusLogKey{"chain_execution", 0.95}, summaryPrometheusMetricType, 1.991017745999998e+08},
+		{PrometheusLogKey{"chain_execution", 0.99}, summaryPrometheusMetricType, 3.821057185599999e+08},
+		{PrometheusLogKey{"chain_execution", 0.999}, summaryPrometheusMetricType, 4.4993e+08},
+		{PrometheusLogKey{"chain_execution", 0.9999}, summaryPrometheusMetricType, 4.4993e+08},
+		{PrometheusLogKey{"chain_block_age", 0}, gaugePrometheusMetricType, 815212292},
 	}
 )

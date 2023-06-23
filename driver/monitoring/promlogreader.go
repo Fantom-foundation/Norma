@@ -17,9 +17,8 @@ import (
 // it contains additionally percentile.
 // For more information about metrics type, the reader can have a look at: https://geth.ethereum.org/docs/monitoring/metrics
 type PrometheusLogValue struct {
-	name       string
+	PrometheusLogKey
 	metricType PrometheusMetricType
-	quantile   float32
 	value      float64
 }
 
@@ -69,7 +68,7 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 				currentName = tokens[2]
 				nextType = PrometheusMetricType(tokens[3])
 			} else if tokens[0] == currentName {
-				val := PrometheusLogValue{name: currentName, metricType: nextType}
+				val := PrometheusLogValue{PrometheusLogKey: PrometheusLogKey{name: currentName}, metricType: nextType}
 				if err := fillValue(tokens, &val); err != nil {
 					errs = append(errs, err)
 				} else {
