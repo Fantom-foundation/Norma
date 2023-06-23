@@ -1,14 +1,18 @@
 package monitoring
 
 import (
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 	"io"
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
 )
+
+func TestLogsParsersImplements(t *testing.T) {
+	var inst NodeLogDispatcher
+	var _ NodeLogProvider = &inst
+}
 
 func TestRegisterLogParser(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -28,7 +32,7 @@ func TestRegisterLogParser(t *testing.T) {
 
 	// simulate existing nodes
 	net.EXPECT().RegisterListener(gomock.Any())
-	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1, node2})
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
 	reg := NewNodeLogDispatcher(net)
 	ch := make(chan Node, 10)
@@ -36,6 +40,8 @@ func TestRegisterLogParser(t *testing.T) {
 	reg.RegisterLogListener(listener)
 
 	// simulate added node
+	reg.AfterNodeCreation(node1)
+	reg.AfterNodeCreation(node2)
 	reg.AfterNodeCreation(node3)
 
 	// drain 3 nodes from the channel
