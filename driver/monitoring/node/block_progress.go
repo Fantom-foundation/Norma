@@ -9,6 +9,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -37,7 +38,7 @@ func newNodeBlockHeightSource(monitor *mon.Monitor, period time.Duration) mon.So
 
 type blockProgressSensorFactory struct{}
 
-func (f *blockProgressSensorFactory) CreateSensor(node driver.Node) (Sensor[int], error) {
+func (f *blockProgressSensorFactory) CreateSensor(node driver.Node) (utils.Sensor[int], error) {
 	url := node.GetServiceUrl(&opera.OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not export an RPC server")
