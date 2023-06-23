@@ -2,6 +2,9 @@ package node
 
 import (
 	"bufio"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -105,5 +108,46 @@ func TestOperaNode_StreamLog(t *testing.T) {
 
 	if !started {
 		t.Errorf("expected log not found")
+	}
+}
+
+func TestOperaNode_MetricsExposed(t *testing.T) {
+	docker, err := docker.NewClient()
+	if err != nil {
+		t.Fatalf("failed to create a docker client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = docker.Close()
+	})
+
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
+		Label:         "test",
+		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
+	})
+	if err != nil {
+		t.Fatalf("failed to create an Opera node on Docker: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
+	url := node.GetServiceUrl(&OperaDebugService)
+
+	var apiWorks bool
+	for i := 0; i < 100; i++ {
+		resp, err := http.Get(fmt.Sprintf("%s/debug/metrics/prometheus", string(*url)))
+		if err == nil {
+			bodyBytes, err := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			if err == nil && strings.Contains(string(bodyBytes), "# TYPE") {
+				apiWorks = true
+				break
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if !apiWorks {
+		t.Errorf("monitoring API has not been available")
 	}
 }

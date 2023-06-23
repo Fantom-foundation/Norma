@@ -17,7 +17,7 @@ import (
 type PprofData []byte
 
 func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
-	url := node.GetServiceUrl(&opera.OperaPprofService)
+	url := node.GetServiceUrl(&opera.OperaDebugService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not offer the pprof service")
 	}
