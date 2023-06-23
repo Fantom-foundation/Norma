@@ -10,6 +10,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 )
 
@@ -60,7 +61,7 @@ type cpuProfileSensorFactory struct {
 	outputDir string
 }
 
-func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (Sensor[string], error) {
+func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (utils.Sensor[string], error) {
 	return &cpuProfileSensor{
 		node:      node,
 		duration:  5 * time.Second, // the duration of the CPU profile collection; TODO: make configurable

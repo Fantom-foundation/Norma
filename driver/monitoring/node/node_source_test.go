@@ -10,6 +10,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	"github.com/golang/mock/gomock"
 	"golang.org/x/exp/slices"
 )
@@ -35,7 +36,7 @@ func (s *testSensor) ReadValue() (int, error) {
 
 type testSensorFactory struct{}
 
-func (f *testSensorFactory) CreateSensor(driver.Node) (Sensor[int], error) {
+func (f *testSensorFactory) CreateSensor(driver.Node) (utils.Sensor[int], error) {
 	return &testSensor{}, nil
 }
 
