@@ -10,7 +10,7 @@ params:
 library(tidyverse)
 library(lubridate)
 
-figure_dimensions = c(10, 4)
+figure_dimensions <- c(10, 4)
 
 # load monitoring data
 all_data <- read_csv(params$datafile)
@@ -29,11 +29,11 @@ The following chart shows the Gas spent per block and a trend line showing long-
 ```{r gas_spent_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
     dplyr::filter(metric == "BlockGasUsed") %>%    # filter metric of interrest
-    mutate(value = as.numeric(value))              # convert value into numeric values
+    mutate(value = as.numeric(value))              # convert value to int
 
 ggplot(data=data) +
     geom_point(aes(x=block, y=value)) +               # the data points
-    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a smoothed out trend line
+    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a trend line
     ggtitle("Gas per Block") +                        # chart title
     xlab("Block Height") +                            # x-axis title
     ylab("Gas spent") +                               # y-axis title
@@ -46,12 +46,12 @@ The following chart shows the number of Transactions per block and a trend line 
 
 ```{r transactions_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
-    dplyr::filter(metric == "BlockNumberOfTransactions") %>%   # filter metric of interrest
-    mutate(value = as.numeric(value))                          # convert value into numeric values
+    dplyr::filter(metric == "BlockNumberOfTransactions") %>%   # filter metric
+    mutate(value = as.numeric(value))                          # convert to int
 
 ggplot(data=data) +
     geom_point(aes(x=block, y=value)) +               # the data points
-    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a smoothed out trend line
+    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a trend line
     ggtitle("Transactions per Block") +               # chart title
     xlab("Block Height") +                            # x-axis title
     ylab("Number of Transactions") +                  # y-axis title
@@ -69,9 +69,9 @@ The number of nodes in the network over time.
 
 ```{r nodes_in_network, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
-    dplyr::filter(metric == "NumberOfNodes") %>%      # filter metric of interrest
-    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%          # convert UNIX time into a date
-    mutate(value = as.numeric(value))                 # convert value into numeric values
+    dplyr::filter(metric == "NumberOfNodes") %>%      # filter metric
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%  # UNIX time to date
+    mutate(value = as.numeric(value))                 # convert value to int
 
 ggplot(data=data) +
     geom_point(aes(x=date, y=value)) +               # the data points
@@ -79,7 +79,7 @@ ggplot(data=data) +
     xlab("Time") +                                   # x-axis title
     ylab("Number of Nodes") +                        # y-axis title
     theme(plot.title = element_text(hjust = 0.5)) +  # center title
-    scale_x_datetime(date_labels = "%c")             # format of the X axis labels to print date and time
+    scale_x_datetime(date_labels = "%c")             # format date labels
 ```
 
 
@@ -93,8 +93,8 @@ The following chart shows the time required by each node for processing each ind
 
 ```{r block_processing_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
-    dplyr::filter(metric == "BlockEventAndTxsProcessingTime") %>%  # filter metric of interrest
-    mutate(value = as.numeric(value))                              # convert value into numeric values
+    dplyr::filter(metric == "BlockEventAndTxsProcessingTime") %>%
+    mutate(value = as.numeric(value))
 
 ggplot(data=data) +
     geom_point(aes(x=block, y=value/1e6, group=node, colour = factor(node))) +
@@ -125,8 +125,8 @@ The following char shows the time at which nodes have reached a given block heig
 ```{r block_height_per_node, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
     dplyr::filter(metric == "NodeBlockHeight") %>%  # filter metric of interrest
-    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%          # convert UNIX time into a date
-    mutate(value = as.numeric(value))               # convert value into numeric values
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))               # convert value to int
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
@@ -135,5 +135,85 @@ ggplot(data=data) +
     ylab("Block Height") +                             # y-axis title
     labs(colour="Nodes") +                             # legend title
     theme(plot.title = element_text(hjust = 0.5)) +    # center title
-    scale_x_datetime(date_labels = "%c")               # format of the X axis labels to print date and time
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+## Application Metrics
+
+### Transactions Send vs. Received
+
+The following chart shows the total number of sent and received transactions.
+
+```{r send_and_received_transactions_per_app, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+# compute the send rate for each account
+sent_rate <- all_data %>%
+    dplyr::filter(metric == "SentTransactions") %>%  # filter metric
+    select(time, app, workers,value) %>%             # filter relevant columns
+    mutate(value = as.numeric(value)) %>%            # convert value to integer
+    group_by(app, workers) %>%                       # one group per account
+    arrange(app, workers, time) %>%                  # sort by time in groups
+    reframe(
+        time = time,                                 # preserve the time
+        rate = value - lag(value, default = 0)       # change since last
+    )
+
+# compute the total number of send transactions per application
+sent <- sent_rate %>%
+    group_by(app) %>%                                # group by application
+    arrange(app, time) %>%                           # sort by time in groups
+    reframe(time = time, total = cumsum(rate)) %>%   # compute prefix sum
+    mutate(date = as_datetime(as.numeric(time)/1e9)) # convert time
+
+# compute the number of received transactions
+received <- all_data %>%
+    dplyr::filter(metric == "ReceivedTransactions") %>%  # filter metric
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))               # convert value to int
+
+ggplot() +
+    geom_line(data=sent, aes(x=date, y=total, group=app, colour = factor(paste(app, " sent")))) +
+    geom_line(data=received, aes(x=date, y=value, group=app, colour = factor(paste(app, " received")))) +
+    ggtitle("Sent and Received Transactions per App") +         # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Total Number of Transactions") +             # y-axis title
+    labs(colour="Apps") +                              # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+
+The following chart shows the cummulative number of transactions send per account.
+
+```{r sent_transactions_per_app, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "SentTransactions") %>%  # filter metric
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value)) %>%              # convert value to int
+    mutate(account = paste(app, "_", workers))         # add an account name
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=account, colour = factor(account))) +
+    ggtitle("Sent Transactions per Account") +         # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Total Number of Transactions") +             # y-axis title
+    labs(colour="Accounts") +                              # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+The following chart shows the send-rate of individual accounts.
+
+```{r send_rate_per_account, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+sent_rate <- sent_rate %>%
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%
+    mutate(account = paste(app, "_", workers))         # add an account name
+
+ggplot() +
+    geom_line(data=sent_rate, aes(x=date, y=rate, group=account, colour = factor(account))) +
+    ggtitle("Sent Rate of Transactions per Account") +         # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Rate [Tx/s]") +             # y-axis title
+    labs(colour="Account") +                              # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
 ```

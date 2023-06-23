@@ -8,7 +8,6 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
-	"golang.org/x/exp/constraints"
 )
 
 // Sensor is an abstraction of some input device capable of probing a node
@@ -30,7 +29,7 @@ type PeriodicDataSource[S comparable, T any] struct {
 
 // NewPeriodicDataSource creates a new data source managing per-node sensor
 // instances for a given metric and periodically collecting data from those.
-func NewPeriodicDataSource[S constraints.Ordered, T any](
+func NewPeriodicDataSource[S comparable, T any](
 	metric monitoring.Metric[S, monitoring.Series[monitoring.Time, T]],
 	monitor *monitoring.Monitor,
 ) *PeriodicDataSource[S, T] {
@@ -39,7 +38,7 @@ func NewPeriodicDataSource[S constraints.Ordered, T any](
 
 // NewPeriodicDataSourceWithPeriod is the same as NewPeriodicDataSource but with
 // a customizable sampling periode.
-func NewPeriodicDataSourceWithPeriod[S constraints.Ordered, T any](
+func NewPeriodicDataSourceWithPeriod[S comparable, T any](
 	metric monitoring.Metric[S, monitoring.Series[monitoring.Time, T]],
 	monitor *monitoring.Monitor,
 	period time.Duration,

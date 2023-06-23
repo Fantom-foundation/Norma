@@ -2,13 +2,14 @@ package app_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"testing"
-	"time"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -32,7 +33,7 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,8 +80,12 @@ func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if counts.SentTxs != 10 {
-		t.Errorf("unexpected amount of txs sent (%d)", counts.SentTxs)
+	sum := 0
+	for _, x := range counts.SentTxs {
+		sum += int(x)
+	}
+	if sum != 10 {
+		t.Errorf("unexpected amount of txs sent (%d)", sum)
 	}
 	if counts.ReceivedTxs != 10 {
 		t.Errorf("unexpected amount of txs in chain (%d)", counts.ReceivedTxs)

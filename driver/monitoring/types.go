@@ -23,6 +23,10 @@ type Account struct {
 	Id  int // A unique identifier of the account.
 }
 
+func (a *Account) Less(b *Account) bool {
+	return a.App < b.App || (a.App == b.App && a.Id < b.Id)
+}
+
 // Time is the time used in time series. The value represents UnixNanos.
 // Note, time.Time cannot be used since it doesn't satisfy constraints.Ordered.
 type Time uint64

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/app"
+	appmon "github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
@@ -67,9 +67,9 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	_ = s8.Append(monitoring.NewTime(time1y), 11)
 	_ = s8.Append(monitoring.NewTime(time2y), 13)
 
-	s9 := &monitoring.SyncedSeries[int, int]{}
-	_ = s9.Append(100, 110)
-	_ = s9.Append(200, 213)
+	s9 := &monitoring.SyncedSeries[monitoring.Time, int]{}
+	_ = s9.Append(monitoring.NewTime(time1y), 110)
+	_ = s9.Append(monitoring.NewTime(time2y), 213)
 
 	n1 := monitoring.Node("A")
 	n2 := monitoring.Node("B")
@@ -98,7 +98,7 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	put(source5, n2, s8)
 
 	// section 5
-	source6 := newSource(app.ReceivedTransactions)
+	source6 := newSource(appmon.ReceivedTransactions)
 	put(source6, "app-1", s9)
 
 	// add in the CSV
@@ -134,8 +134,8 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 			"NodeBlockHeight, network, B, , 1683192855537000000, , , 13\n" +
 			"NumberOfNodes, network, , , 1683192855080000000, , , 110\n" +
 			"NumberOfNodes, network, , , 1683192855537000000, , , 120\n" +
-			"ReceivedTransactions, network, , app-1, , , 100, 110\n" +
-			"ReceivedTransactions, network, , app-1, , , 200, 213\n"
+			"ReceivedTransactions, network, , app-1, 1683192855080000000, , , 110\n" +
+			"ReceivedTransactions, network, , app-1, 1683192855537000000, , , 213\n"
 
 	have := builder.String()
 	lines := strings.Split(have, "\n")
