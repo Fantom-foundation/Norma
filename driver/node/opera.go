@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -25,10 +26,24 @@ var OperaWsService = network.ServiceDescription{
 	Protocol: "ws",
 }
 
-var OperaPprofService = network.ServiceDescription{
+var OperaDebugService = network.ServiceDescription{
 	Name:     "OperaPprof",
 	Port:     6060,
 	Protocol: "http",
+}
+
+var operaServices = network.ServiceGroup{}
+
+func init() {
+	if err := operaServices.RegisterService(&OperaRpcService); err != nil {
+		panic(err)
+	}
+	if err := operaServices.RegisterService(&OperaWsService); err != nil {
+		panic(err)
+	}
+	if err := operaServices.RegisterService(&OperaDebugService); err != nil {
+		panic(err)
+	}
 }
 
 const operaDockerImageName = "opera"
@@ -66,18 +81,19 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	ports, err := network.GetFreePorts(3)
+	ports, err := network.GetFreePorts(len(operaServices.Services()))
+	portForwarding := make(map[network.Port]network.Port, len(ports))
+	for i, service := range operaServices.Services() {
+		portForwarding[service.Port] = ports[i]
+	}
+
 	if err != nil {
 		return nil, err
 	}
 	host, err := client.Start(&docker.ContainerConfig{
 		ImageName:       operaDockerImageName,
 		ShutdownTimeout: &shutdownTimeout,
-		PortForwarding: map[network.Port]network.Port{
-			OperaRpcService.Port:   ports[0],
-			OperaWsService.Port:    ports[1],
-			OperaPprofService.Port: ports[2],
-		},
+		PortForwarding:  portForwarding,
 		Environment: map[string]string{
 			"VALIDATOR_NUMBER": validatorId,
 			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
@@ -103,8 +119,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 	}
 
 	// The node did not show up in time, so we consider the start to have failed.
-	node.host.Cleanup()
-	return nil, fmt.Errorf("failed to get node online")
+	return nil, errors.Join(fmt.Errorf("failed to get node online"), node.host.Cleanup())
 }
 
 func (n *OperaNode) GetLabel() string {
