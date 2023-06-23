@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
+
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
-	"sync/atomic"
 )
 
 // NewCounterApplication deploys a Counter contract to the chain.
@@ -52,6 +52,7 @@ func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account) (*Count
 		abi:             parsedAbi,
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
+		txTracker:       new(transactionTracker),
 	}, nil
 }
 
@@ -62,7 +63,8 @@ type CounterApplication struct {
 	abi             *abi.ABI
 	primaryAccount  *Account
 	contractAddress common.Address
-	sentTxs         uint64
+	numAccounts     int
+	txTracker       *transactionTracker
 }
 
 // CreateGenerator creates a new transaction generator for the app.
@@ -75,17 +77,19 @@ func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGe
 	}
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice)
+	id := f.numAccounts
+	f.numAccounts++
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice, id)
 	if err != nil {
 		return nil, err
 	}
 
 	gen := &CounterGenerator{
-		abi:      f.abi,
-		sender:   workerAccount,
-		gasPrice: regularGasPrice,
-		sentTxs:  &f.sentTxs,
-		contract: f.contractAddress,
+		abi:       f.abi,
+		sender:    workerAccount,
+		gasPrice:  regularGasPrice,
+		txTracker: f.txTracker,
+		contract:  f.contractAddress,
 	}
 	return gen, nil
 }
@@ -106,18 +110,18 @@ func (f *CounterApplication) GetTransactionCounts(rpcClient RpcClient) (Transact
 	}
 	return TransactionCounts{
 		ReceivedTxs: count.Uint64(),
-		SentTxs:     atomic.LoadUint64(&f.sentTxs),
+		SentTxs:     f.txTracker.GetSentTransactionCounts(),
 	}, nil
 }
 
 // CounterGenerator is a txs generator incrementing trivial Counter contract.
 // A generator is supposed to be used in a single thread.
 type CounterGenerator struct {
-	abi      *abi.ABI
-	sender   *Account
-	gasPrice *big.Int
-	sentTxs  *uint64
-	contract common.Address
+	abi       *abi.ABI
+	sender    *Account
+	gasPrice  *big.Int
+	contract  common.Address
+	txTracker *transactionTracker
 }
 
 func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
@@ -131,7 +135,7 @@ func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
 	const gasLimit = 50000 // IncrementCounter method call takes 43426 of gas
 	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
 	if err == nil {
-		atomic.AddUint64(g.sentTxs, 1)
+		g.txTracker.OnSentTransaction(g.sender.id)
 	}
 	return tx, err
 }

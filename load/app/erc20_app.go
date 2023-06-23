@@ -4,14 +4,14 @@ import (
 	"context"
 	crand "crypto/rand"
 	"fmt"
+	"math/big"
+	"math/rand"
+
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
-	"math/rand"
-	"sync/atomic"
 )
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
@@ -58,6 +58,7 @@ func NewERC20Application(rpcClient RpcClient, primaryAccount *Account) (*ERC20Ap
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
 		recipients:      recipients,
+		txTracker:       &transactionTracker{},
 	}, nil
 }
 
@@ -79,7 +80,8 @@ type ERC20Application struct {
 	primaryAccount  *Account
 	contractAddress common.Address
 	recipients      []common.Address
-	sentTxs         uint64
+	numAccounts     int
+	txTracker       *transactionTracker
 }
 
 // CreateGenerator creates a new transaction generator for the app.
@@ -91,7 +93,9 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 	}
 
 	// generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice)
+	id := f.numAccounts
+	f.numAccounts++
+	workerAccount, err := GenerateAndFundAccount(f.primaryAccount, rpcClient, regularGasPrice, id)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +120,7 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 		abi:        f.abi,
 		sender:     workerAccount,
 		gasPrice:   regularGasPrice,
-		sentTxs:    &f.sentTxs,
+		txTracker:  f.txTracker,
 		contract:   f.contractAddress,
 		recipients: f.recipients,
 	}, nil
@@ -142,7 +146,7 @@ func (f *ERC20Application) GetTransactionCounts(rpcClient RpcClient) (Transactio
 	}
 	return TransactionCounts{
 		ReceivedTxs: totalReceived,
-		SentTxs:     atomic.LoadUint64(&f.sentTxs),
+		SentTxs:     f.txTracker.GetSentTransactionCounts(),
 	}, nil
 }
 
@@ -152,9 +156,9 @@ type ERC20Generator struct {
 	abi        *abi.ABI
 	sender     *Account
 	gasPrice   *big.Int
-	sentTxs    *uint64
 	contract   common.Address
 	recipients []common.Address
+	txTracker  *transactionTracker
 }
 
 func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
@@ -171,7 +175,7 @@ func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
 	const gasLimit = 52000 // Transfer method call takes 51349 of gas
 	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
 	if err == nil {
-		atomic.AddUint64(g.sentTxs, 1)
+		g.txTracker.OnSentTransaction(g.sender.id)
 	}
 	return tx, err
 }
