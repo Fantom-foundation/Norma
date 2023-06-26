@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"bytes"
 	"os"
 	"testing"
 
@@ -102,7 +103,9 @@ func TestMonitor_CsvExport(t *testing.T) {
 
 	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
 
-	if got, want := string(content), "metric,network,node,app,time,block,workers,value\n"; got != want {
+	buffer := new(bytes.Buffer)
+	WriteCsvHeader(buffer)
+	if got, want := string(content), buffer.String(); got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
 }

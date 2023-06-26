@@ -30,16 +30,22 @@ var runCommand = cli.Command{
 	Name:   "run",
 	Usage:  "runs a scenario",
 	Flags: []cli.Flag{
-		&DbImpl,
+		&dbImpl,
+		&evalLabel,
 		&keepPrometheusRunning,
 	},
 }
 
 var (
-	DbImpl = cli.StringFlag{
+	dbImpl = cli.StringFlag{
 		Name:  "db-impl",
 		Usage: "select the DB implementation to use (geth or carmen)",
 		Value: "carmen",
+	}
+	evalLabel = cli.StringFlag{
+		Name:  "label",
+		Usage: "define a label for to be added to the monitoring data for this run. I empty, a random label is used.",
+		Value: "",
 	}
 	keepPrometheusRunning = cli.BoolFlag{
 		Name:    "keep-prometheus-running",
@@ -49,23 +55,22 @@ var (
 )
 
 func run(ctx *cli.Context) (err error) {
-	db := strings.ToLower(ctx.String(DbImpl.Name))
+	db := strings.ToLower(ctx.String(dbImpl.Name))
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
 	} else if db != "geth" {
-		return fmt.Errorf("unknown value fore --%v flag: %v", DbImpl.Name, db)
+		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
+	}
+
+	label := ctx.String(evalLabel.Name)
+	if label == "" {
+		label = fmt.Sprintf("eval_%d", time.Now().Unix())
 	}
 
 	args := ctx.Args()
 	if args.Len() < 1 {
 		return fmt.Errorf("requires scenario file as an argument")
 	}
-
-	outputDir, err := os.MkdirTemp("", "norma_data_")
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Monitoring data is written to %v\n", outputDir)
 
 	path := args.First()
 	fmt.Printf("Reading '%s' ...\n", path)
@@ -74,6 +79,12 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
+	fmt.Printf("Starting evaluation %s\n", label)
+	outputDir, err := os.MkdirTemp("", fmt.Sprintf("norma_data_%s_", label))
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Monitoring data is written to %v\n", outputDir)
 	clock := executor.NewWallTimeClock()
 
 	// Startup network.
@@ -98,7 +109,8 @@ func run(ctx *cli.Context) (err error) {
 
 	// Initialize monitoring environment.
 	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{
-		OutputDir: outputDir,
+		EvaluationLabel: label,
+		OutputDir:       outputDir,
 	})
 	if err != nil {
 		return err

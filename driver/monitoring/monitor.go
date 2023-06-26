@@ -25,7 +25,8 @@ type Monitor struct {
 }
 
 type MonitorConfig struct {
-	OutputDir string
+	EvaluationLabel string
+	OutputDir       string
 }
 
 // NewMonitor creates a new Monitor instance without any registered sources.
@@ -72,6 +73,7 @@ func (m *Monitor) Shutdown() error {
 			row := CsvRecord{
 				Record: r,
 				Metric: metric,
+				Run:    m.config.EvaluationLabel,
 			}
 			if _, err := row.WriteTo(csvFile); err != nil {
 				errs = append(errs, err)

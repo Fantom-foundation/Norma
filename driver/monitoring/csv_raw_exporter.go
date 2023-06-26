@@ -12,11 +12,12 @@ import (
 type CsvRecord struct {
 	Record
 	Metric string // must not be empty
+	Run    string // The name of the evaluation run
 }
 
 // WriteCsvHeader writes a header line defining the fields of the CsvRecord.
 func WriteCsvHeader(out io.Writer) error {
-	_, err := out.Write([]byte("metric,network,node,app,time,block,workers,value\n"))
+	_, err := out.Write([]byte("run,metric,network,node,app,time,block,workers,value\n"))
 	return err
 }
 
@@ -30,6 +31,7 @@ func (r *CsvRecord) WriteTo(out io.Writer) (int64, error) {
 	}
 
 	line := strings.Join([]string{
+		r.Run,
 		r.Metric,
 		r.Network,
 		r.Node,
