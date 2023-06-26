@@ -58,7 +58,7 @@ func TestSMASource(t *testing.T) {
 	for node := range monitoring.NodeBlockTestData {
 		series, exists := smaSource.GetData(node)
 		if !exists {
-			t.Errorf("series does not exist for subject: %v", node)
+			t.Fatalf("series does not exist for subject: %v", node)
 		}
 
 		points := series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000))
@@ -112,7 +112,11 @@ func TestSMACsvExport(t *testing.T) {
 		Description: "Transaction throughput standard moving average",
 	}
 
-	newNodeBlockSeriesTransformation(monitor, TransactionThroughputSMA, TransactionsThroughput, smaFactory)
+	smaSource := newNodeBlockSeriesTransformation(monitor, TransactionThroughputSMA, TransactionsThroughput, smaFactory)
+	sf = sourceFactory[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{TransactionThroughputSMA, smaSource}
+	if err := monitoring.InstallSource[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]](monitor, &sf); err != nil {
+		t.Fatalf("failed to install source: %v", err)
+	}
 
 	seconds := time.Now().Unix()
 	// time diff only 50ns
@@ -124,11 +128,17 @@ func TestSMACsvExport(t *testing.T) {
 	}
 
 	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
-	if got, want := string(content),
-		"TransactionsThroughput, network, A, , , 11, , 10\n"+
-			"TransactionThroughputSMA_2, network, A, , , 11, , 10\n"; !strings.Contains(got, want) {
 
-		t.Errorf("unexpected export: %v != %v", got, want)
+	lines := []string{
+		"TransactionsThroughput, network, A, , , 11, , 10\n",
+		"TransactionThroughputSMA_2, network, A, , , 11, , 10\n",
+	}
+
+	csv := string(content)
+	for _, line := range lines {
+		if !strings.Contains(csv, line) {
+			t.Errorf("missing line %v, got %v", line, csv)
+		}
 	}
 }
 

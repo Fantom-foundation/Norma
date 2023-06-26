@@ -111,6 +111,10 @@ func TestTransactionsCsvExport(t *testing.T) {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
 	source := NewTransactionsThroughputSource(monitor)
+	factory := sourceFactory[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{TransactionsThroughput, source}
+	if err := monitoring.InstallSource[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]](monitor, &factory); err != nil {
+		t.Fatalf("failed to install source: %v", err)
+	}
 
 	seconds := time.Now().Unix()
 

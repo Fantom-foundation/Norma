@@ -98,15 +98,11 @@ func TestMonitor_CsvExport(t *testing.T) {
 		t.Fatalf("failed to create monitor instance: %v", err)
 	}
 
-	monitor.Writer().Add(func() error {
-		_, _ = monitor.Writer().Write([]byte("Hello World"))
-		return nil
-	})
 	_ = monitor.Shutdown()
 
 	content, _ := os.ReadFile(monitor.GetMeasurementFileName())
 
-	if got, want := string(content), "metric,network,node,app,time,block,workers,value\nHello World"; got != want {
+	if got, want := string(content), "metric,network,node,app,time,block,workers,value\n"; got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
 }

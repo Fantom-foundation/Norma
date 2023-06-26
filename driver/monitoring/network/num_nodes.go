@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
-
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 )
 
 // NumberOfNodes retains a time-series for the number of nodes in the network
@@ -25,7 +24,8 @@ func init() {
 // numNodesSource is a monitoring data source tracking the number of active
 // nodes in a network environment.
 type numNodesSource struct {
-	data mon.SyncedSeries[mon.Time, int]
+	*utils.SyncedSeriesSource[mon.Network, mon.Time, int]
+	data *mon.SyncedSeries[mon.Time, int]
 	stop chan<- bool
 	done <-chan bool
 }
@@ -43,9 +43,11 @@ func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mo
 	done := make(chan bool)
 
 	res := &numNodesSource{
-		stop: stop,
-		done: done,
+		SyncedSeriesSource: utils.NewSyncedSeriesSource(NumberOfNodes),
+		stop:               stop,
+		done:               done,
 	}
+	res.data = res.GetOrAddSubject(mon.Network{})
 
 	go func() {
 		defer close(done)
@@ -61,28 +63,11 @@ func newNumNodesSource(monitor *mon.Monitor, period time.Duration) mon.Source[mo
 		}
 	}()
 
-	monitor.Writer().Add(func() error {
-		source := (mon.Source[mon.Network, mon.Series[mon.Time, int]])(res)
-		return export.AddSeriesData(monitor.Writer(), source)
-	})
-
 	return res
-}
-
-func (s *numNodesSource) GetMetric() mon.Metric[mon.Network, mon.Series[mon.Time, int]] {
-	return NumberOfNodes
-}
-
-func (s *numNodesSource) GetSubjects() []mon.Network {
-	return []mon.Network{{}}
-}
-
-func (s *numNodesSource) GetData(mon.Network) (mon.Series[mon.Time, int], bool) {
-	return &s.data, true
 }
 
 func (s *numNodesSource) Shutdown() error {
 	close(s.stop)
 	<-s.done
-	return nil
+	return s.SyncedSeriesSource.Shutdown()
 }

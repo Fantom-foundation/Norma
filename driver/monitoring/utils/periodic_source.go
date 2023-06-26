@@ -2,12 +2,9 @@ package utils
 
 import (
 	"errors"
-	"fmt"
-	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 )
 
 // Sensor is an abstraction of some input device capable of probing a node
@@ -19,12 +16,10 @@ type Sensor[T any] interface {
 // PeriodicDataSource is a generic data source periodically querying
 // node-associated sensors for data.
 type PeriodicDataSource[S comparable, T any] struct {
-	metric   monitoring.Metric[S, monitoring.Series[monitoring.Time, T]]
-	period   time.Duration
-	data     map[S]*monitoring.SyncedSeries[monitoring.Time, T]
-	dataLock sync.Mutex
-	stop     chan bool  // used to signal per-node collectors about the shutdown
-	done     chan error // used to signal collector shutdown to source
+	*SyncedSeriesSource[S, monitoring.Time, T]
+	period time.Duration
+	stop   chan bool  // used to signal per-node collectors about the shutdown
+	done   chan error // used to signal collector shutdown to source
 }
 
 // NewPeriodicDataSource creates a new data source managing per-node sensor
@@ -47,58 +42,26 @@ func NewPeriodicDataSourceWithPeriod[S comparable, T any](
 	done := make(chan error)
 
 	res := &PeriodicDataSource[S, T]{
-		metric: metric,
-		period: period,
-		data:   map[S]*monitoring.SyncedSeries[monitoring.Time, T]{},
-		stop:   stop,
-		done:   done,
+		SyncedSeriesSource: NewSyncedSeriesSource(metric),
+		period:             period,
+		stop:               stop,
+		done:               done,
 	}
 
-	monitor.Writer().Add(func() error {
-		source := monitoring.Source[S, monitoring.Series[monitoring.Time, T]](res)
-		return export.AddSeriesData(monitor.Writer(), source)
-	})
-
 	return res
-}
-
-func (s *PeriodicDataSource[S, T]) GetMetric() monitoring.Metric[S, monitoring.Series[monitoring.Time, T]] {
-	return s.metric
-}
-
-func (s *PeriodicDataSource[S, T]) GetSubjects() []S {
-	s.dataLock.Lock()
-	defer s.dataLock.Unlock()
-	res := make([]S, 0, len(s.data))
-	for subject := range s.data {
-		res = append(res, subject)
-	}
-	return res
-}
-
-func (s *PeriodicDataSource[S, T]) GetData(subject S) (monitoring.Series[monitoring.Time, T], bool) {
-	s.dataLock.Lock()
-	defer s.dataLock.Unlock()
-	res, exists := s.data[subject]
-	return res, exists
 }
 
 func (s *PeriodicDataSource[S, T]) Shutdown() error {
 	close(s.stop)
 	<-s.done
-	return nil
+	return s.SyncedSeriesSource.Shutdown()
 }
 
 func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error {
-	// Register a new data series if the subject is new.
-	s.dataLock.Lock()
-	data := &monitoring.SyncedSeries[monitoring.Time, T]{}
-	if _, exist := s.data[subject]; exist {
-		s.dataLock.Unlock()
-		return fmt.Errorf("sensor for subject %v already present", subject)
+	data, err := s.NewSubject(subject)
+	if err != nil {
+		return err
 	}
-	s.data[subject] = data
-	s.dataLock.Unlock()
 
 	// Start background routine collecting sensor data.
 	go func() {

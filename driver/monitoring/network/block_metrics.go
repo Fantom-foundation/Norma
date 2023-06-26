@@ -3,10 +3,9 @@ package netmon
 import (
 	"fmt"
 	"log"
-	"sync"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 )
 
 var (
@@ -35,11 +34,10 @@ func init() {
 
 // BlockNetworkMetricSource is a metric source that captures block properties where the Metric is the subject
 type BlockNetworkMetricSource[T any] struct {
-	metric           monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]]
+	*utils.SyncedSeriesSource[monitoring.Network, monitoring.BlockNumber, T]
+	series           *monitoring.SyncedSeries[monitoring.BlockNumber, T]
 	getBlockProperty func(b monitoring.Block) T
 	monitor          *monitoring.Monitor
-	series           *monitoring.SyncedSeries[monitoring.BlockNumber, T]
-	seriesLock       *sync.Mutex
 	lastBlock        int // track last block added in the series not to add duplicated block heights
 }
 
@@ -76,45 +74,22 @@ func newBlockNetworkMetricsSource[T any](
 	metric monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]]) *BlockNetworkMetricSource[T] {
 
 	m := &BlockNetworkMetricSource[T]{
-		metric:           metric,
-		getBlockProperty: getBlockProperty,
-		monitor:          monitor,
-		series:           &monitoring.SyncedSeries[monitoring.BlockNumber, T]{},
-		seriesLock:       &sync.Mutex{},
-		lastBlock:        -1,
+		SyncedSeriesSource: utils.NewSyncedSeriesSource(metric),
+		getBlockProperty:   getBlockProperty,
+		monitor:            monitor,
+		lastBlock:          -1,
 	}
-
+	m.series = m.GetOrAddSubject(monitoring.Network{})
 	monitor.NodeLogProvider().RegisterLogListener(m)
-	monitor.Writer().Add(func() error {
-		source := (monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]])(m)
-		return export.AddSeriesData(monitor.Writer(), source)
-	})
-
 	return m
-}
-
-func (s *BlockNetworkMetricSource[T]) GetMetric() monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, T]] {
-	return s.metric
-}
-
-func (s *BlockNetworkMetricSource[T]) GetSubjects() []monitoring.Network {
-	var item monitoring.Network
-	return []monitoring.Network{item}
-}
-
-func (s *BlockNetworkMetricSource[T]) GetData(monitoring.Network) (monitoring.Series[monitoring.BlockNumber, T], bool) {
-	return s.series, true
 }
 
 func (s *BlockNetworkMetricSource[T]) Shutdown() error {
 	s.monitor.NodeLogProvider().UnregisterLogListener(s)
-	return nil
+	return s.SyncedSeriesSource.Shutdown()
 }
 
 func (s *BlockNetworkMetricSource[T]) OnBlock(_ monitoring.Node, block monitoring.Block) {
-	s.seriesLock.Lock()
-	defer s.seriesLock.Unlock()
-
 	if block.Height > s.lastBlock {
 		if err := s.series.Append(monitoring.BlockNumber(block.Height), s.getBlockProperty(block)); err != nil {
 			log.Printf("error to add to the series: %s", err)
