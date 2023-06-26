@@ -10,7 +10,7 @@ func TestCsvExport_HeaderCanBeWritten(t *testing.T) {
 	if err := WriteCsvHeader(buffer); err != nil {
 		t.Fatalf("failed to write CSV header: %v", err)
 	}
-	want := "metric,network,node,app,time,block,workers,value\n"
+	want := "run,metric,network,node,app,time,block,workers,value\n"
 	if got := buffer.String(); want != got {
 		t.Errorf("invalid header, got %s, wanted %s", got, want)
 	}
@@ -27,6 +27,7 @@ func TestCsvExport_WriteLineWithoutOptionals(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	line := CsvRecord{
 		Metric: "m",
+		Run:    "r",
 		Record: record,
 	}
 	if _, err := line.WriteTo(buffer); err != nil {
@@ -34,7 +35,7 @@ func TestCsvExport_WriteLineWithoutOptionals(t *testing.T) {
 		return
 	}
 
-	want := "m, N, n, a, , , , v\n"
+	want := "r, m, N, n, a, , , , v\n"
 	if got := buffer.String(); got != want {
 		t.Errorf("unexpected encoding, wanted `%v`, got `%v`", want, got)
 	}
@@ -59,6 +60,7 @@ func TestCsvExport_WriteLineWithOptionals(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	line := CsvRecord{
 		Metric: "m",
+		Run:    "r",
 		Record: record,
 	}
 	if _, err := line.WriteTo(buffer); err != nil {
@@ -66,7 +68,7 @@ func TestCsvExport_WriteLineWithOptionals(t *testing.T) {
 		return
 	}
 
-	want := "m, N, n, a, 1, 2, 3, v\n"
+	want := "r, m, N, n, a, 1, 2, 3, v\n"
 	if got := buffer.String(); got != want {
 		t.Errorf("unexpected encoding, wanted `%v`, got `%v`", want, got)
 	}
