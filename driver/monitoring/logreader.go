@@ -2,8 +2,8 @@ package monitoring
 
 import (
 	"bufio"
-	"github.com/ethereum/go-ethereum/log"
 	"io"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,7 +26,7 @@ func NewLogReader(reader io.Reader) <-chan Block {
 	go func() {
 		defer close(ch)
 		if err := readBlocks(reader, ch); err != nil {
-			log.Error("error: %s", err)
+			log.Printf("error: %s", err)
 		}
 	}()
 

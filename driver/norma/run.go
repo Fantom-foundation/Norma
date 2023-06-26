@@ -218,12 +218,12 @@ func getGasUsed(monitor *monitoring.Monitor) string {
 
 func getBlockHeights(monitor *monitoring.Monitor) []string {
 	metric := nodemon.NodeBlockHeight
-	return getLastValAllSubjects[monitoring.Time, int, monitoring.TimeSeries[int]](monitor, metric)
+	return getLastValAllSubjects[monitoring.Time, int, monitoring.Series[monitoring.Time, int]](monitor, metric)
 }
 
 func getBlockProcessingTimes(monitor *monitoring.Monitor) []string {
 	metric := nodemon.BlockEventAndTxsProcessingTime
-	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.BlockSeries[time.Duration]](monitor, metric)
+	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.Series[monitoring.BlockNumber, time.Duration]](monitor, metric)
 }
 
 func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, T]](monitor *monitoring.Monitor, metric monitoring.Metric[monitoring.Node, X]) []string {

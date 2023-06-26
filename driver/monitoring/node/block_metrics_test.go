@@ -50,17 +50,22 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
-	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
 	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
 
-	reg := monitoring.NewNodeLogDispatcher(net)
 	source := NewBlockTimeSource(monitor)
+	reg := monitoring.NewNodeLogDispatcher(net)
+
+	// test the source is created later
+	time.Sleep(time.Second)
 	reg.RegisterLogListener(source)
 
+	// add first node
+	reg.AfterNodeCreation(node1)
 	// pre-existing node with some blocks
 	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId}, source)
 	testNodeSeriesData(t, monitoring.Node1TestId, monitoring.NodeBlockTestData[monitoring.Node1TestId], source)
@@ -95,7 +100,7 @@ func testNodeSubjects[T any](t *testing.T, expected []monitoring.Node, source *B
 			if found {
 				break
 			}
-			time.Sleep(time.Second)
+			time.Sleep(10 * time.Millisecond)
 		}
 		if !found {
 			t.Errorf("Node %v not found in: %v", want, source.GetSubjects())
@@ -126,7 +131,7 @@ func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expect
 			if found {
 				break
 			}
-			time.Sleep(time.Second)
+			time.Sleep(10 * time.Millisecond)
 		}
 
 		if !found {

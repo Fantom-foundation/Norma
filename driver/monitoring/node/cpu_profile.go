@@ -2,7 +2,6 @@ package nodemon
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"io"
 	"net/http"
 	"os"
@@ -11,13 +10,14 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 )
 
 type PprofData []byte
 
 func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
-	url := node.GetServiceUrl(&opera.OperaPprofService)
+	url := node.GetServiceUrl(&opera.OperaDebugService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not offer the pprof service")
 	}
@@ -33,7 +33,7 @@ func GetPprofData(node driver.Node, duration time.Duration) (PprofData, error) {
 }
 
 // NodeCpuProfile periodically collects CPU profiles from individual nodes.
-var NodeCpuProfile = mon.Metric[mon.Node, mon.TimeSeries[string]]{
+var NodeCpuProfile = mon.Metric[mon.Node, mon.Series[mon.Time, string]]{
 	Name:        "NodeCpuProfile",
 	Description: "CpuProfile samples of a node at various times.",
 }
@@ -46,7 +46,7 @@ func init() {
 
 // NewNodeCpuProfileSource creates a new data source periodically collecting
 // CPU profiling data at configured sampling periods.
-func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.TimeSeries[string]] {
+func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, mon.Series[mon.Time, string]] {
 	return newPeriodicNodeDataSource[string](
 		NodeCpuProfile,
 		monitor,
@@ -54,7 +54,6 @@ func NewNodeCpuProfileSource(monitor *monitoring.Monitor) mon.Source[mon.Node, m
 		&cpuProfileSensorFactory{
 			outputDir: monitor.Config().OutputDir,
 		},
-		export.DirectConverter[string]{},
 	)
 }
 
@@ -62,7 +61,7 @@ type cpuProfileSensorFactory struct {
 	outputDir string
 }
 
-func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (Sensor[string], error) {
+func (f *cpuProfileSensorFactory) CreateSensor(node driver.Node) (utils.Sensor[string], error) {
 	return &cpuProfileSensor{
 		node:      node,
 		duration:  5 * time.Second, // the duration of the CPU profile collection; TODO: make configurable

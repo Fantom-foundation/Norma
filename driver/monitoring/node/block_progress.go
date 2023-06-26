@@ -3,19 +3,19 @@ package nodemon
 import (
 	"context"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // NodeBlockHeight collects a per-node time series of its current block height.
-var NodeBlockHeight = mon.Metric[mon.Node, mon.TimeSeries[int]]{
+var NodeBlockHeight = mon.Metric[mon.Node, mon.Series[mon.Time, int]]{
 	Name:        "NodeBlockHeight",
 	Description: "The block height of nodes at various times.",
 }
@@ -28,17 +28,17 @@ func init() {
 
 // NewNodeBlockHeightSource creates a new data source periodically collecting data on
 // the block height at various nodes over time.
-func NewNodeBlockHeightSource(monitor *mon.Monitor) mon.Source[mon.Node, mon.TimeSeries[int]] {
+func NewNodeBlockHeightSource(monitor *mon.Monitor) mon.Source[mon.Node, mon.Series[mon.Time, int]] {
 	return newNodeBlockHeightSource(monitor, time.Second)
 }
 
-func newNodeBlockHeightSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Node, mon.TimeSeries[int]] {
-	return newPeriodicNodeDataSource[int](NodeBlockHeight, monitor, period, &blockProgressSensorFactory{}, export.DirectConverter[int]{})
+func newNodeBlockHeightSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Node, mon.Series[mon.Time, int]] {
+	return newPeriodicNodeDataSource[int](NodeBlockHeight, monitor, period, &blockProgressSensorFactory{})
 }
 
 type blockProgressSensorFactory struct{}
 
-func (f *blockProgressSensorFactory) CreateSensor(node driver.Node) (Sensor[int], error) {
+func (f *blockProgressSensorFactory) CreateSensor(node driver.Node) (utils.Sensor[int], error) {
 	url := node.GetServiceUrl(&opera.OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("node does not export an RPC server")

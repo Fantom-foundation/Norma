@@ -15,6 +15,28 @@ type ServiceDescription struct {
 	Protocol string
 }
 
+type ServiceGroup map[Port]*ServiceDescription
+
+// RegisterService installs a supported service in the registry.
+func (s *ServiceGroup) RegisterService(service *ServiceDescription) error {
+	if _, exists := (*s)[service.Port]; exists {
+		return fmt.Errorf("port %d already assigned - it is not supported to bind the same port many times", service.Port)
+	}
+
+	(*s)[service.Port] = service
+	return nil
+}
+
+// Services returns all registered services from the registry.
+func (s *ServiceGroup) Services() []*ServiceDescription {
+	res := make([]*ServiceDescription, 0, len(*s))
+	for _, v := range *s {
+		res = append(res, v)
+	}
+
+	return res
+}
+
 // Port provides an alias type for a TCP port.
 type Port uint16
 

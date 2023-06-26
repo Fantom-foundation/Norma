@@ -2,16 +2,17 @@ package nodemon
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 )
 
 var (
 	// TransactionsThroughput is a metric capturing number of transactions per certain time period, i.e. the throughput
-	TransactionsThroughput = monitoring.Metric[monitoring.Node, monitoring.BlockSeries[float32]]{
+	TransactionsThroughput = monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{
 		Name:        "TransactionsThroughput",
 		Description: "The number of transactions processed per certain time period by each node",
 	}
@@ -45,14 +46,15 @@ func NewTransactionsThroughputSource(monitor *monitoring.Monitor) *TransactionsT
 	monitor.NodeLogProvider().RegisterLogListener(m)
 
 	monitor.Writer().Add(func() error {
-		return export.AddNodeBlockSeriesSource[float32](monitor.Writer(), m, export.DirectConverter[float32]{})
+		source := (monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]])(m)
+		return export.AddSeriesData(monitor.Writer(), source)
 	})
 
 	return m
 }
 
 // newTransactionsThroughputSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
-func newTransactionsThroughputSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.BlockSeries[float32]] {
+func newTransactionsThroughputSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]] {
 	return NewTransactionsThroughputSource(monitor)
 }
 

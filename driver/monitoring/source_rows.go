@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"golang.org/x/exp/constraints"
-	"sort"
 )
 
 // SourceRowsForEacher wraps a Source, of which values are Series. It implements
@@ -27,10 +26,9 @@ type Row[S any, K constraints.Ordered, T any, X Series[K, T]] struct {
 }
 
 // ForEachRow iterates all rows representing data stored in the wrapped source.
-func (s *SourceRowsForEacher[S, K, T, X]) ForEachRow(f func(Row[S, K, T, X]), subjectCmp Comparator[S]) {
+func (s *SourceRowsForEacher[S, K, T, X]) ForEachRow(f func(Row[S, K, T, X])) {
 	metrics := s.source.GetMetric()
 	subjects := s.source.GetSubjects()
-	sort.Slice(subjects, func(i, j int) bool { return subjectCmp.Compare(&subjects[i], &subjects[j]) < 0 })
 
 	for _, subject := range subjects {
 		series, _ := s.source.GetData(subject)

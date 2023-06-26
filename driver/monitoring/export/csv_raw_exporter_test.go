@@ -1,6 +1,7 @@
 package export_test
 
 import (
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -74,41 +75,41 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 	n2 := monitoring.Node("B")
 
 	// section 1
-	source1 := newSource[monitoring.Node, monitoring.BlockNumber, time.Time, monitoring.BlockSeries[time.Time]](nodemon.BlockCompletionTime)
-	source1.put(n1, s1)
-	source1.put(n2, s2)
+	source1 := newSource(nodemon.BlockCompletionTime)
+	put(source1, n1, s1)
+	put(source1, n2, s2)
 
 	// section 1 - next column
-	source2 := newSource[monitoring.Node, monitoring.BlockNumber, time.Duration, monitoring.BlockSeries[time.Duration]](nodemon.BlockEventAndTxsProcessingTime)
-	source2.put(n1, s3)
-	source2.put(n2, s4)
+	source2 := newSource(nodemon.BlockEventAndTxsProcessingTime)
+	put(source2, n1, s3)
+	put(source2, n2, s4)
 
 	// section 2
-	source3 := newSource[monitoring.Network, monitoring.Time, int, monitoring.TimeSeries[int]](netmon.NumberOfNodes)
-	source3.put(monitoring.Network{}, s5)
+	source3 := newSource(netmon.NumberOfNodes)
+	put(source3, monitoring.Network{}, s5)
 
 	// section 3
-	source4 := newSource[monitoring.Network, monitoring.BlockNumber, int, monitoring.BlockSeries[int]](netmon.BlockNumberOfTransactions)
-	source4.put(monitoring.Network{}, s6)
+	source4 := newSource(netmon.BlockNumberOfTransactions)
+	put(source4, monitoring.Network{}, s6)
 
 	// section 4
-	source5 := newSource[monitoring.Node, monitoring.Time, int, monitoring.TimeSeries[int]](nodemon.NodeBlockHeight)
-	source5.put(n1, s7)
-	source5.put(n2, s8)
+	source5 := newSource(nodemon.NodeBlockHeight)
+	put(source5, n1, s7)
+	put(source5, n2, s8)
 
 	// section 5
-	source6 := newSource[monitoring.App, int, int, monitoring.Series[int, int]](app.ReceivedTransactions)
-	source6.put("app-1", s9)
+	source6 := newSource(app.ReceivedTransactions)
+	put(source6, "app-1", s9)
 
 	// add in the CSV
 	var builder strings.Builder
 	csv := monitoring.NewWriterChain(&stringBuilderCloser{&builder})
-	_ = export.AddNodeBlockSeriesSource[time.Time](csv, source1, export.TimeConverter{})
-	_ = export.AddNodeBlockSeriesSource[time.Duration](csv, source2, export.DurationConverter{})
-	_ = export.AddNetworkBlockSeriesSource[int](csv, source4, export.DirectConverter[int]{})
-	_ = export.AddNetworkTimeSeriesSource[int](csv, source3, export.DirectConverter[int]{})
-	_ = export.AddNodeTimeSeriesSource[int](csv, source5, export.DirectConverter[int]{})
-	_ = export.AddAppSeriesSource[int, int](csv, source6, export.DirectConverter[int]{}, export.DirectConverter[int]{})
+	_ = export.AddSeriesData(csv, source1)
+	_ = export.AddSeriesData(csv, source2)
+	_ = export.AddSeriesData(csv, source4)
+	_ = export.AddSeriesData(csv, source3)
+	_ = export.AddSeriesData(csv, source5)
+	_ = export.AddSeriesData(csv, source6)
 	_ = csv.Close()
 
 	expected :=
@@ -127,17 +128,22 @@ func TestPrintMultiSourceMultiSectionCsvRows(t *testing.T) {
 			"BlockNumberOfTransactions, network, , , , 1, , 17\n" +
 			"BlockNumberOfTransactions, network, , , , 2, , 21\n" +
 			"BlockNumberOfTransactions, network, , , , 3, , 35\n" +
-			"NumberOfNodes, network, , , 1683192855080000000, , , 110\n" +
-			"NumberOfNodes, network, , , 1683192855537000000, , , 120\n" +
 			"NodeBlockHeight, network, A, , 1683192855080000000, , , 11\n" +
 			"NodeBlockHeight, network, A, , 1683192855537000000, , , 12\n" +
 			"NodeBlockHeight, network, B, , 1683192855080000000, , , 11\n" +
 			"NodeBlockHeight, network, B, , 1683192855537000000, , , 13\n" +
+			"NumberOfNodes, network, , , 1683192855080000000, , , 110\n" +
+			"NumberOfNodes, network, , , 1683192855537000000, , , 120\n" +
 			"ReceivedTransactions, network, , app-1, , , 100, 110\n" +
 			"ReceivedTransactions, network, , app-1, , , 200, 213\n"
 
-	if !strings.Contains(builder.String(), expected) {
-		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, builder.String())
+	have := builder.String()
+	lines := strings.Split(have, "\n")
+	sort.Slice(lines, func(i, j int) bool { return lines[i] < lines[j] })
+	have = strings.Join(lines, "\n")
+
+	if !strings.Contains(have, expected) {
+		t.Errorf("strings do not match:\n %s \n is not \n%s", expected, have)
 	}
 }
 
@@ -148,24 +154,24 @@ func TestRegisterSources(t *testing.T) {
 	_ = s1.Append(monitoring.BlockNumber(3), 30*time.Second)
 
 	n1 := monitoring.Node("A")
-	source := newSource[monitoring.Node, monitoring.BlockNumber, time.Duration, monitoring.BlockSeries[time.Duration]](nodemon.BlockEventAndTxsProcessingTime)
-	source.put(n1, s1)
+	source := newSource(nodemon.BlockEventAndTxsProcessingTime)
+	put(source, n1, s1)
 
 	// register twice the same
 	var builder strings.Builder
 	csv := monitoring.NewWriterChain(&stringBuilderCloser{&builder})
 	csv.Add(func() error {
-		return export.AddNodeBlockSeriesSource[time.Duration](csv, source, export.DirectConverter[time.Duration]{})
+		return export.AddSeriesData(csv, source)
 	})
 	csv.Add(func() error {
-		return export.AddNodeBlockSeriesSource[time.Duration](csv, source, export.DurationConverter{})
+		return export.AddSeriesData(csv, source)
 	})
 	_ = csv.Close()
 
 	expected :=
-		"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10s\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20s\n" +
-			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30s\n" +
+		"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20000000000\n" +
+			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30000000000\n" +
 			"BlockEventAndTxsProcessingTime, network, A, , , 1, , 10000000000\n" +
 			"BlockEventAndTxsProcessingTime, network, A, , , 2, , 20000000000\n" +
 			"BlockEventAndTxsProcessingTime, network, A, , , 3, , 30000000000\n"
@@ -175,19 +181,19 @@ func TestRegisterSources(t *testing.T) {
 	}
 }
 
-type source[S comparable, K constraints.Ordered, T any, X monitoring.Series[K, T]] struct {
-	metric monitoring.Metric[S, X]
-	data   map[S]X
+type source[S comparable, K constraints.Ordered, V any] struct {
+	metric monitoring.Metric[S, monitoring.Series[K, V]]
+	data   map[S]monitoring.Series[K, V]
 }
 
-func newSource[S comparable, K constraints.Ordered, T any, X monitoring.Series[K, T]](metric monitoring.Metric[S, X]) *source[S, K, T, X] {
-	return &source[S, K, T, X]{
-		data:   make(map[S]X, 10),
+func newSource[S comparable, K constraints.Ordered, V any](metric monitoring.Metric[S, monitoring.Series[K, V]]) monitoring.Source[S, monitoring.Series[K, V]] {
+	return &source[S, K, V]{
+		data:   make(map[S]monitoring.Series[K, V], 10),
 		metric: metric,
 	}
 }
 
-func (d *source[S, K, T, X]) GetSubjects() []S {
+func (d *source[S, K, V]) GetSubjects() []S {
 	subjects := make([]S, 0, len(d.data))
 	for k := range d.data {
 		subjects = append(subjects, k)
@@ -195,21 +201,25 @@ func (d *source[S, K, T, X]) GetSubjects() []S {
 	return subjects
 }
 
-func (d *source[S, K, T, X]) GetMetric() monitoring.Metric[S, X] {
+func (d *source[S, K, V]) GetMetric() monitoring.Metric[S, monitoring.Series[K, V]] {
 	return d.metric
 }
 
-func (d *source[S, K, T, X]) GetData(subject S) (X, bool) {
+func (d *source[S, K, V]) GetData(subject S) (monitoring.Series[K, V], bool) {
 	res, exists := d.data[subject]
 	return res, exists
 }
 
-func (d *source[S, K, T, X]) Shutdown() error {
+func (d *source[S, K, V]) Shutdown() error {
 	return nil
 }
 
-func (d *source[S, K, T, X]) put(s S, val X) {
+func (d *source[S, K, V]) put(s S, val monitoring.Series[K, V]) {
 	d.data[s] = val
+}
+
+func put[S comparable, K constraints.Ordered, V any](dest monitoring.Source[S, monitoring.Series[K, V]], s S, val any) {
+	dest.(*source[S, K, V]).put(s, val.(monitoring.Series[K, V]))
 }
 
 type stringBuilderCloser struct {

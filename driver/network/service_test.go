@@ -31,6 +31,27 @@ func TestGetFreePorts(t *testing.T) {
 		if err != nil {
 			t.Errorf("provided port %d is not free", port)
 		}
-		defer listener.Close()
+		t.Cleanup(func() {
+			_ = listener.Close()
+		})
 	}
+}
+
+func TestRegisterDuplicatedPortsForServices(t *testing.T) {
+	service := ServiceDescription{
+		Name:     "OperaPprof",
+		Port:     6060,
+		Protocol: "http",
+	}
+
+	serviceGroup := ServiceGroup{}
+
+	if err := serviceGroup.RegisterService(&service); err != nil {
+		t.Errorf("first registration must succeed")
+	}
+
+	if err := serviceGroup.RegisterService(&service); err == nil {
+		t.Errorf("first registration must fail")
+	}
+
 }

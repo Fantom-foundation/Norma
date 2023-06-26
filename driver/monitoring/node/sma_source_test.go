@@ -25,16 +25,16 @@ func TestSMASource(t *testing.T) {
 	}
 
 	source := NewTransactionsThroughputSource(monitor)
-	sf := sourceFactory[monitoring.Node, monitoring.BlockSeries[float32]]{TransactionsThroughput, source}
-	if err := monitoring.InstallSource[monitoring.Node, monitoring.BlockSeries[float32]](monitor, &sf); err != nil {
+	sf := sourceFactory[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{TransactionsThroughput, source}
+	if err := monitoring.InstallSource[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]](monitor, &sf); err != nil {
 		t.Fatalf("failed to install source: %v", err)
 	}
 
 	period := 2
-	smaFactory := func(input monitoring.BlockSeries[float32]) monitoring.BlockSeries[float32] {
+	smaFactory := func(input monitoring.Series[monitoring.BlockNumber, float32]) monitoring.Series[monitoring.BlockNumber, float32] {
 		return monitoring.NewSMASeries[monitoring.BlockNumber, float32](input, period)
 	}
-	TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.BlockSeries[float32]]{
+	TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{
 		Name:        fmt.Sprintf("TransactionThroughputSMA_%d", period),
 		Description: "Transaction throughput standard moving average",
 	}
@@ -98,16 +98,16 @@ func TestSMACsvExport(t *testing.T) {
 		t.Fatalf("failed to start monitor instance: %v", err)
 	}
 	source := NewTransactionsThroughputSource(monitor)
-	sf := sourceFactory[monitoring.Node, monitoring.BlockSeries[float32]]{TransactionsThroughput, source}
-	if err := monitoring.InstallSource[monitoring.Node, monitoring.BlockSeries[float32]](monitor, &sf); err != nil {
+	sf := sourceFactory[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{TransactionsThroughput, source}
+	if err := monitoring.InstallSource[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]](monitor, &sf); err != nil {
 		t.Fatalf("failed to install source: %v", err)
 	}
 
 	period := 2
-	smaFactory := func(input monitoring.BlockSeries[float32]) monitoring.BlockSeries[float32] {
+	smaFactory := func(input monitoring.Series[monitoring.BlockNumber, float32]) monitoring.Series[monitoring.BlockNumber, float32] {
 		return monitoring.NewSMASeries[monitoring.BlockNumber, float32](input, period)
 	}
-	TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.BlockSeries[float32]]{
+	TransactionThroughputSMA := monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]]{
 		Name:        fmt.Sprintf("TransactionThroughputSMA_%d", period),
 		Description: "Transaction throughput standard moving average",
 	}
