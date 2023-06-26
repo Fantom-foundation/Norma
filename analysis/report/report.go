@@ -18,12 +18,23 @@ type Report struct {
 //go:embed single_eval_report.Rmd
 var singleEvalReportTemplate []byte
 
+//go:embed multi_eval_report.Rmd
+var multiEvalReportTemplate []byte
+
 var (
 	// SingleEvalReport is a report template covering metrics collected in a single
 	// scenario evaluation.
 	SingleEvalReport = Report{
 		name:     "single_eval_report",
 		template: singleEvalReportTemplate,
+	}
+
+	// MultiEvalReport is a report template comparing the results of multiple
+	// scenariou evaluations. The input CSV should be the concatenation of the
+	// individual measurement CSV files.
+	MultiEvalReport = Report{
+		name:     "multi_eval_report",
+		template: multiEvalReportTemplate,
 	}
 )
 
