@@ -111,13 +111,27 @@ func (r *Rate) Check(scenario *Scenario) error {
 	if r.Constant != nil && *r.Constant < 0 {
 		return fmt.Errorf("constant transaction rate must be >= 0, got %f", *r.Constant)
 	}
-	if r.Slope != nil && *r.Slope < 0 {
-		return fmt.Errorf("slope transaction increase rate must be >= 0, got %f", *r.Slope)
+	if r.Slope != nil {
+		return r.Slope.Check()
 	}
 	if r.Wave != nil {
 		return r.Wave.Check()
 	}
 	return nil
+}
+
+// Check tests semantic constraints on the configuration of a slope traffic pattern.
+func (s *Slope) Check() error {
+	errs := []error{}
+
+	if s.Start < 0 {
+		errs = append(errs, fmt.Errorf("minimum transaction rate must be >= 0, got %f", s.Start))
+	}
+	if s.Increment < 0 {
+		errs = append(errs, fmt.Errorf("increment transaction rate must be >= 0, got %f", s.Increment))
+	}
+
+	return errors.Join(errs...)
 }
 
 // Check tests semantic constraints on the configuration of a wave-shaped traffic pattern.

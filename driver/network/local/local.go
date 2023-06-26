@@ -250,9 +250,12 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
 	}
 
-	constantShaper := shaper.NewConstantShaper(config.Rate)
+	sh, err := shaper.ParseRate(config.Rate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse shaper; %v", err)
+	}
 
-	appController, err := controller.NewAppController(generatorFactory, constantShaper, config.Accounts, n)
+	appController, err := controller.NewAppController(generatorFactory, sh, config.Accounts, n)
 	if err != nil {
 		return nil, err
 	}

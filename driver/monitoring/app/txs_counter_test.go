@@ -30,7 +30,6 @@ func TestApplicationRegistered(t *testing.T) {
 		appName := fmt.Sprintf("app-%d", i%appsCount)
 		application.EXPECT().Config().AnyTimes().Return(&driver.ApplicationConfig{
 			Name:     appName,
-			Rate:     0,
 			Accounts: i + 1,
 		})
 		application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{
@@ -125,7 +124,6 @@ func TestApplicationPrinted(t *testing.T) {
 	application := driver.NewMockApplication(ctrl)
 	application.EXPECT().Config().AnyTimes().Return(&driver.ApplicationConfig{
 		Name:     fmt.Sprintf("app-%d", 666),
-		Rate:     0,
 		Accounts: 999,
 	})
 	application.EXPECT().GetTransactionCounts().AnyTimes().Return(app.TransactionCounts{

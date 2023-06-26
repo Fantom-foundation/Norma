@@ -118,6 +118,20 @@ func TestWaveCheck_NonPositivePeriodeIsDetected(t *testing.T) {
 	}
 }
 
+func TestSlopeCheck_NegativeStartRateIsDetected(t *testing.T) {
+	slope := Slope{Start: -1}
+	if err := slope.Check(); err == nil {
+		t.Errorf("negative slope start rate should not be allowed")
+	}
+}
+
+func TestSlopeCheck_NegativeIncrementRateIsDetected(t *testing.T) {
+	slope := Slope{Increment: -1}
+	if err := slope.Check(); err == nil {
+		t.Errorf("negative slope increment rate should not be allowed")
+	}
+}
+
 func TestRateCheck_NoOptionIsDetected(t *testing.T) {
 	scenario := Scenario{}
 	rate := Rate{}
@@ -131,8 +145,7 @@ func TestRateCheck_MultipleOptionsIsDetected(t *testing.T) {
 	rate := Rate{}
 	rate.Constant = new(float32)
 	*rate.Constant = 10
-	rate.Slope = new(float32)
-	*rate.Slope = 15
+	rate.Slope = new(Slope)
 	if err := rate.Check(&scenario); err == nil {
 		t.Errorf("multiple rate specifications should be detected")
 	}
@@ -151,16 +164,16 @@ func TestRateCheck_NegativeConstantRateIsDetected(t *testing.T) {
 	}
 }
 
-func TestRateCheck_NegativeSlopeRateIsDetected(t *testing.T) {
+func TestRateCheck_InvalidSlopeRateIsDetected(t *testing.T) {
 	scenario := Scenario{}
 	rate := Rate{}
-	rate.Slope = new(float32)
+	rate.Slope = new(Slope)
 	if err := rate.Check(&scenario); err != nil {
-		t.Errorf("vailid constant rate of %v should be fine, but received the error %v", *rate.Slope, err)
+		t.Errorf("vailid slope of %v should be fine, but received the error %v", *rate.Slope, err)
 	}
-	*rate.Slope = -10
+	rate.Slope.Start = -10
 	if err := rate.Check(&scenario); err == nil {
-		t.Errorf("negative slope rate specification should be detected")
+		t.Errorf("invalid slope specification should be detected")
 	}
 }
 

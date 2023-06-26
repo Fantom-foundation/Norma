@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-func TestLinearShaper(t *testing.T) {
+func TestSlopeShaper(t *testing.T) {
 	// Create a LinearShaper with a start frequency of 5 Hz and increment of 5 Hz
-	shaper := NewLinearShaper(5, 5)
+	shaper := NewSlopeShaper(5, 5)
 
 	// Starting frequency of 5 Hz means that the interval is 200 ms
 	// So we expect to return 200 ms for the first 5 calls
