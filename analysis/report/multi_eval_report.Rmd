@@ -1,0 +1,112 @@
+---
+title: "Norma Evaluation Diffing"
+output: html_document
+date: "`r Sys.Date()`"
+params:
+    datafile: "measurements.csv"
+---
+
+```{r setup, echo=FALSE, include=FALSE}
+library(tidyverse)
+
+figure_dimensions <- c(10, 4)
+
+# load monitoring data
+all_data <- read_csv(params$datafile)
+
+# comput the start time of each run
+start_times <- all_data %>%
+    dplyr::filter(metric == "SentTransactions") %>%  # filter metric
+    select(run, time) %>%
+    group_by(run) %>%
+    summarise(start = min(time))
+
+# join the start times into the monitoring data
+all_data_with_start_time <- inner_join(all_data, start_times, by = "run")
+```
+
+This report compares the execution of multiple Norma evaluations.
+
+## Application Metrics
+
+### Transactions Send vs. Received
+
+The following chart shows the total number of sent and received transactions in each of the scenarios.
+
+```{r send_and_received_transactions_per_run, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+# compute the send rate for each account
+sent_rate <- all_data_with_start_time %>%
+    dplyr::filter(metric == "SentTransactions") %>%   # filter metric
+    select(run, time, app, workers, value, start) %>% # filter relevant columns
+    mutate(value = as.numeric(value)) %>%             # convert value to integer
+    group_by(run, app, workers) %>%                   # one group per account
+    arrange(app, workers, time) %>%                   # sort by time in groups
+    reframe(
+        run = run,                                    # preserve the run
+        time = time,                                  # preserve the time
+        start = start,                                # preserve the start time
+        rate = value - lag(value, default = 0)        # change since last
+    )
+
+# compute the accumulated number of send transactions per run
+sent <- sent_rate %>%
+    group_by(run) %>%                                # group by run
+    arrange(time) %>%                                # sort by time in groups
+    reframe(time = time, start = start, total = cumsum(rate)) %>%   # compute prefix sum
+    mutate(simtime = as.numeric(time) - as.numeric(start))       # compute relative time
+
+# compute the number of received transactions
+received <- all_data_with_start_time %>%
+    dplyr::filter(metric == "ReceivedTransactions") %>%  # filter metric
+    mutate(value = as.numeric(value)) %>%           # convert value to int
+    mutate(simtime = as.numeric(time) - as.numeric(start))      # compute relative time
+
+ggplot() +
+    geom_line(data=sent, aes(x=simtime/1e9, y=total, group=run, colour = factor(paste(run, " sent")))) +
+    geom_line(data=received, aes(x=simtime/1e9, y=value, group=run, colour = factor(paste(run, " received")))) +
+    ggtitle("Sent and Received Transactions") +        # chart title
+    xlab("Simulation Time [s]") +                      # x-axis title
+    ylab("Total Number of Transactions") +             # y-axis title
+    labs(colour="Runs") +                              # legend title
+    theme(plot.title = element_text(hjust = 0.5))      # center title
+```
+
+The following chart compares the througput of the runs over time.
+
+```{r throughput_over_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+# compute the number of received transactions
+received <- all_data_with_start_time %>%
+    dplyr::filter(metric == "ReceivedTransactions") %>%  # filter metric
+    mutate(value = as.numeric(value)) %>%           # convert value to int
+    mutate(time = as.numeric(time)) %>%             # convert time to int
+    mutate(start = as.numeric(start)) %>%           # convert start to int
+    mutate(simtime = time - start)                  # compute relative time
+
+# compute the receive rate over time
+received_rate <- received %>%
+    group_by(run) %>%
+    arrange(time) %>%
+    reframe(
+        simtime = simtime,
+        rate = (value - lag(value, default = 0)) / ((time - lag(time)) / 1e9)
+    ) %>%
+    drop_na(rate)
+
+ggplot() +
+    geom_line(data=received_rate, aes(x=simtime/1e9, y=rate, group=run, colour = factor(run))) +
+    ggtitle("Received Transactions") +                 # chart title
+    xlab("Simulation Time [s]") +                      # x-axis title
+    ylab("Tx/s") +                                     # y-axis title
+    labs(colour = "Runs") +                            # legend title
+    theme(plot.title = element_text(hjust = 0.5))      # center title
+```
+
+```{r throughput_over_time_smoothed, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+ggplot() +
+    geom_smooth(data=received_rate, aes(x=simtime/1e9, y=rate, group=run, colour = factor(run))) +
+    ggtitle("Received Transactions (Smoothed)") +      # chart title
+    xlab("Simulation Time [s]") +                      # x-axis title
+    ylab("Tx/s") +                                     # y-axis title
+    labs(colour = "Runs") +                            # legend title
+    theme(plot.title = element_text(hjust = 0.5))      # center title
+```
