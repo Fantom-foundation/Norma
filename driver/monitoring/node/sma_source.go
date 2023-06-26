@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
 	"golang.org/x/exp/constraints"
 )
 
@@ -75,11 +74,6 @@ func newNodeBlockSeriesTransformation[T any](
 	seriesFactory func(monitoring.Series[monitoring.BlockNumber, T]) monitoring.Series[monitoring.BlockNumber, T]) monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]] {
 
 	res := NewNodeSeriesTransformation[monitoring.BlockNumber, T, monitoring.Series[monitoring.BlockNumber, T]](monitor, metric, source, seriesFactory)
-	monitor.Writer().Add(func() error {
-		source := (monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, T]])(res)
-		return export.AddSeriesData(monitor.Writer(), source)
-	})
-
 	return res
 }
 
@@ -102,6 +96,8 @@ func (s *NodeBlockSeriesTransformation[K, T, X]) GetData(node monitoring.Node) (
 			newSeries := s.seriesFactory(source)
 			s.series[node] = newSeries
 			return newSeries, true
+		} else {
+			return res, false
 		}
 	}
 
@@ -110,4 +106,30 @@ func (s *NodeBlockSeriesTransformation[K, T, X]) GetData(node monitoring.Node) (
 
 func (s *NodeBlockSeriesTransformation[K, T, X]) Shutdown() error {
 	return nil
+}
+
+func (s *NodeBlockSeriesTransformation[K, T, X]) ForEachRecord(consumer func(r monitoring.Record)) {
+	subjects := monitoring.GetSubjects(s.monitor, s.source)
+	for _, subject := range subjects {
+		series, exists := monitoring.GetData(s.monitor, subject, s.source)
+		if !exists {
+			continue
+		}
+
+		r := monitoring.Record{}
+		r.SetSubject(subject)
+
+		var first K
+		latest := series.GetLatest()
+		if latest == nil {
+			continue
+		}
+		allData := series.GetRange(first, latest.Position)
+		for _, point := range allData {
+			r.SetPosition(point.Position).SetValue(point.Value)
+			consumer(r)
+		}
+		r.SetPosition(latest.Position).SetValue(latest.Value)
+		consumer(r)
+	}
 }

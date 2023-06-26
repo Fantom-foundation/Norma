@@ -38,6 +38,24 @@ func (s *TestSource) GetData(node Node) (Series[BlockNumber, int], bool) {
 	res, exists := s.data[node]
 	return res, exists
 }
+
+func (s *TestSource) ForEachRecord(consumer func(Record)) {
+	for subject, series := range s.data {
+		r := Record{}
+		r.SetSubject(subject)
+
+		latest := series.GetLatest()
+		if latest == nil {
+			continue
+		}
+		allData := series.GetRange(BlockNumber(0), latest.Position+1)
+		for _, point := range allData {
+			r.SetPosition(point.Position).SetValue(point.Value)
+			consumer(r)
+		}
+	}
+}
+
 func (s *TestSource) Start() error {
 	// Nothing to do.
 	return nil

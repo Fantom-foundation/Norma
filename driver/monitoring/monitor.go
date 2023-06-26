@@ -22,7 +22,6 @@ type Monitor struct {
 	config          MonitorConfig
 	nodeLogProvider NodeLogProvider
 	sources         map[string]source
-	writer          WriterChain
 }
 
 type MonitorConfig struct {
@@ -34,17 +33,11 @@ func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) 
 	if config.OutputDir == "" {
 		config.OutputDir = "."
 	}
-	csvPath := config.OutputDir + "/measurements.csv"
-	csvFile, err := os.Create(csvPath)
-	if err != nil {
-		return nil, err
-	}
 	return &Monitor{
 		network:         network,
 		config:          config,
 		nodeLogProvider: NewNodeLogDispatcher(network),
 		sources:         map[string]source{},
-		writer:          NewWriterChain(csvFile),
 	}, nil
 }
 
@@ -57,14 +50,39 @@ func (m *Monitor) GetMeasurementFileName() string {
 // should be called before abandoning the Monitor instance.
 func (m *Monitor) Shutdown() error {
 	var errs = []error{}
+
+	// Shut down all sources.
 	for _, source := range m.sources {
 		if err := source.Shutdown(); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	errs = append(errs, m.writer.Close())
-	return errors.Join(errs...)
+	// Dump all data to a CSV file.
+	csvPath := m.GetMeasurementFileName()
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return errors.Join(err, errors.Join(errs...))
+	}
+	if err := WriteCsvHeader(csvFile); err != nil {
+		errs = append(errs, err)
+	}
+	for metric, source := range m.sources {
+		source.ForEachRecord(func(r Record) {
+			row := CsvRecord{
+				Record: r,
+				Metric: metric,
+			}
+			if _, err := row.WriteTo(csvFile); err != nil {
+				errs = append(errs, err)
+			}
+		})
+	}
+
+	return errors.Join(
+		csvFile.Close(),
+		errors.Join(errs...),
+	)
 }
 
 // InstallSource installs a new source on the given monitor. The provided factory
@@ -114,11 +132,6 @@ func (m *Monitor) Network() driver.Network {
 // monitor instance.
 func (m *Monitor) Config() MonitorConfig {
 	return m.config
-}
-
-// Writer returns a reference to the writer instance.
-func (m *Monitor) Writer() WriterChain {
-	return m.writer
 }
 
 // NodeLogProvider returns a reference to the log parser instance.
