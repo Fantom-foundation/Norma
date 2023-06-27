@@ -174,8 +174,8 @@ func (n *PrometheusLogDispatcher) AfterApplicationCreation(driver.Application) {
 	// ignored
 }
 
-// startPeriodicDispatch starts a go-routine, which lets periodically
-// parse node logs, and distribute the log to registered listeners.
+// startPeriodicDispatch starts a go-routine that periodically triggers the
+// fetching, parsing, and distribution of node logs to registered listeners.
 // This method only sends the signal to trigger node parsing, and waits
 // to send next signal every period.
 // Each node maintains its own channel, which triggers parsing of its log
@@ -215,7 +215,7 @@ func (n *PrometheusLogDispatcher) startNodeLogsDispatch(nodeId Node, url *driver
 			if logs, err := n.logReader(url); err == nil {
 				n.distributeLog(NewTime(time.Now()), node, logs)
 			} else {
-				log.Printf("error to parse log: %s", err)
+				log.Printf("failed to parse log: %s", err)
 			}
 		}
 	}(nodeId, *url)
