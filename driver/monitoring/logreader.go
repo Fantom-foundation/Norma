@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"regexp"
@@ -58,8 +59,8 @@ func readBlocks(reader io.Reader, ch chan<- Block) error {
 
 // parseTime convert time from log format into Time type.
 func parseTime(str string) (time.Time, error) {
-
-	return time.Parse("[01-02|15:04:05.000]", str)
+	year := time.Now().Year()
+	return time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-%s", year, str))
 }
 
 // parseBlock parses block information from the log line. It is expected the log line is well-formed.

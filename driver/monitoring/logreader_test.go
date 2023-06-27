@@ -3,6 +3,7 @@ package monitoring
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestParseTime(t *testing.T) {
@@ -11,6 +12,9 @@ func TestParseTime(t *testing.T) {
 		t.Errorf("cannot parse: %s", err)
 	}
 
+	if got, want := tt.Year(), time.Now().Year(); got != want {
+		t.Errorf("wrong year parsed, want %d, got %d", want, got)
+	}
 	if val := tt.Month(); val != 5 {
 		t.Errorf("wrong time parsed: %d", val)
 	}
