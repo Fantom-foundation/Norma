@@ -127,9 +127,6 @@ func (s *Slope) Check() error {
 	if s.Start < 0 {
 		errs = append(errs, fmt.Errorf("minimum transaction rate must be >= 0, got %f", s.Start))
 	}
-	if s.Increment < 0 {
-		errs = append(errs, fmt.Errorf("increment transaction rate must be >= 0, got %f", s.Increment))
-	}
 
 	return errors.Join(errs...)
 }
