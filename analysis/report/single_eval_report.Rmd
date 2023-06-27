@@ -59,6 +59,38 @@ ggplot(data=data) +
 ```
 
 
+### Block Delay
+The following chart shows the time between the earliest reported completion time of block `n-1` and earliest reported completion time block `n` for block `n`.
+
+```{r block_delay_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    # filter desired metric and columns
+    dplyr::filter(metric == "BlockCompletionTime") %>%
+    select(block, value) %>%
+    # convert values into numbers
+    mutate(value = as.numeric(value)) %>%
+    # find earliest time for each block
+    group_by(block) %>%
+    summarise(value = min(value)) %>%
+    # compute delta between consecutive blocks
+    arrange(block) %>%
+    mutate(delta = value - lag(value)) %>%
+    drop_na(delta)
+
+ggplot(data = data) +
+    # a horizontal line marking the 1s target
+    geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+    # the individual block delays
+    geom_point(aes(x = block, y = delta / 1e9)) +
+    # a interpolation line
+    geom_smooth(aes(x = block, y = delta / 1e9), se = FALSE) +
+    ggtitle("Block Delay") +                           # chart title
+    xlab("Block Height") +                             # x-axis title
+    ylab("Delay [s]") +                                # y-axis title
+    theme(plot.title = element_text(hjust = 0.5))      # center title
+```
+
+
 ## Network Metrics
 
 This section covers metrics that are network wide properties.

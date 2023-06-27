@@ -1,6 +1,9 @@
 package monitoring
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 var (
 	Node1TestId = Node("A")
@@ -16,12 +19,13 @@ var (
 
 	Node3TestLog = "INFO [05-04|09:38:15.080] New block      index=1 id=2:1:247c79       gas_used=11 txs=10/0 age=7.392s t=5.686ms \n"
 
-	time1, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.080]")
-	time2, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:15.537]")
-	time3, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.027]")
-	time4, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:16.512]")
-	time5, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:34:17.003]")
-	time6, _ = time.Parse("[01-02|15:04:05.000]", "[05-04|09:38:15.080]")
+	year     = time.Now().Year()
+	time1, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:34:15.080]", year))
+	time2, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:34:15.537]", year))
+	time3, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:34:16.027]", year))
+	time4, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:34:16.512]", year))
+	time5, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:34:17.003]", year))
+	time6, _ = time.Parse("2006-[01-02|15:04:05.000]", fmt.Sprintf("%d-[05-04|09:38:15.080]", year))
 
 	dur1, _ = time.ParseDuration("711.334µs")
 	dur2, _ = time.ParseDuration("1.579ms")
