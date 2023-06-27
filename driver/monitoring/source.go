@@ -30,6 +30,10 @@ type source interface {
 	// Shutdown stops the collection of data. Already collected data shall
 	// remain available, but no new data is collected.
 	Shutdown() error
+
+	// ForEachRecord requires each source to enumerate all collected records.
+	// This is mainly intended to provide a uniform export interface.
+	ForEachRecord(func(r Record))
 }
 
 // SourceFactory is a generic interface for metric sources. It is used to

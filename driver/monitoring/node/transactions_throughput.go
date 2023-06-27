@@ -3,11 +3,10 @@ package nodemon
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/Fantom-foundation/Norma/driver/monitoring/export"
+	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 )
 
 var (
@@ -33,10 +32,8 @@ type TransactionsThroughputSource struct {
 // NewTransactionsThroughputSource creates a metric capturing transaction throughput.
 func NewTransactionsThroughputSource(monitor *monitoring.Monitor) *TransactionsThroughputSource {
 	blockMetrics := BlockNodeMetricSource[float32]{
-		metric:     TransactionsThroughput,
-		monitor:    monitor,
-		series:     make(map[monitoring.Node]*monitoring.SyncedSeries[monitoring.BlockNumber, float32], 50),
-		seriesLock: &sync.Mutex{},
+		SyncedSeriesSource: utils.NewSyncedSeriesSource(TransactionsThroughput),
+		monitor:            monitor,
 	}
 
 	m := &TransactionsThroughputSource{
@@ -44,11 +41,6 @@ func NewTransactionsThroughputSource(monitor *monitoring.Monitor) *TransactionsT
 		lastTimes:             make(map[monitoring.Node]time.Time, 50),
 	}
 	monitor.NodeLogProvider().RegisterLogListener(m)
-
-	monitor.Writer().Add(func() error {
-		source := (monitoring.Source[monitoring.Node, monitoring.Series[monitoring.BlockNumber, float32]])(m)
-		return export.AddSeriesData(monitor.Writer(), source)
-	})
 
 	return m
 }
@@ -59,14 +51,12 @@ func newTransactionsThroughputSource(monitor *monitoring.Monitor) monitoring.Sou
 }
 
 func (s *TransactionsThroughputSource) OnBlock(node monitoring.Node, block monitoring.Block) {
-	s.seriesLock.Lock()
-	defer s.seriesLock.Unlock()
 
 	prevTime, exists := s.lastTimes[node]
 	s.lastTimes[node] = block.Time
 	if !exists {
-		// very first node received - assign a new series
-		s.series[node] = &monitoring.SyncedSeries[monitoring.BlockNumber, float32]{}
+		// very first node received - no difference can be computed, but the data series is expected to be created
+		s.GetOrAddSubject(node)
 		return
 	}
 
@@ -74,7 +64,8 @@ func (s *TransactionsThroughputSource) OnBlock(node monitoring.Node, block monit
 	// prevent NaN or Inf: when the time difference is bellow measured value, skip the block.
 	if timeDiff != 0 {
 		txs := float64(block.Txs) * 1e9 / float64(timeDiff)
-		if err := s.series[node].Append(monitoring.BlockNumber(block.Height), float32(txs)); err != nil {
+		series := s.GetOrAddSubject(node)
+		if err := series.Append(monitoring.BlockNumber(block.Height), float32(txs)); err != nil {
 			log.Printf("error to add to the series: %s", err)
 		}
 	}

@@ -14,19 +14,19 @@ library("rmarkdown")
 #  - the script to run
 #  - the data source file
 #  - the output directory
-args = commandArgs(trailingOnly=TRUE)
-if (length(args)!=4) {
-  stop("Script requires exactly three parameters: <template> <data> <outputdir> <outputfile>", call.=FALSE)
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args) != 4) {
+  stop("Script requires exactly four parameters: <template> <data> <outputdir> <outputfile>", call.=FALSE)
 }
 
-template = args[1]
-data = args[2]
-outputdir = args[3]
-outputfile = args[4]
+template <- args[1]
+data <- args[2]
+outputdir <- args[3]
+outputfile <- args[4]
 
 rmarkdown::render(
     template,
-    params = list(datafile=data),
+    params = list(datafile = data),
     output_dir = outputdir,
     output_file = outputfile,
 )

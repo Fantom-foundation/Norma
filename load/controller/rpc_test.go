@@ -35,7 +35,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(PrivateKey, FakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, PrivateKey, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,8 +70,12 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if counts.ReceivedTxs != counts.SentTxs {
-		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", counts.ReceivedTxs, counts.SentTxs)
+	sum := uint64(0)
+	for _, x := range counts.SentTxs {
+		sum += x
+	}
+	if counts.ReceivedTxs != sum {
+		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", counts.ReceivedTxs, sum)
 	}
 
 	// in optimal case should be generated 30 txs per second
