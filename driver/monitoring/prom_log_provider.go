@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"context"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/node"
@@ -14,10 +13,10 @@ import (
 // TimeLogListener is an interface implemented by any subject that wants to receive
 // a value for the specific time and node. Its method is triggered every time a new value
 // is available for the timestamp.
-type TimeLogListener[T any] interface {
+type TimeLogListener interface {
 
 	// OnLog is executed every time a new value occurs for the given time and node.
-	OnLog(node Node, timestamp Time, value T)
+	OnLog(node Node, timestamp Time, value float64)
 }
 
 // PrometheusLogKey is a unique identifier of the log entry obtained from prometheus.
@@ -45,10 +44,10 @@ type PrometheusLogProvider interface {
 
 	// RegisterLogListener registers the input listener to receive new log entries
 	// for the given log type.
-	RegisterLogListener(key PrometheusLogKey, listener TimeLogListener[float64])
+	RegisterLogListener(key PrometheusLogKey, listener TimeLogListener)
 
 	// UnregisterLogListener removes the input listener from receiving new logs
-	UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener[float64])
+	UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener)
 }
 
 // PrometheusLogDispatcher allows for registering objects to receive Prometheus log messages
@@ -62,15 +61,15 @@ type PrometheusLogDispatcher struct {
 	nodes     map[Node]chan Time
 	nodesLock sync.Mutex
 
-	listeners     map[PrometheusLogKey]map[TimeLogListener[float64]]bool
+	listeners     map[PrometheusLogKey]map[TimeLogListener]bool
 	listenersLock sync.Mutex
 
 	network driver.Network
 
-	ctx    context.Context
+	ticker *time.Ticker
 	period time.Duration
-	cancel context.CancelFunc
 	wg     sync.WaitGroup
+	done   chan bool
 
 	logReader func(driver.URL) ([]PrometheusLogValue, error)
 }
@@ -97,16 +96,14 @@ func NewPrometheusLogDispatcher(network driver.Network) *PrometheusLogDispatcher
 // newPrometheusLogDispatcher is the same as its public counterpart, but allows for setting the period of fetching logs from the nodes,
 // and allows for customising the method to fetch logs from nodes.
 func newPrometheusLogDispatcher(network driver.Network, period time.Duration, logReader func(driver.URL) ([]PrometheusLogValue, error)) *PrometheusLogDispatcher {
-	ctx, cancel := context.WithCancel(context.Background())
-
 	res := &PrometheusLogDispatcher{
 		network:   network,
 		nodes:     make(map[Node]chan Time, 50),
-		listeners: make(map[PrometheusLogKey]map[TimeLogListener[float64]]bool, 50),
+		listeners: make(map[PrometheusLogKey]map[TimeLogListener]bool, 50),
 		logReader: logReader,
 		period:    period,
-		ctx:       ctx,
-		cancel:    cancel,
+		ticker:    time.NewTicker(period),
+		done:      make(chan bool),
 	}
 
 	res.startPeriodicDispatch()
@@ -125,24 +122,25 @@ func newPrometheusLogDispatcher(network driver.Network, period time.Duration, lo
 // Shutdown terminates periodic parsing of the logs. No more new logs will be provided
 // after this method is called.
 func (n *PrometheusLogDispatcher) Shutdown() {
-	n.cancel()
+	n.ticker.Stop()
+	n.done <- true
 	n.wg.Wait()
 }
 
-func (n *PrometheusLogDispatcher) RegisterLogListener(key PrometheusLogKey, listener TimeLogListener[float64]) {
+func (n *PrometheusLogDispatcher) RegisterLogListener(key PrometheusLogKey, listener TimeLogListener) {
 	n.listenersLock.Lock()
 	defer n.listenersLock.Unlock()
 
 	listeners, exist := n.listeners[key]
 	if !exist {
-		listeners = make(map[TimeLogListener[float64]]bool, 50)
+		listeners = make(map[TimeLogListener]bool, 50)
 		n.listeners[key] = listeners
 	}
 
 	listeners[listener] = true
 }
 
-func (n *PrometheusLogDispatcher) UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener[float64]) {
+func (n *PrometheusLogDispatcher) UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener) {
 	n.listenersLock.Lock()
 	defer n.listenersLock.Unlock()
 	listeners, exist := n.listeners[key]
@@ -184,7 +182,7 @@ func (n *PrometheusLogDispatcher) startPeriodicDispatch() {
 	go func() {
 		for {
 			select {
-			case <-n.ctx.Done():
+			case <-n.done:
 				n.nodesLock.Lock()
 				for nodeId, ch := range n.nodes {
 					close(ch)
@@ -192,7 +190,7 @@ func (n *PrometheusLogDispatcher) startPeriodicDispatch() {
 				}
 				n.nodesLock.Unlock()
 				return
-			case t := <-time.After(n.period):
+			case t := <-n.ticker.C:
 				n.nodesLock.Lock()
 				for _, ch := range n.nodes {
 					ch <- NewTime(t)
@@ -227,10 +225,17 @@ func (n *PrometheusLogDispatcher) startNodeLogsDispatch(nodeId Node, url *driver
 // the logs, but not their distribution to receivers.
 func (n *PrometheusLogDispatcher) distributeLog(timestamp Time, nodeId Node, logs []PrometheusLogValue) {
 	n.listenersLock.Lock()
+	localCopy := make(map[PrometheusLogKey]map[TimeLogListener]bool, len(n.listeners))
+	for _, value := range logs {
+		receivers := n.listeners[value.PrometheusLogKey]
+		for receiver := range receivers {
+			localCopy[value.PrometheusLogKey][receiver] = true
+		}
+	}
 	defer n.listenersLock.Unlock()
 
 	for _, value := range logs {
-		receivers := n.listeners[value.PrometheusLogKey]
+		receivers := localCopy[value.PrometheusLogKey]
 		for receiver := range receivers {
 			receiver.OnLog(nodeId, timestamp, value.value)
 		}

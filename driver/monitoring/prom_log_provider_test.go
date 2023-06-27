@@ -16,6 +16,8 @@ func TestLogsDispatchedImplements(t *testing.T) {
 }
 
 func TestLogsDispatched(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -76,6 +78,8 @@ func TestLogsDispatched(t *testing.T) {
 }
 
 func TestLogsDispatchedLogsOrdered(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -129,6 +133,8 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 }
 
 func TestLogsDispatchedShutdown(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -173,6 +179,8 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 }
 
 func TestLogsDispatchedUnregisterListener(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
