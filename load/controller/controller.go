@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"log"
-	"time"
 )
 
 // AppController emits transactions to the testing network into a blockchain app to generate a load.
@@ -71,15 +72,20 @@ func (ac *AppController) Run(ctx context.Context) error {
 			}
 			return err
 		default:
-			// trigger a worker to send a tx
-			select {
-			case ac.trigger <- struct{}{}:
-			default:
-				missed++
+			shouldSend, waitTime := ac.shaper.GetNextWaitTime()
+
+			// send only if the shaper says so
+			if shouldSend {
+				// trigger a worker to send a tx
+				select {
+				case ac.trigger <- struct{}{}:
+				default:
+					missed++
+				}
 			}
 
 			// wait for time determined by the shaper
-			time.Sleep(ac.shaper.GetNextWaitTime())
+			time.Sleep(waitTime)
 		}
 	}
 }

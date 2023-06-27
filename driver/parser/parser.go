@@ -57,6 +57,7 @@ type Rate struct {
 }
 
 // Slope defines the parameters of a linearly increasing traffic pattern.
+// The pattern is defined by a starting Tx/s rate and an increment per second.
 type Slope struct {
 	Start     float32 // starting Tx/s
 	Increment float32 // increment by given Tx/s per second

@@ -10,7 +10,9 @@ import (
 // Shaper defines delays between produced txs to ensure desired produced traffic profile.
 type Shaper interface {
 	// GetNextWaitTime provides the time to wait before the next tx should be sent
-	GetNextWaitTime() time.Duration
+	// If the returned bool is false, no transaction should be sent and shaper should be asked
+	// again after the duration returned by GetNextWaitTime.
+	GetNextWaitTime() (bool, time.Duration)
 }
 
 // ParseRate parses rate from the parser.

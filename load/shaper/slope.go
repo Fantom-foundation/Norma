@@ -1,35 +1,52 @@
 package shaper
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
-// SlopeShaper is used to send txs with a linearly increasing frequency
+// SlopeShaper is used to send txs with a linearly increasing frequency.
+// It is defined as follows:
 type SlopeShaper struct {
-	interval           time.Duration
-	currentFrequency   float32
+	startFrequency     float32
 	incrementFrequency float32
-	currentTick        time.Duration
+	// startTimeStamp is the time when the wait time was first obtained.
+	startTimeStamp time.Time
 }
 
 func NewSlopeShaper(startFrequency, incrementFrequency float32) *SlopeShaper {
 	return &SlopeShaper{
-		currentFrequency:   startFrequency,
-		interval:           time.Duration(float32(time.Second) / startFrequency),
+		startFrequency:     startFrequency,
 		incrementFrequency: incrementFrequency,
-		currentTick:        0,
 	}
 }
 
-// GetNextWaitTime returns the next wait time based on the current frequency
-// and the increment frequency.
-func (s *SlopeShaper) GetNextWaitTime() time.Duration {
-	// Increase the current frequency if the current tick is greater than or
-	// equal to one second. That means that the current frequency is completed.
-	if s.currentTick >= time.Second {
-		s.currentFrequency += s.incrementFrequency
-		s.interval = time.Duration(float32(time.Second) / s.currentFrequency).Round(time.Microsecond)
-		s.currentTick = 0
+// GetNextWaitTime returns the next wait time based on the current timestamp
+// and start and increment frequency
+func (s *SlopeShaper) GetNextWaitTime() (bool, time.Duration) {
+	now := time.Now()
+	// if this is the first call, set the start time stamp
+	if s.startTimeStamp.IsZero() {
+		s.startTimeStamp = now
 	}
-	// Increase the current tick by the interval.
-	s.currentTick += s.interval
-	return s.interval
+	return s.GetWaitTimeForTimeStamps(s.startTimeStamp, now)
+}
+
+// GetWaitTimeForTimeStamps returns the wait time for the given start and current time stamps
+func (s *SlopeShaper) GetWaitTimeForTimeStamps(start time.Time, current time.Time) (bool, time.Duration) {
+	timeSinceStart := current.Sub(start).Seconds()
+
+	// calculate the current frequency as linear function t(n) = s + n * i,
+	// where `s` is the start frequency, `n` is the time since start and `i` is the increment frequency
+	currentFrequency := s.startFrequency + float32(timeSinceStart)*s.incrementFrequency
+
+	// if the current frequency is less than or equal to 0, then signal
+	// to the consumer that he should ask in given duration
+	if currentFrequency <= 0 {
+		// calculate the duration from absolute value (might be negative) of the increment frequency
+		return false, time.Duration(float32(time.Second) / float32(math.Abs(float64(s.incrementFrequency))))
+	}
+
+	// return the wait time for the current frequency
+	return true, time.Duration(float32(time.Second) / currentFrequency)
 }

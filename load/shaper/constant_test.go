@@ -10,7 +10,7 @@ func TestConstantShaper(t *testing.T) {
 	shaper := NewConstantShaper(100)
 
 	expectedInterval := time.Second / 100
-	waitTime := shaper.GetNextWaitTime()
+	_, waitTime := shaper.GetNextWaitTime()
 
 	if waitTime != expectedInterval {
 		t.Fatalf("Expected %d, got %d", expectedInterval, waitTime)

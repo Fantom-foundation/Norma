@@ -125,13 +125,6 @@ func TestSlopeCheck_NegativeStartRateIsDetected(t *testing.T) {
 	}
 }
 
-func TestSlopeCheck_NegativeIncrementRateIsDetected(t *testing.T) {
-	slope := Slope{Increment: -1}
-	if err := slope.Check(); err == nil {
-		t.Errorf("negative slope increment rate should not be allowed")
-	}
-}
-
 func TestRateCheck_NoOptionIsDetected(t *testing.T) {
 	scenario := Scenario{}
 	rate := Rate{}
@@ -169,7 +162,7 @@ func TestRateCheck_InvalidSlopeRateIsDetected(t *testing.T) {
 	rate := Rate{}
 	rate.Slope = new(Slope)
 	if err := rate.Check(&scenario); err != nil {
-		t.Errorf("vailid slope of %v should be fine, but received the error %v", *rate.Slope, err)
+		t.Errorf("valid slope of %v should be fine, but received the error %v", *rate.Slope, err)
 	}
 	rate.Slope.Start = -10
 	if err := rate.Check(&scenario); err == nil {
