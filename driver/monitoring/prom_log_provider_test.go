@@ -15,7 +15,7 @@ func TestLogsDispatchedImplements(t *testing.T) {
 }
 
 func TestLogsDispatched(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -73,7 +73,7 @@ func TestLogsDispatched(t *testing.T) {
 }
 
 func TestLogsDispatchedLogsOrdered(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -89,32 +89,33 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 
 	requestedItems := 1000
 
+	listener := NewMockTimeLogListener(ctrl)
+	// check ordering by expected values 1 to N in exact order, executed each exactly once
+	calls := make([]*gomock.Call, 0, requestedItems)
+	for i := 1; i <= requestedItems; i++ {
+		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)))
+	}
+	gomock.InOrder(calls...)
+
 	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
 	var counter atomic.Int64
-	current := make(chan int, 1)
+	current := make(chan bool, 1)
 	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
 		mu.Lock()
 		next := counter.Add(1)
-		current <- int(next)
+		current <- true
 		res := PrometheusLogValue{PrometheusLogKey{"A", 0}, counterPrometheusMetricType, float64(next)}
 		return []PrometheusLogValue{res}, nil
 	}
 	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
-	listener := NewMockTimeLogListener(ctrl)
-
-	// check ordering by expected values 1 to N in exact order, executed each exactly once
-	calls := make([]*gomock.Call, 0, requestedItems)
-	for i := 1; i <= requestedItems; i++ {
-		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)).AnyTimes())
-	}
-	gomock.InOrder(calls...)
 
 	// listen for metrics
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)
 
 	// wait till the requested amount of calls received
-	for val := range current {
-		if val == requestedItems {
+	for range current {
+		if int(counter.Load()) == requestedItems {
+			time.Sleep(100 * time.Millisecond)
 			// unregister the listener, so we have no more execution of the listener before the end of this test
 			dispatcher.UnregisterLogListener(PrometheusLogKey{"A", 0}, listener)
 			mu.Unlock()
@@ -125,7 +126,7 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 }
 
 func TestLogsDispatchedShutdown(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -174,7 +175,7 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 }
 
 func TestLogsDispatchedUnregisterListener(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -189,48 +190,45 @@ func TestLogsDispatchedUnregisterListener(t *testing.T) {
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
 	requestedItems := 1000
-	metrics := []string{"A", "B"}
-
-	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
-	var counter atomic.Int64
-	current := make(chan int, 1)
-	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
-		mu.Lock()
-		next := counter.Add(1)
-		current <- int(next)
-		res := PrometheusLogValue{PrometheusLogKey{metrics[next%2], 0}, counterPrometheusMetricType, float64(next)}
-		return []PrometheusLogValue{res}, nil
-	}
-	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
 
 	listener := NewMockTimeLogListener(ctrl)
-
 	// altering A, B metrics denoted by continuously growing 1 to N
-	calls := make([]*gomock.Call, 0, requestedItems)
-	for i := 1; i <= requestedItems/2; i++ {
-		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)).AnyTimes())
+	calls := make([]*gomock.Call, 0, 2*requestedItems)
+	for i := 1; i <= requestedItems; i++ {
+		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)))
 	}
 	// only B metric denoted by multiplies of 2
-	for i := 1; i <= requestedItems/2; i = i + 2 {
-		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)).AnyTimes())
+	for i := requestedItems; i < 2*requestedItems; i = i + 2 {
+		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i+1)))
 	}
 
 	// check all called in order
 	gomock.InOrder(calls...)
+
+	metrics := []string{"A", "B"}
+	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
+	var counter atomic.Int64
+	current := make(chan bool, 1)
+	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
+		mu.Lock()
+		next := counter.Add(1)
+		current <- true
+		res := PrometheusLogValue{PrometheusLogKey{metrics[next%2], 0}, counterPrometheusMetricType, float64(next)}
+		return []PrometheusLogValue{res}, nil
+	}
+	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
 
 	// listen for two metrics A and B
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)
 	dispatcher.RegisterLogListener(PrometheusLogKey{"B", 0}, listener)
 
 	// wait till the requested amount of calls received
-	for val := range current {
-		if val == requestedItems/2 {
+	for range current {
+		if int(counter.Load()) == requestedItems {
 			// unregister the listener A, only B will remain
 			dispatcher.UnregisterLogListener(PrometheusLogKey{"A", 0}, listener)
-			mu.Unlock()
-			break
 		}
-		if val == requestedItems {
+		if int(counter.Load()) == 2*requestedItems {
 			// unregister the listener, so we have no more execution of the listener before the end of this test
 			dispatcher.UnregisterLogListener(PrometheusLogKey{"B", 0}, listener)
 			mu.Unlock()
