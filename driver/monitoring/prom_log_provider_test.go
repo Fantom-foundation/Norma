@@ -142,10 +142,8 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 	requestedItems := 1000
 
 	var counter atomic.Int64
-	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
 	max := make(chan bool, 1)
 	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
-		mu.Lock()
 		next := counter.Add(1)
 		if int(next) == requestedItems {
 			max <- true
