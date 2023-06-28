@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source prom_log_provider.go -destination prom_log_provider_mock.go -package monitoring
+
 // TimeLogListener is an interface implemented by any subject that wants to receive
 // a value for the specific time and node. Its method is triggered every time a new value
 // is available for the timestamp.
@@ -224,19 +226,15 @@ func (n *PrometheusLogDispatcher) startNodeLogsDispatch(nodeId Node, url *driver
 // at the moment, as assumption is that the slowest part of logs processing is actually I/O to retrieve
 // the logs, but not their distribution to receivers.
 func (n *PrometheusLogDispatcher) distributeLog(timestamp Time, nodeId Node, logs []PrometheusLogValue) {
-	n.listenersLock.Lock()
-	localCopy := make(map[PrometheusLogKey]map[TimeLogListener]bool, len(n.listeners))
 	for _, value := range logs {
-		receivers := n.listeners[value.PrometheusLogKey]
-		for receiver := range receivers {
-			localCopy[value.PrometheusLogKey][receiver] = true
+		n.listenersLock.Lock()
+		listeners := n.listeners[value.PrometheusLogKey]
+		listenersCopy := make([]TimeLogListener, 0, len(n.listeners))
+		for listener := range listeners {
+			listenersCopy = append(listenersCopy, listener)
 		}
-	}
-	defer n.listenersLock.Unlock()
-
-	for _, value := range logs {
-		receivers := localCopy[value.PrometheusLogKey]
-		for receiver := range receivers {
+		n.listenersLock.Unlock()
+		for _, receiver := range listenersCopy {
 			receiver.OnLog(nodeId, timestamp, value.value)
 		}
 	}
