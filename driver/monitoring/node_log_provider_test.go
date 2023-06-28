@@ -35,8 +35,8 @@ func TestRegisterLogParser(t *testing.T) {
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
 	reg := NewNodeLogDispatcher(net)
-	ch := make(chan Node, 10)
-	listener := &testBlockNodeListener{data: map[Node][]Block{}, ch: ch}
+	listener := &testBlockNodeListener{data: map[Node][]Block{}}
+	listener.wg.Add(len(NodeBlockTestData[Node1TestId]) + len(NodeBlockTestData[Node2TestId]) + len(NodeBlockTestData[Node3TestId]))
 	reg.RegisterLogListener(listener)
 
 	// simulate added node
@@ -44,9 +44,12 @@ func TestRegisterLogParser(t *testing.T) {
 	reg.AfterNodeCreation(node2)
 	reg.AfterNodeCreation(node3)
 
-	// drain 3 nodes from the channel
-	for _, node := range []Node{<-ch, <-ch, <-ch} {
-		got := listener.getBlocks(node)
+	// wait for all records received
+	listener.wg.Wait()
+	listener.dataLock.Lock()
+	defer listener.dataLock.Unlock()
+
+	for node, got := range listener.data {
 		want := NodeBlockTestData[node]
 		blockEqual(t, node, got, want)
 	}
@@ -63,7 +66,7 @@ func TestRegisterLogParser(t *testing.T) {
 type testBlockNodeListener struct {
 	data     map[Node][]Block
 	dataLock sync.Mutex
-	ch       chan Node
+	wg       sync.WaitGroup
 }
 
 func blockEqual(t *testing.T, node Node, got, want []Block) {
@@ -81,21 +84,11 @@ func blockEqual(t *testing.T, node Node, got, want []Block) {
 func (l *testBlockNodeListener) OnBlock(node Node, b Block) {
 	l.dataLock.Lock()
 	defer l.dataLock.Unlock()
-
-	// send uniq nodes
-	if _, exists := l.data[node]; !exists {
-		l.ch <- node
-	}
+	defer l.wg.Done()
 
 	// count in only non-empty blocks
 	if b.Height > 0 {
 		l.data[node] = append(l.data[node], b)
 	}
-}
 
-func (l *testBlockNodeListener) getBlocks(node Node) []Block {
-	l.dataLock.Lock()
-	defer l.dataLock.Unlock()
-
-	return l.data[node]
 }

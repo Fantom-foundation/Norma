@@ -107,6 +107,7 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 		res := PrometheusLogValue{PrometheusLogKey{"A", 0}, counterPrometheusMetricType, float64(next)}
 		return []PrometheusLogValue{res}, nil
 	}
+
 	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
 
 	// listen for metrics
@@ -115,7 +116,6 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 	// wait till the requested amount of calls received
 	for range current {
 		if int(counter.Load()) == requestedItems {
-			time.Sleep(100 * time.Millisecond)
 			// unregister the listener, so we have no more execution of the listener before the end of this test
 			dispatcher.UnregisterLogListener(PrometheusLogKey{"A", 0}, listener)
 			mu.Unlock()
