@@ -45,9 +45,9 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	node2.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node2TestId))
 	node3.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node3TestId))
 
-	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
-	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
-	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil)
+	node1.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil })
+	node2.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil })
+	node3.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil })
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
@@ -58,7 +58,11 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
 
-	reg := monitoring.NewNodeLogDispatcher(net)
+	reg, err := monitoring.NewNodeLogDispatcher(net, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create node log dispatcher: %v", err)
+	}
+	defer reg.WaitForLogsToBeConsumed()
 	source := NewNumberOfTransactionsSource(monitor)
 	reg.RegisterLogListener(source)
 

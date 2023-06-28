@@ -1,8 +1,10 @@
 package monitoring
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"os"
 	"sync"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -33,6 +35,7 @@ type NodeLogProvider interface {
 // Every time a node is added to the network, the internal list is extended.
 // Log streams of all the nodes maintained in this registry are read and parsed,
 // while the parsed blocks from the logs are distributed to all registered listeners.
+// Furthermore, all collected logs are writen to a configurable output directory.
 type NodeLogDispatcher struct {
 	nodes     map[Node]bool
 	nodesLock sync.Mutex
@@ -41,15 +44,24 @@ type NodeLogDispatcher struct {
 	listenersLock sync.Mutex
 
 	network driver.Network
+	logDir  string
+	wg      sync.WaitGroup
 }
 
 // NewNodeLogDispatcher creates a new instance of this registry, which is filled
 // by already running nodes, and further listens to newly added nodes.
-func NewNodeLogDispatcher(network driver.Network) *NodeLogDispatcher {
+func NewNodeLogDispatcher(network driver.Network, outputDir string) (*NodeLogDispatcher, error) {
+	logDir := outputDir + "/node_logs"
+	err := os.MkdirAll(logDir, 0700)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create output directory: %v", err)
+	}
+
 	res := &NodeLogDispatcher{
 		network:   network,
 		nodes:     make(map[Node]bool, 50),
 		listeners: make(map[LogListener]bool, 50),
+		logDir:    logDir,
 	}
 
 	// listen for new Nodes
@@ -60,7 +72,14 @@ func NewNodeLogDispatcher(network driver.Network) *NodeLogDispatcher {
 		res.AfterNodeCreation(node)
 	}
 
-	return res
+	return res, nil
+}
+
+// WaitForLogsToBeConsumed blocks until all goroutines that are currently
+// active in consuming logs have completed. It is intended for synchronizing
+// consumers in unit tests.
+func (n *NodeLogDispatcher) WaitForLogsToBeConsumed() {
+	n.wg.Wait()
 }
 
 func (n *NodeLogDispatcher) RegisterLogListener(listener LogListener) {
@@ -82,11 +101,18 @@ func (n *NodeLogDispatcher) AfterNodeCreation(node driver.Node) {
 
 	// open new log stream only when the node has not been in the map yet
 	if _, exists := n.nodes[Node(nodeId)]; !exists {
+		n.wg.Add(1)
+
+		// Start a goroutine collecting the log and writting it into a file.
+		go n.runLogCollector(node)
+
+		// Start a goroutine parsing the log and dispatching block information.
 		logStream, err := node.StreamLog()
 		if err != nil {
 			log.Printf("failed to obtain logs of node, will not be able to track blocks: %v", err)
 			return // do not start dispatch on error
 		}
+		n.wg.Add(1)
 		n.startDispatcher(Node(nodeId), logStream)
 
 		n.nodes[Node(nodeId)] = true
@@ -119,6 +145,7 @@ func (n *NodeLogDispatcher) getNumNodes() int {
 
 func (n *NodeLogDispatcher) startDispatcher(node Node, reader io.ReadCloser) {
 	go func() {
+		defer n.wg.Done()
 		defer func() {
 			_ = reader.Close()
 		}()
@@ -131,4 +158,26 @@ func (n *NodeLogDispatcher) startDispatcher(node Node, reader io.ReadCloser) {
 			n.listenersLock.Unlock()
 		}
 	}()
+}
+
+func (n *NodeLogDispatcher) runLogCollector(node driver.Node) {
+	defer n.wg.Done()
+	label := node.GetLabel()
+	in, err := node.StreamLog()
+	if err != nil {
+		log.Printf("failed to obtain logs of node %v, log is not captured: %v", label, err)
+		return
+	}
+	defer in.Close()
+	file := n.logDir + "/" + label + ".log"
+	out, err := os.Create(file)
+	if err != nil {
+		log.Printf("failed to create log file %v for node %v, log is not captured: %v", file, label, err)
+		return
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	if err != nil {
+		log.Printf("failed to capture log for node %v: %v", label, err)
+	}
 }
