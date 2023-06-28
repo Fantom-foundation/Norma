@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/golang/mock/gomock"
 )
 
@@ -14,9 +13,7 @@ func TestReceivedTransactionSensorReportsProperValue(t *testing.T) {
 	factory := &receivedTransactionsSensorFactory{}
 	for _, expected := range tests {
 		application := driver.NewMockApplication(ctrl)
-		application.EXPECT().GetTransactionCounts().Return(app.TransactionCounts{
-			ReceivedTxs: expected,
-		}, nil)
+		application.EXPECT().GetReceivedTransactions().Return(expected, nil)
 
 		sensor, err := factory.CreateSensor(application)
 		if err != nil {

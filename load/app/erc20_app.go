@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"math/rand"
+	"sync/atomic"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -58,7 +59,6 @@ func NewERC20Application(rpcClient RpcClient, primaryAccount *Account) (*ERC20Ap
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
 		recipients:      recipients,
-		txTracker:       &transactionTracker{},
 	}, nil
 }
 
@@ -81,7 +81,6 @@ type ERC20Application struct {
 	contractAddress common.Address
 	recipients      []common.Address
 	numAccounts     int
-	txTracker       *transactionTracker
 }
 
 // CreateGenerator creates a new transaction generator for the app.
@@ -120,7 +119,6 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 		abi:        f.abi,
 		sender:     workerAccount,
 		gasPrice:   regularGasPrice,
-		txTracker:  f.txTracker,
 		contract:   f.contractAddress,
 		recipients: f.recipients,
 	}, nil
@@ -130,24 +128,21 @@ func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient RpcClient) e
 	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.getCurrentNonce(), rpcClient)
 }
 
-func (f *ERC20Application) GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error) {
+func (f *ERC20Application) GetReceivedTransations(rpcClient RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
 	if err != nil {
-		return TransactionCounts{}, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
 	}
 	totalReceived := uint64(0)
 	for _, recipient := range f.recipients {
 		recipientBalance, err := ERC20Contract.BalanceOf(nil, recipient)
 		if err != nil {
-			return TransactionCounts{}, err
+			return 0, err
 		}
 		totalReceived += recipientBalance.Uint64()
 	}
-	return TransactionCounts{
-		ReceivedTxs: totalReceived,
-		SentTxs:     f.txTracker.GetSentTransactionCounts(),
-	}, nil
+	return totalReceived, nil
 }
 
 // ERC20Generator is a txs app transferring ERC20 tokens.
@@ -158,7 +153,7 @@ type ERC20Generator struct {
 	gasPrice   *big.Int
 	contract   common.Address
 	recipients []common.Address
-	txTracker  *transactionTracker
+	sentTxs    uint64
 }
 
 func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
@@ -175,7 +170,11 @@ func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
 	const gasLimit = 52000 // Transfer method call takes 51349 of gas
 	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
 	if err == nil {
-		g.txTracker.OnSentTransaction(g.sender.id)
+		atomic.AddUint64(&g.sentTxs, 1)
 	}
 	return tx, err
+}
+
+func (g *ERC20Generator) GetSentTransactions() uint64 {
+	return atomic.LoadUint64(&g.sentTxs)
 }

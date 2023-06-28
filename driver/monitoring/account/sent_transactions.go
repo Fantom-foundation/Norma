@@ -45,12 +45,9 @@ type sentTransactionsSensor struct {
 }
 
 func (s *sentTransactionsSensor) ReadValue() (int, error) {
-	counts, err := s.app.GetTransactionCounts()
+	count, err := s.app.GetSentTransactions(s.account)
 	if err != nil {
 		return 0, err
 	}
-	if s.account < 0 || s.account >= len(counts.SentTxs) {
-		return 0, nil
-	}
-	return int(counts.SentTxs[s.account]), nil
+	return int(count), nil
 }

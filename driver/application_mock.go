@@ -7,7 +7,6 @@ package driver
 import (
 	reflect "reflect"
 
-	app "github.com/Fantom-foundation/Norma/load/app"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -48,19 +47,48 @@ func (mr *MockApplicationMockRecorder) Config() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockApplication)(nil).Config))
 }
 
-// GetTransactionCounts mocks base method.
-func (m *MockApplication) GetTransactionCounts() (app.TransactionCounts, error) {
+// GetNumberOfAccounts mocks base method.
+func (m *MockApplication) GetNumberOfAccounts() int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransactionCounts")
-	ret0, _ := ret[0].(app.TransactionCounts)
+	ret := m.ctrl.Call(m, "GetNumberOfAccounts")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetNumberOfAccounts indicates an expected call of GetNumberOfAccounts.
+func (mr *MockApplicationMockRecorder) GetNumberOfAccounts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumberOfAccounts", reflect.TypeOf((*MockApplication)(nil).GetNumberOfAccounts))
+}
+
+// GetReceivedTransactions mocks base method.
+func (m *MockApplication) GetReceivedTransactions() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReceivedTransactions")
+	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTransactionCounts indicates an expected call of GetTransactionCounts.
-func (mr *MockApplicationMockRecorder) GetTransactionCounts() *gomock.Call {
+// GetReceivedTransactions indicates an expected call of GetReceivedTransactions.
+func (mr *MockApplicationMockRecorder) GetReceivedTransactions() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactionCounts", reflect.TypeOf((*MockApplication)(nil).GetTransactionCounts))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransactions", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransactions))
+}
+
+// GetSentTransactions mocks base method.
+func (m *MockApplication) GetSentTransactions(account int) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSentTransactions", account)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSentTransactions indicates an expected call of GetSentTransactions.
+func (mr *MockApplicationMockRecorder) GetSentTransactions(account interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockApplication)(nil).GetSentTransactions), account)
 }
 
 // Start mocks base method.

@@ -2,11 +2,12 @@ package rpc
 
 import (
 	"context"
+	"log"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"log"
 )
 
 type RpcWorkerPool struct {

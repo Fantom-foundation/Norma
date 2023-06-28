@@ -47,9 +47,14 @@ func TestTrafficGenerating(t *testing.T) {
 
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
-	app, err := controller.NewAppController(application, constantShaper, 5, net) // 5 parallel workers
+	numGenerators := 5 // 5 parallel workers
+	app, err := controller.NewAppController(application, constantShaper, numGenerators, net)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if got, want := app.GetNumberOfAccounts(), numGenerators; got != want {
+		t.Errorf("unexpected number of accounts, wanted %d, got %d", want, got)
 	}
 
 	// let the app run for 1 second
@@ -65,22 +70,22 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	counts, err := application.GetTransactionCounts(rpcClient)
-	if err != nil {
-		t.Fatal(err)
+	sum := uint64(0)
+	for i := 0; i < app.GetNumberOfAccounts(); i++ {
+		count, err := app.GetSentTransactions(i)
+		if err != nil {
+			t.Fatalf("failed to fetch sent transactions from account %d: %v", i, err)
+		}
+		sum += count
 	}
 
-	sum := uint64(0)
-	for _, x := range counts.SentTxs {
-		sum += x
-	}
-	if counts.ReceivedTxs != sum {
-		t.Errorf("amount of txs in chain (%d) does not match the sent amount (%d)", counts.ReceivedTxs, sum)
+	if received, err := app.GetReceivedTransactions(); err != nil || received != sum {
+		t.Errorf("invalid number of received transactions on the network, wanted %d, got %d, err %v", sum, received, err)
 	}
 
 	// in optimal case should be generated 30 txs per second
 	// as a tolerance for slow CI we require at least 20 txs
-	if counts.ReceivedTxs < 20 || counts.ReceivedTxs > 30 {
-		t.Errorf("unexpected amount of generated txs: %d", counts.ReceivedTxs)
+	if sum < 20 || sum > 30 {
+		t.Errorf("unexpected amount of generated txs: %d", sum)
 	}
 }
