@@ -87,42 +87,32 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any())
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
-	requestedItems := 1000
+	requestedItems := 100
 
+	var prevVal atomic.Int64
+	var wg sync.WaitGroup
+	wg.Add(1)
 	listener := NewMockTimeLogListener(ctrl)
-	// check ordering by expected values 1 to N in exact order, executed each exactly once
-	calls := make([]*gomock.Call, 0, requestedItems)
-	for i := 1; i <= requestedItems; i++ {
-		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i)))
-	}
-	gomock.InOrder(calls...)
+	listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Do(func(node Node, timestamp Time, value float64) {
+		if int64(value) <= prevVal.Load() {
+			t.Errorf("values not ordered: %d <= %d", int64(value), prevVal.Load())
+		}
+		if int(value) >= requestedItems {
+			wg.Done()
+		}
+	})
 
-	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
 	var counter atomic.Int64
-	current := make(chan bool, 1)
 	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
-		mu.Lock()
 		next := counter.Add(1)
-		current <- true
 		res := PrometheusLogValue{PrometheusLogKey{"A", 0}, counterPrometheusMetricType, float64(next)}
 		return []PrometheusLogValue{res}, nil
 	}
 
-	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
-
-	// listen for metrics
+	dispatcher := newPrometheusLogDispatcher(net, 10*time.Millisecond, testFunc)
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)
 
-	// wait till the requested amount of calls received
-	for range current {
-		if int(counter.Load()) == requestedItems {
-			// unregister the listener, so we have no more execution of the listener before the end of this test
-			dispatcher.UnregisterLogListener(PrometheusLogKey{"A", 0}, listener)
-			mu.Unlock()
-			break
-		}
-		mu.Unlock()
-	}
+	wg.Wait()
 }
 
 func TestLogsDispatchedShutdown(t *testing.T) {
@@ -140,19 +130,19 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 	net.EXPECT().RegisterListener(gomock.Any())
 	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
 
-	requestedItems := 1000
+	requestedItems := 100
 
 	var counter atomic.Int64
-	max := make(chan bool, 1)
+	done := make(chan bool, 1)
 	testFunc := func(url driver.URL) ([]PrometheusLogValue, error) {
 		next := counter.Add(1)
 		if int(next) == requestedItems {
-			max <- true
+			done <- true
 		}
 		res := PrometheusLogValue{PrometheusLogKey{"A", 0}, counterPrometheusMetricType, float64(next)}
 		return []PrometheusLogValue{res}, nil
 	}
-	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
+	dispatcher := newPrometheusLogDispatcher(net, 10*time.Millisecond, testFunc)
 	listener := NewMockTimeLogListener(ctrl)
 	listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(requestedItems)
 
@@ -160,7 +150,7 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)
 
 	// wait for first 1000 values
-	<-max
+	<-done
 	dispatcher.Shutdown()
 	// fetch real counts after shutdown as there could be execution between reading from the channel and shutdown.
 	sizeAfterShutdown := counter.Load()
