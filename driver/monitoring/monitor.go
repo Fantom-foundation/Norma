@@ -34,10 +34,14 @@ func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) 
 	if config.OutputDir == "" {
 		config.OutputDir = "."
 	}
+	dispatcher, err := NewNodeLogDispatcher(network, config.OutputDir)
+	if err != nil {
+		return nil, err
+	}
 	return &Monitor{
 		network:         network,
 		config:          config,
-		nodeLogProvider: NewNodeLogDispatcher(network),
+		nodeLogProvider: dispatcher,
 		sources:         map[string]source{},
 	}, nil
 }
