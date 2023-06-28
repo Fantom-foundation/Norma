@@ -54,7 +54,7 @@ func TestGenerators(t *testing.T) {
 	})
 }
 
-func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient *ethclient.Client) {
+func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Client) {
 	gen, err := app.CreateGenerator(rpcClient)
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +64,8 @@ func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient 
 		t.Fatal(err)
 	}
 
-	for i := 0; i < 10; i++ {
+	numTransactions := 10
+	for i := 0; i < numTransactions; i++ {
 		tx, err := gen.GenerateTx()
 		if err != nil {
 			t.Fatal(err)
@@ -76,18 +77,7 @@ func testGenerator(t *testing.T, app app.ApplicationProvidingTxCount, rpcClient 
 
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
-	counts, err := app.GetTransactionCounts(rpcClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sum := 0
-	for _, x := range counts.SentTxs {
-		sum += int(x)
-	}
-	if sum != 10 {
-		t.Errorf("unexpected amount of txs sent (%d)", sum)
-	}
-	if counts.ReceivedTxs != 10 {
-		t.Errorf("unexpected amount of txs in chain (%d)", counts.ReceivedTxs)
+	if got, want := gen.GetSentTransactions(), numTransactions; got != uint64(want) {
+		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
 	}
 }

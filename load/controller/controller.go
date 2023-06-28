@@ -2,13 +2,13 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"log"
-	"time"
 )
 
 // AppController emits transactions to the testing network into a blockchain app to generate a load.
@@ -16,10 +16,12 @@ import (
 // The Generator passed into the driver constructs the transactions.
 // The RPC Client is used to send the transactions into the network.
 type AppController struct {
-	shaper         shaper.Shaper
-	countsProvider app.ApplicationProvidingTxCount
-	network        driver.Network
-	trigger        chan struct{}
+	shaper      shaper.Shaper
+	application app.Application
+	network     driver.Network
+	trigger     chan struct{}
+	accounts    []app.TransactionGenerator
+	rpcClient   app.RpcClient
 }
 
 func NewAppController(application app.Application, shaper shaper.Shaper, generators int, network driver.Network) (*AppController, error) {
@@ -29,9 +31,9 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial ranom RPC; %v", err)
 	}
-	defer rpcClient.Close()
 
 	// initialize workers for individual generators
+	accounts := make([]app.TransactionGenerator, 0, generators)
 	for i := 0; i < generators; i++ {
 		gen, err := application.CreateGenerator(rpcClient)
 		if err != nil {
@@ -39,6 +41,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 		}
 
 		go runGeneratorLoop(gen, trigger, network)
+		accounts = append(accounts, gen)
 	}
 
 	// wait until all changes are on the chain
@@ -46,17 +49,19 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
 	}
 
-	countsProvider, _ := application.(app.ApplicationProvidingTxCount) // nil if not TxCount provider
 	return &AppController{
-		shaper:         shaper,
-		countsProvider: countsProvider,
-		network:        network,
-		trigger:        trigger,
+		shaper:      shaper,
+		application: application,
+		network:     network,
+		trigger:     trigger,
+		accounts:    accounts,
+		rpcClient:   rpcClient,
 	}, nil
 }
 
 func (ac *AppController) Run(ctx context.Context) error {
 	defer close(ac.trigger)
+	defer ac.rpcClient.Close()
 	missed := 0
 	for {
 		select {
@@ -84,22 +89,33 @@ func (ac *AppController) Run(ctx context.Context) error {
 	}
 }
 
-// GetTransactionCounts returns the object that provides the number of send and received transactions
-// of application managed by this application controller.
-// If this application controller is not capable of providing such an information, this method returns
-// ErrDoesNotProvideTxCounts in its error return argument.
-func (ac *AppController) GetTransactionCounts() (app.TransactionCounts, error) {
-	if ac.countsProvider == nil {
-		return app.TransactionCounts{}, ErrDoesNotProvideTxCounts
-	}
-
-	rpcClient, err := ac.network.DialRandomRpc()
-	if err != nil {
-		return app.TransactionCounts{}, fmt.Errorf("failed to dial ranom RPC; %v", err)
-	}
-	defer rpcClient.Close()
-
-	return ac.countsProvider.GetTransactionCounts(rpcClient)
+func (ac *AppController) GetNumberOfAccounts() int {
+	return len(ac.accounts)
 }
 
-var ErrDoesNotProvideTxCounts = errors.New("app does not provide tx counts")
+func (ac *AppController) GetSentTransactions(account int) (uint64, error) {
+	if account < 0 || account >= len(ac.accounts) {
+		return 0, nil
+	}
+	return ac.accounts[account].GetSentTransactions(), nil
+}
+
+func (ac *AppController) GetReceivedTransactions() (uint64, error) {
+	for retry := 0; ; retry++ {
+		// fetch transaction data from the network
+		res, err := ac.application.GetReceivedTransations(ac.rpcClient)
+		if err == nil {
+			return res, nil
+		}
+		if retry >= 5 {
+			return 0, err
+		}
+
+		// attempt a re-connect
+		ac.rpcClient.Close()
+		ac.rpcClient, err = ac.network.DialRandomRpc()
+		if err != nil {
+			return 0, fmt.Errorf("failed to dial random RPC; %v", err)
+		}
+	}
+}

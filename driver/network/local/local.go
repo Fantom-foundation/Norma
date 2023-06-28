@@ -219,12 +219,20 @@ func (a *localApplication) Stop() error {
 	return nil
 }
 
-func (a *localApplication) GetTransactionCounts() (app.TransactionCounts, error) {
-	return a.controller.GetTransactionCounts()
-}
-
 func (a *localApplication) Config() *driver.ApplicationConfig {
 	return a.config
+}
+
+func (a *localApplication) GetNumberOfAccounts() int {
+	return a.controller.GetNumberOfAccounts()
+}
+
+func (a *localApplication) GetSentTransactions(account int) (uint64, error) {
+	return a.controller.GetSentTransactions(account)
+}
+
+func (a *localApplication) GetReceivedTransactions() (uint64, error) {
+	return a.controller.GetReceivedTransactions()
 }
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync/atomic"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -52,7 +53,6 @@ func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account) (*Count
 		abi:             parsedAbi,
 		primaryAccount:  primaryAccount,
 		contractAddress: contractAddress,
-		txTracker:       new(transactionTracker),
 	}, nil
 }
 
@@ -64,7 +64,6 @@ type CounterApplication struct {
 	primaryAccount  *Account
 	contractAddress common.Address
 	numAccounts     int
-	txTracker       *transactionTracker
 }
 
 // CreateGenerator creates a new transaction generator for the app.
@@ -85,11 +84,10 @@ func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGe
 	}
 
 	gen := &CounterGenerator{
-		abi:       f.abi,
-		sender:    workerAccount,
-		gasPrice:  regularGasPrice,
-		txTracker: f.txTracker,
-		contract:  f.contractAddress,
+		abi:      f.abi,
+		sender:   workerAccount,
+		gasPrice: regularGasPrice,
+		contract: f.contractAddress,
 	}
 	return gen, nil
 }
@@ -98,30 +96,27 @@ func (f *CounterApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient)
 	return waitUntilAccountNonceIs(f.primaryAccount.address, f.primaryAccount.getCurrentNonce(), rpcClient)
 }
 
-func (f *CounterApplication) GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error) {
+func (f *CounterApplication) GetReceivedTransations(rpcClient RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	counterContract, err := contract.NewCounter(f.contractAddress, rpcClient)
 	if err != nil {
-		return TransactionCounts{}, fmt.Errorf("failed to get Counter contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get Counter contract representation; %v", err)
 	}
 	count, err := counterContract.GetCount(nil)
 	if err != nil {
-		return TransactionCounts{}, err
+		return 0, err
 	}
-	return TransactionCounts{
-		ReceivedTxs: count.Uint64(),
-		SentTxs:     f.txTracker.GetSentTransactionCounts(),
-	}, nil
+	return count.Uint64(), nil
 }
 
 // CounterGenerator is a txs generator incrementing trivial Counter contract.
 // A generator is supposed to be used in a single thread.
 type CounterGenerator struct {
-	abi       *abi.ABI
-	sender    *Account
-	gasPrice  *big.Int
-	contract  common.Address
-	txTracker *transactionTracker
+	abi      *abi.ABI
+	sender   *Account
+	gasPrice *big.Int
+	contract common.Address
+	sentTxs  uint64
 }
 
 func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
@@ -135,7 +130,11 @@ func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
 	const gasLimit = 50000 // IncrementCounter method call takes 43426 of gas
 	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
 	if err == nil {
-		g.txTracker.OnSentTransaction(g.sender.id)
+		atomic.AddUint64(&g.sentTxs, 1)
 	}
 	return tx, err
+}
+
+func (g *CounterGenerator) GetSentTransactions() uint64 {
+	return atomic.LoadUint64(&g.sentTxs)
 }

@@ -16,6 +16,8 @@ type Application interface {
 	CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error)
 
 	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
+
+	GetReceivedTransations(rpcClient RpcClient) (uint64, error)
 }
 
 type RpcClient interface {
@@ -28,31 +30,5 @@ type RpcClient interface {
 // Generators are not thread-safe.
 type TransactionGenerator interface {
 	GenerateTx() (*types.Transaction, error)
-}
-
-type ApplicationProvidingTxCount interface {
-	Application
-	GetTransactionCounts(rpcClient RpcClient) (TransactionCounts, error)
-}
-
-// TransactionCounts should be implemented by an instance that can provide the number of received
-// and expected transactions.
-type TransactionCounts struct {
-	// SentTxs represents the number of transactions originally sent to an application per account. The
-	// slice is indexed by the account IDs such that SentTxs[14] is the number of transactions send by
-	// account 14 of the appication that has returned this struct. The length may by differ from the total
-	// number of accounts, in which case all non-covered account lengths should be considered to have sent
-	// zero transactions.
-	// The number of transactions reported here are not necessarily received by the application as the transactions
-	// could be filtered out by any layers between the RPC endpoint and actual block processing,
-	// or the client was not able to process requested amount of transactions and the transactions could not reach
-	// the block processing.
-	SentTxs []uint64
-
-	// ReceivedTxs represents the number of transactions received by an application.
-	// This number of transactions may be smaller than the number of actually sent transactions
-	// as the transactions could be filtered out by any layers between the RPC endpoint and actual block processing,
-	// or the client was not able to process requested amount of transactions and the transactions could not reach
-	// the block processing.
-	ReceivedTxs uint64
+	GetSentTransactions() uint64
 }

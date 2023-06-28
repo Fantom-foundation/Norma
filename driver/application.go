@@ -1,9 +1,5 @@
 package driver
 
-import (
-	"github.com/Fantom-foundation/Norma/load/app"
-)
-
 //go:generate mockgen -source application.go -destination application_mock.go -package driver
 
 // Application is an abstraction of an application running on a Norma net.
@@ -16,8 +12,14 @@ type Application interface {
 	// Config returns current application configuration.
 	Config() *ApplicationConfig
 
-	// GetTransactionCounts returns information about expected and received transactions
-	// if this information is available for this application.
-	// If the information is not available, it returns controller.ErrDoesNotProvideTxCounts.
-	GetTransactionCounts() (app.TransactionCounts, error)
+	// GetNumberOfAccounts retrieves the number of accounts interacting with this application.
+	// This value is expected to be a constant over the life-time of an application.
+	GetNumberOfAccounts() int
+
+	// GetSentTransactions returns the number of transactions send from a given account.
+	GetSentTransactions(account int) (uint64, error)
+
+	// GetReceivedTransactions returns the number fo transactions received by the appliation
+	// on the network.
+	GetReceivedTransactions() (uint64, error)
 }

@@ -43,9 +43,9 @@ type receivedTransactionsSensor struct {
 }
 
 func (s *receivedTransactionsSensor) ReadValue() (int, error) {
-	counts, err := s.app.GetTransactionCounts()
+	count, err := s.app.GetReceivedTransactions()
 	if err != nil {
 		return 0, err
 	}
-	return int(counts.ReceivedTxs), nil
+	return int(count), nil
 }
