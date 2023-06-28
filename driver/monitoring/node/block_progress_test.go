@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net"
 	"net/http"
 	"sort"
 	"strings"
@@ -147,11 +148,23 @@ func StartTestRpcServer() (*TestRpcServer, error) {
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: mux,
 	}
+	ready := make(chan error)
 	done := make(chan bool)
 	go func() {
-		server.ListenAndServe()
-		close(done)
+		defer close(done)
+		ln, err := net.Listen("tcp", server.Addr)
+		if err != nil {
+			ready <- err
+			return
+		}
+		ready <- nil
+		if err := server.Serve(ln); err != http.ErrServerClosed {
+			fmt.Printf("server failed: %v\n", err)
+		}
 	}()
+	if err := <-ready; err != nil {
+		return nil, err
+	}
 	return &TestRpcServer{server, done}, nil
 }
 
