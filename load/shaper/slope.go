@@ -36,15 +36,22 @@ func (s *SlopeShaper) GetNextWaitTime() (time.Duration, bool) {
 func (s *SlopeShaper) GetWaitTimeForTimeStamp(current time.Time) (time.Duration, bool) {
 	timeSinceStart := current.Sub(s.startTimeStamp).Seconds()
 
+	// if the time since start is 0 and the start frequency is 0, then
+	// signal to the consumer that he should ask later again
+	// this is special case for the first call to GetNextWaitTime
+	if timeSinceStart == 0 && s.startFrequency == 0 {
+		// calculate the duration from absolute value (might be negative) of the increment frequency
+		return time.Duration(float32(time.Second) / float32(math.Abs(float64(s.incrementFrequency)))), false
+	}
+
 	// calculate the current frequency as linear function t(n) = s + n * i,
 	// where `s` is the start frequency, `n` is the time since start and `i` is the increment frequency
 	currentFrequency := s.startFrequency + float32(timeSinceStart)*s.incrementFrequency
 
-	// if the current frequency is less than or equal to 0, then signal
-	// to the consumer that he should ask in given duration
+	// if the current frequency decreased to 0, it means, that the increment frequency is negative,
+	// and we reached from which we won't send anymore txs, so we return infinity as the wait time
 	if currentFrequency <= 0 {
-		// calculate the duration from absolute value (might be negative) of the increment frequency
-		return time.Duration(float32(time.Second) / float32(math.Abs(float64(s.incrementFrequency)))), false
+		return time.Duration(math.Inf(1)), false
 	}
 
 	// return the wait time for the current frequency
