@@ -72,7 +72,7 @@ func (ac *AppController) Run(ctx context.Context) error {
 			}
 			return err
 		default:
-			shouldSend, waitTime := ac.shaper.GetNextWaitTime()
+			waitTime, shouldSend := ac.shaper.GetNextWaitTime()
 
 			// send only if the shaper says so
 			if shouldSend {

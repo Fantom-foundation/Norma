@@ -23,18 +23,18 @@ func NewSlopeShaper(startFrequency, incrementFrequency float32) *SlopeShaper {
 
 // GetNextWaitTime returns the next wait time based on the current timestamp
 // and start and increment frequency
-func (s *SlopeShaper) GetNextWaitTime() (bool, time.Duration) {
+func (s *SlopeShaper) GetNextWaitTime() (time.Duration, bool) {
 	now := time.Now()
 	// if this is the first call, set the start time stamp
 	if s.startTimeStamp.IsZero() {
 		s.startTimeStamp = now
 	}
-	return s.GetWaitTimeForTimeStamps(s.startTimeStamp, now)
+	return s.GetWaitTimeForTimeStamp(now)
 }
 
-// GetWaitTimeForTimeStamps returns the wait time for the given start and current time stamps
-func (s *SlopeShaper) GetWaitTimeForTimeStamps(start time.Time, current time.Time) (bool, time.Duration) {
-	timeSinceStart := current.Sub(start).Seconds()
+// GetWaitTimeForTimeStamp returns the wait time for the given timestamp
+func (s *SlopeShaper) GetWaitTimeForTimeStamp(current time.Time) (time.Duration, bool) {
+	timeSinceStart := current.Sub(s.startTimeStamp).Seconds()
 
 	// calculate the current frequency as linear function t(n) = s + n * i,
 	// where `s` is the start frequency, `n` is the time since start and `i` is the increment frequency
@@ -44,9 +44,9 @@ func (s *SlopeShaper) GetWaitTimeForTimeStamps(start time.Time, current time.Tim
 	// to the consumer that he should ask in given duration
 	if currentFrequency <= 0 {
 		// calculate the duration from absolute value (might be negative) of the increment frequency
-		return false, time.Duration(float32(time.Second) / float32(math.Abs(float64(s.incrementFrequency))))
+		return time.Duration(float32(time.Second) / float32(math.Abs(float64(s.incrementFrequency)))), false
 	}
 
 	// return the wait time for the current frequency
-	return true, time.Duration(float32(time.Second) / currentFrequency)
+	return time.Duration(float32(time.Second) / currentFrequency), true
 }

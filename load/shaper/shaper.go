@@ -12,7 +12,7 @@ type Shaper interface {
 	// GetNextWaitTime provides the time to wait before the next tx should be sent
 	// If the returned bool is false, no transaction should be sent and shaper should be asked
 	// again after the duration returned by GetNextWaitTime.
-	GetNextWaitTime() (bool, time.Duration)
+	GetNextWaitTime() (time.Duration, bool)
 }
 
 // ParseRate parses rate from the parser.

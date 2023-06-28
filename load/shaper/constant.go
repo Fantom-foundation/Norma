@@ -13,6 +13,6 @@ func NewConstantShaper(frequency float32) *ConstantShaper {
 	}
 }
 
-func (s *ConstantShaper) GetNextWaitTime() (bool, time.Duration) {
-	return true, s.interval
+func (s *ConstantShaper) GetNextWaitTime() (time.Duration, bool) {
+	return s.interval, true
 }
