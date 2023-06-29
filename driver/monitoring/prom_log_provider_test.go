@@ -1,12 +1,13 @@
 package monitoring
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 )
 
 func TestLogsDispatchedImplements(t *testing.T) {
@@ -15,7 +16,7 @@ func TestLogsDispatchedImplements(t *testing.T) {
 }
 
 func TestLogsDispatched(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -44,6 +45,7 @@ func TestLogsDispatched(t *testing.T) {
 		return testData[url], nil
 	}
 	dispatcher := newPrometheusLogDispatcher(net, 1*time.Second, testFunc)
+	defer dispatcher.Shutdown()
 
 	dispatcher.AfterNodeCreation(node3)
 
@@ -73,7 +75,7 @@ func TestLogsDispatched(t *testing.T) {
 }
 
 func TestLogsDispatchedLogsOrdered(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -112,12 +114,13 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 
 	dispatcher := newPrometheusLogDispatcher(net, 10*time.Millisecond, testFunc)
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)
+	defer dispatcher.Shutdown()
 
 	wg.Wait()
 }
 
 func TestLogsDispatchedShutdown(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -166,7 +169,7 @@ func TestLogsDispatchedShutdown(t *testing.T) {
 }
 
 func TestLogsDispatchedUnregisterListener(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
@@ -208,6 +211,7 @@ func TestLogsDispatchedUnregisterListener(t *testing.T) {
 		return []PrometheusLogValue{res}, nil
 	}
 	dispatcher := newPrometheusLogDispatcher(net, 1*time.Millisecond, testFunc)
+	defer dispatcher.Shutdown()
 
 	// listen for two metrics A and B
 	dispatcher.RegisterLogListener(PrometheusLogKey{"A", 0}, listener)

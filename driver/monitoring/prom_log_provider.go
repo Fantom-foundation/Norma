@@ -2,12 +2,13 @@ package monitoring
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/driver/node"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/node"
 )
 
 //go:generate mockgen -source prom_log_provider.go -destination prom_log_provider_mock.go -package monitoring
@@ -125,7 +126,7 @@ func newPrometheusLogDispatcher(network driver.Network, period time.Duration, lo
 // after this method is called.
 func (n *PrometheusLogDispatcher) Shutdown() {
 	n.ticker.Stop()
-	n.done <- true
+	close(n.done)
 	n.wg.Wait()
 }
 
@@ -186,10 +187,10 @@ func (n *PrometheusLogDispatcher) startPeriodicDispatch() {
 			select {
 			case <-n.done:
 				n.nodesLock.Lock()
-				for nodeId, ch := range n.nodes {
+				for _, ch := range n.nodes {
 					close(ch)
-					delete(n.nodes, nodeId)
 				}
+				n.nodes = map[Node]chan Time{}
 				n.nodesLock.Unlock()
 				return
 			case t := <-n.ticker.C:
