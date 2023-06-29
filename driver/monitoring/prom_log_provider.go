@@ -27,13 +27,37 @@ type TimeLogListener interface {
 // For this reason, the key is composed of the name and quantile only.
 // The quantile is set to empty when it is not applicable.
 type PrometheusLogKey struct {
-	name     string
-	quantile string
+	Name     string
+	Quantile Quantile
 }
 
-// NewPrometheusNameKey composes the key using the name of the metric only. The quantile is set to zero.
+func (p PrometheusLogKey) String() string {
+	if p.Quantile == QuantileEmpty {
+		return fmt.Sprintf("%s", p.Name)
+	} else {
+		return fmt.Sprintf("%s (q: %s)", p.Name, p.Quantile)
+	}
+}
+
+// Quantile is a type representing quantile for a summary metric.
+type Quantile string
+
+const (
+	Quantile05    Quantile = "0.5"
+	Quantile09             = "0.9"
+	Quantile099            = "0.99"
+	Quantile0999           = "0.999"
+	QuantileEmpty          = ""
+)
+
+// NewPrometheusKey composes the key using the name of the metric and quantile
+func NewPrometheusKey(name string, quantile Quantile) PrometheusLogKey {
+	return PrometheusLogKey{Name: name, Quantile: quantile}
+}
+
+// NewPrometheusNameKey composes the key using the name of the metric only. The quantile is set to empty.
 func NewPrometheusNameKey(name string) PrometheusLogKey {
-	return PrometheusLogKey{name: name}
+	return PrometheusLogKey{Name: name, Quantile: QuantileEmpty}
 }
 
 // PrometheusLogProvider is an interface for registering listeners that will be notified about incoming

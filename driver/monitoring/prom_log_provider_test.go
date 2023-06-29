@@ -299,6 +299,15 @@ func TestLogsCannotAddListenerAfterShutdown(t *testing.T) {
 	time.Sleep(2 * time.Second)
 }
 
+func TestParseQuantileEnum(t *testing.T) {
+	if Quantile099 != Quantile("0.99") {
+		t.Errorf("quantiles do not match")
+	}
+	if Quantile05 != Quantile("0.5") {
+		t.Errorf("quantiles do not match")
+	}
+}
+
 var (
 	testData = map[driver.URL][]PrometheusLogValue{
 		"A": {

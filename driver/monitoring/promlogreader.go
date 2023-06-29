@@ -24,9 +24,9 @@ type PrometheusLogValue struct {
 
 func (p PrometheusLogValue) String() string {
 	if p.metricType == summaryPrometheusMetricType {
-		return fmt.Sprintf("%s_%s: %.2f (q: %s)", p.name, p.metricType, p.value, p.quantile)
+		return fmt.Sprintf("%s_%s: %.2f (q: %s)", p.Name, p.metricType, p.value, p.Quantile)
 	} else {
-		return fmt.Sprintf("%s_%s: %.2f", p.name, p.metricType, p.value)
+		return fmt.Sprintf("%s_%s: %.2f", p.Name, p.metricType, p.value)
 	}
 }
 
@@ -68,7 +68,7 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 				currentName = tokens[2]
 				nextType = PrometheusMetricType(tokens[3])
 			} else if tokens[0] == currentName {
-				val := PrometheusLogValue{PrometheusLogKey: PrometheusLogKey{name: currentName}, metricType: nextType}
+				val := PrometheusLogValue{PrometheusLogKey: PrometheusLogKey{Name: currentName}, metricType: nextType}
 				if err := fillValue(tokens, &val); err != nil {
 					errs = append(errs, err)
 				} else {
@@ -96,7 +96,7 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 	// - metric_name metric_value
 	// - metric_name quantile_value metric_value
 	if len(tokens) >= 3 && quantileReg.MatchString(tokens[1]) {
-		dest.quantile = strings.Split(tokens[1], "\"")[1]
+		dest.Quantile = Quantile(strings.Split(tokens[1], "\"")[1])
 		valueStr = tokens[2]
 	} else {
 		valueStr = tokens[1]
