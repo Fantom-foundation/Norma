@@ -100,6 +100,7 @@ func TestLogsDispatchedLogsOrdered(t *testing.T) {
 		if int(value) >= requestedItems {
 			wg.Done()
 		}
+		prevVal.Store(int64(value))
 	})
 
 	var counter atomic.Int64
