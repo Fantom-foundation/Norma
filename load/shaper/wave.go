@@ -22,8 +22,7 @@ func NewWaveShaper(minFrequency, maxFrequency, wavePeriod float32) *WaveShaper {
 	}
 }
 
-// GetNextWaitTime returns the next wait time based on the current timestamp
-// and start and increment frequency
+// GetNextWaitTime returns the next wait time based on the current time stamp
 func (s *WaveShaper) GetNextWaitTime() (time.Duration, bool) {
 	now := time.Now()
 	// if this is the first call, set the start time stamp
