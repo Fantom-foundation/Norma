@@ -4,7 +4,7 @@
 # R markdown file as a template.
 
 # Install missing packages.
-list.of.packages <- c("rmarkdown", "tidyverse", "lubridate")
+list.of.packages <- c("rmarkdown", "tidyverse", "lubridate", "slider")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 

@@ -9,6 +9,7 @@ params:
 ```{r setup, echo=FALSE, include=FALSE}
 library(tidyverse)
 library(lubridate)
+library(slider)
 
 figure_dimensions <- c(10, 4)
 
@@ -94,6 +95,92 @@ ggplot(data = data) +
 ## Network Metrics
 
 This section covers metrics that are network wide properties.
+
+### Network Incoming and Committed Transaction Rates
+
+The following chart shows the total rate of incoming and committed transactions smoothed over 5 second intervals.
+
+```{r throughput_over_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+# compute the rate at which transactions have been sent to the network
+sent_rate <- all_data %>%
+    # filter for rows and columns needed
+    dplyr::filter(metric == "SentTransactions") %>%
+    select(time, app, workers, value) %>%
+    # convert values to numerical values
+    mutate(value = as.numeric(value)) %>%
+    mutate(time = as.numeric(time)) %>%
+    # convert per-account absolute values to increment values
+    group_by(app, workers) %>%
+    arrange(time) %>%
+    reframe(
+        time = time,
+        increment = value - lag(value, default = 0)
+    ) %>%
+    # compute average rate over dynamic sized windows (each 5 seconds)
+    arrange(time) %>%
+    slide_period_dfr(
+        as.POSIXct(.$time/1e9,origin="1970-01-01"),
+        "second",
+        .before=5,
+        function(data) {
+            summarize(
+                data,
+                # compute the rate over time window
+                rate = sum(increment) / ((max(time) - min(time)) / 1e9),
+                # associate rate to mid-point time
+                time = (max(time)+min(time))/2
+            )
+        }
+    ) %>%
+    drop_na(rate) %>%
+    # convert time from UNIX to DateTime type
+    mutate(date = as_datetime(time/1e9))
+
+
+# compute the number of received (=committed) transactions
+received_rate <- all_data %>%
+    # filter rows and columns
+    dplyr::filter(metric == "ReceivedTransactions") %>%
+    select(time, value) %>%
+    # convert value and time to numerical values
+    mutate(value = as.numeric(value)) %>%
+    mutate(time = as.numeric(time)) %>%
+    # compute the individual increments
+    arrange(time) %>%
+    reframe(
+        time = time,
+        increment = value - lag(value, default=0),
+    ) %>%
+    # compute average rate over dynamic sized windows (each 5 seconds)
+    slide_period_dfr(
+        as.POSIXct(.$time/1e9,origin="1970-01-01"),
+        "second",
+        .before=5,
+        function(data) {
+            summarize(
+                data,
+                # compute the rate over time window
+                rate = sum(increment) / ((max(time) - min(time)) / 1e9),
+                # associate rate to mid-point time
+                time = (max(time)+min(time))/2
+            )
+        }
+    ) %>%
+    drop_na(rate) %>%
+    # convert time from UNIX to DateTime type
+    mutate(date = as_datetime(time/1e9))
+
+ggplot() +
+    geom_line(data=sent_rate, aes(x=date, y=rate, color = "incomming [5s window]")) +
+    #geom_smooth(data=sent_rate, aes(x=date, y=rate)) +
+    geom_line(data=received_rate, aes(x=date, y=rate, color = "committed [5s window]")) +
+    #geom_smooth(data=received_rate, aes(x=date, y=rate)) +
+    ggtitle("Incomming and Committed Transaction Rates") +
+    xlab("Time") +
+    ylab("Tx/s") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
 
 ### Number of Nodes in the Network
 
