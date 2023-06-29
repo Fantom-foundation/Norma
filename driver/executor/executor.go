@@ -206,16 +206,12 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	if source.End != nil {
 		endTime = Seconds(*source.End)
 	}
-	rate := float32(0)
-	if source.Rate.Constant != nil {
-		rate = *source.Rate.Constant
-	}
 
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
 			Name:     name,
-			Rate:     rate,
+			Rate:     &source.Rate,
 			Accounts: accounts,
 		}); err == nil { // schedule application only when it could be created
 			queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {

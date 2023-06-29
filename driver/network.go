@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -76,13 +77,12 @@ type NodeConfig struct {
 type ApplicationConfig struct {
 	Name string
 
-	// Rate defines the Tx/s the source should produce while active.
-	Rate float32
+	// Rate defines the Tx/s config the source should produce while active.
+	Rate *parser.Rate
 
 	// Accounts defines the amount of accounts sending transactions to the app.
 	Accounts int
 
 	// TODO: add other parameters as needed
 	//  - application type
-	//  - other traffic shapes
 }

@@ -76,15 +76,20 @@ func (ac *AppController) Run(ctx context.Context) error {
 			}
 			return err
 		default:
-			// trigger a worker to send a tx
-			select {
-			case ac.trigger <- struct{}{}:
-			default:
-				missed++
+			waitTime, shouldSend := ac.shaper.GetNextWaitTime()
+
+			// send only if the shaper says so
+			if shouldSend {
+				// trigger a worker to send a tx
+				select {
+				case ac.trigger <- struct{}{}:
+				default:
+					missed++
+				}
 			}
 
 			// wait for time determined by the shaper
-			time.Sleep(ac.shaper.GetNextWaitTime())
+			time.Sleep(waitTime)
 		}
 	}
 }

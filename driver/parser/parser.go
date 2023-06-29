@@ -52,8 +52,15 @@ type Application struct {
 type Rate struct {
 	// Only one of the next fields may be set.
 	Constant *float32 `yaml:",omitempty"`
-	Slope    *float32 `yaml:",omitempty"`
+	Slope    *Slope   `yaml:",omitempty"`
 	Wave     *Wave    `yaml:",omitempty"`
+}
+
+// Slope defines the parameters of a linearly increasing traffic pattern.
+// The pattern is defined by a starting Tx/s rate and an increment per second.
+type Slope struct {
+	Start     float32 // starting Tx/s
+	Increment float32 // increment by given Tx/s per second
 }
 
 // Wave defines the parameters of a sin-wave traffic pattern.

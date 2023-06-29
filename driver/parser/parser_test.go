@@ -61,7 +61,9 @@ applications:
 
   - name: my_coin
     rate:
-      slope: 10
+      slope:
+        start: 5
+        increment: 1
 
   - name: game
     rate:
