@@ -2,15 +2,18 @@ package monitoring
 
 import (
 	"bytes"
-	"os"
-	"testing"
-
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/docker"
+	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/golang/mock/gomock"
 	"golang.org/x/exp/slices"
+	"os"
+	"sync"
+	"testing"
 )
 
 func TestMonitor_CreateAndShutdown(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -27,6 +30,7 @@ func TestMonitor_CreateAndShutdown(t *testing.T) {
 }
 
 func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -87,6 +91,7 @@ func TestMonitor_RegisterAndRetrievalOfDataWorks(t *testing.T) {
 }
 
 func TestMonitor_CsvExport(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
@@ -108,4 +113,76 @@ func TestMonitor_CsvExport(t *testing.T) {
 	if got, want := string(content), buffer.String(); got != want {
 		t.Errorf("unexpected export: %v != %v", got, want)
 	}
+}
+
+func TestMonitorPrometheusLogProviderConfigured(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+
+	// simulate existing nodes
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	outDir := t.TempDir()
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: outDir})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
+	defer func() {
+		_ = monitor.Shutdown()
+	}()
+
+	if monitor.PrometheusLogProvider() == nil {
+		t.Errorf("prometheus log provider not configured")
+	}
+}
+
+func TestMonitorIntegrationPrometheusLogReceived(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+
+	client, err := docker.NewClient()
+	if err != nil {
+		t.Fatalf("failed to create a docker client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = client.Close()
+	})
+	node, err := opera.StartOperaDockerNode(client, nil, &opera.OperaNodeConfig{
+		Label:         "test",
+		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
+	})
+	if err != nil {
+		t.Fatalf("failed to create an Opera node on Docker: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
+	// simulate existing nodes
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node})
+
+	outDir := t.TempDir()
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: outDir})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
+	defer func() {
+		_ = monitor.Shutdown()
+	}()
+
+	// check metric arrived
+	once := sync.Once{}
+	done := make(chan bool)
+	listener := NewMockTimeLogListener(ctrl)
+	// expected to be called
+	listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Do(func(Node, Time, float64) {
+		once.Do(func() { close(done) })
+	})
+	monitor.PrometheusLogProvider().RegisterLogListener(NewPrometheusNameKey("chain_block_age"), listener)
+
+	<-done
 }

@@ -49,6 +49,9 @@ type PrometheusLogProvider interface {
 
 	// UnregisterLogListener removes the input listener from receiving new logs
 	UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener)
+
+	// Shutdown stops dispatching events to registered listeners.
+	Shutdown()
 }
 
 // PrometheusLogDispatcher allows for registering objects to receive Prometheus log messages
