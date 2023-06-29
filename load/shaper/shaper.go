@@ -28,8 +28,13 @@ func ParseRate(rate *parser.Rate) (Shaper, error) {
 	if rate.Slope != nil {
 		return NewSlopeShaper(rate.Slope.Start, rate.Slope.Increment), nil
 	}
-
-	// TODO: add wave shaper
+	if rate.Wave != nil {
+		min := float32(0)
+		if rate.Wave.Min != nil {
+			min = *rate.Wave.Min
+		}
+		return NewWaveShaper(min, rate.Wave.Max, rate.Wave.Period), nil
+	}
 
 	return nil, fmt.Errorf("unknown rate type")
 }
