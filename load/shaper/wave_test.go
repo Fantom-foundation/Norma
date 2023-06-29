@@ -6,7 +6,7 @@ import (
 )
 
 func TestWaveShaper(t *testing.T) {
-	// Create a SlopeShaper with a min frequency of 5 Hz, max frequency of 50 Hz
+	// Create a WaveShaper with a min frequency of 5 Hz, max frequency of 50 Hz
 	// and a wave period of 0.5 second.
 	shaper, startTime := initializeWaveShaper(5, 50, 2)
 
@@ -45,7 +45,7 @@ func TestWaveShaper(t *testing.T) {
 }
 
 func TestWaveShaperReturnsNoSendForZeroValue(t *testing.T) {
-	// Create a SlopeShaper with a min frequency of 5 Hz, max frequency of 50 Hz
+	// Create a WaveShaper with a min frequency of 5 Hz, max frequency of 50 Hz
 	// and a wave period of 0.5 second.
 	shaper, startTime := initializeWaveShaper(0, 50, 2)
 
