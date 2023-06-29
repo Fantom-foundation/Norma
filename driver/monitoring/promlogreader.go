@@ -17,15 +17,14 @@ import (
 // it contains additionally percentile.
 // For more information about metrics type, the reader can have a look at: https://geth.ethereum.org/docs/monitoring/metrics
 type PrometheusLogValue struct {
-	name       string
+	PrometheusLogKey
 	metricType PrometheusMetricType
-	quantile   float32
 	value      float64
 }
 
 func (p PrometheusLogValue) String() string {
 	if p.metricType == summaryPrometheusMetricType {
-		return fmt.Sprintf("%s_%s: %.2f (q: %.5f)", p.name, p.metricType, p.value, p.quantile)
+		return fmt.Sprintf("%s_%s: %.2f (q: %s)", p.name, p.metricType, p.value, p.quantile)
 	} else {
 		return fmt.Sprintf("%s_%s: %.2f", p.name, p.metricType, p.value)
 	}
@@ -69,7 +68,7 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 				currentName = tokens[2]
 				nextType = PrometheusMetricType(tokens[3])
 			} else if tokens[0] == currentName {
-				val := PrometheusLogValue{name: currentName, metricType: nextType}
+				val := PrometheusLogValue{PrometheusLogKey: PrometheusLogKey{name: currentName}, metricType: nextType}
 				if err := fillValue(tokens, &val); err != nil {
 					errs = append(errs, err)
 				} else {
@@ -97,11 +96,7 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 	// - metric_name metric_value
 	// - metric_name quantile_value metric_value
 	if len(tokens) >= 3 && quantileReg.MatchString(tokens[1]) {
-		q, err := strconv.ParseFloat(strings.Split(tokens[1], "\"")[1], 32)
-		if err != nil {
-			return fmt.Errorf("cannot parse quantile from: %s", tokens[1])
-		}
-		dest.quantile = float32(q)
+		dest.quantile = strings.Split(tokens[1], "\"")[1]
 		valueStr = tokens[2]
 	} else {
 		valueStr = tokens[1]
