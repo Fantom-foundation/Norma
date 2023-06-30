@@ -253,7 +253,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 	defer rpcClient.Close()
 
-	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount)
+	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount, config.Accounts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
 	}
