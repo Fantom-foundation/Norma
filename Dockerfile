@@ -23,15 +23,27 @@ RUN /bin/bash ./build_libcarmen.sh
 
 # Stage 2: build the client
 FROM golang:1.20.3 AS client-build
+WORKDIR /client
 
-COPY client/ /client
+# Copy go.mod and go.sum files to cache dependencies
+COPY client/go.* ./
+
+# We also need to copy carmen and tosca directories, as they are
+# replaced in the go.mod file with local paths
+COPY client/carmen/ ./carmen
+COPY client/tosca/ ./tosca
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY client/ ./
 
 # The built carmen library is needed to build the client
-COPY --from=carmen-build /client/carmen/go/lib/libcarmen.so /client/carmen/go/lib/libcarmen.so
+COPY --from=carmen-build /client/carmen/go/lib/libcarmen.so ./carmen/go/lib/libcarmen.so
 
-# Build Opera
-WORKDIR /client
-RUN make opera
+# Build Opera with caching
+RUN --mount=type=cache,target=/root/.cache/go-build make opera
 
 # This results in an image that contains the Opera binary
 #
