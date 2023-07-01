@@ -57,7 +57,7 @@ jobs:
 
     - name: Build Docker Image
       working-directory: ./
-      run: docker build . -t opera
+      run: DOCKER_BUILDKIT=1 docker build . -t opera
   
     - name: Build
       working-directory: ./
