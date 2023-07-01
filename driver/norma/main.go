@@ -11,7 +11,7 @@ import (
 
 func main() {
 	app := &cli.App{
-		Name:      "Norma Network Runner",
+		Name:      "Norma Network Runner TEST RUN",
 		HelpName:  "norma",
 		Usage:     "A set of tools for running network scenarios",
 		Copyright: "(c) 2023 Fantom Foundation",
