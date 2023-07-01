@@ -42,6 +42,10 @@ jobs:
         brew install docker
         colima start --memory 8
 
+    - name: Set up Docker buildx
+      run: |
+        brew install docker-buildx
+
     - name: Fetch Docker test-image
       run: docker image pull hello-world
 
