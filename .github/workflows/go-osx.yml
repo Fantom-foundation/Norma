@@ -42,10 +42,6 @@ jobs:
         brew install docker
         colima start --memory 8
 
-    - name: Set up Docker buildx
-      run: |
-        brew install docker-buildx
-
     - name: Fetch Docker test-image
       run: docker image pull hello-world
 
@@ -55,13 +51,9 @@ jobs:
     - name: Fetch Prometheus image
       run: docker image pull prom/prometheus:v2.44.0
 
-      # Cache of docker layers
-    - uses: satackey/action-docker-layer-caching@v0.0.11
-      continue-on-error: true
-
     - name: Build Docker Image
       working-directory: ./
-      run: DOCKER_BUILDKIT=1 docker build . -t opera
+      run: docker build . -t opera
   
     - name: Build
       working-directory: ./

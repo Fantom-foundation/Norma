@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # This is a multi stages Dockerfile, which builds go-opera
 # from the client/ directory first, and runs the binary then.
 #
