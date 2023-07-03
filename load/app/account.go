@@ -54,14 +54,14 @@ func GenerateAccount(id int, chainID int64) (*Account, error) {
 }
 
 // GenerateAndFundAccount creates a new Account with a random private key and transfer finances to cover txs fees
-func GenerateAndFundAccount(sourceAccount *Account, rpcClient RpcClient, regularGasPrice *big.Int, accountId int, tokens int64) (*Account, error) {
+func GenerateAndFundAccount(sourceAccount *Account, rpcClient RpcClient, regularGasPrice *big.Int, accountId int, endowment int64) (*Account, error) {
 	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
 	account, err := GenerateAccount(accountId, sourceAccount.chainID.Int64())
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate account; %v", err)
 	}
 	// transfers (tokens) FTM to the new account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(tokens), big.NewInt(1_000_000_000_000_000_000))
+	workerBudget := big.NewInt(0).Mul(big.NewInt(endowment), big.NewInt(1_000_000_000_000_000_000))
 	if err := transferValue(rpcClient, sourceAccount, account.address, workerBudget, priorityGasPrice); err != nil {
 		return nil, fmt.Errorf("failed to fund account: %v", err)
 	}

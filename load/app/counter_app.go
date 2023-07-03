@@ -15,7 +15,7 @@ import (
 // NewCounterApplication deploys a Counter contract to the chain.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, accounts int) (*CounterApplication, error) {
+func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, numAccounts int) (*CounterApplication, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -36,7 +36,7 @@ func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, account
 
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accounts, regularGasPrice)
+	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numAccounts, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}

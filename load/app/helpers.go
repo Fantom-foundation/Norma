@@ -76,9 +76,9 @@ func getPriorityGasPrice(regularGasPrice *big.Int) *big.Int {
 	return &priorityPrice
 }
 
-func generateStartingAccounts(rpcClient RpcClient, primaryAccount *Account, accounts int, regularGasPrice *big.Int) ([]*Account, error) {
+func generateStartingAccounts(rpcClient RpcClient, primaryAccount *Account, numAccounts int, regularGasPrice *big.Int) ([]*Account, error) {
 	var err error
-	startingAccounts := make([]*Account, accounts/500+1)
+	startingAccounts := make([]*Account, numAccounts/500+1)
 	for i := 0; i < len(startingAccounts); i++ {
 		startingAccounts[i], err = GenerateAndFundAccount(primaryAccount, rpcClient, regularGasPrice, i, 1_000_000)
 		if err != nil {

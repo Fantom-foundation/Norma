@@ -16,7 +16,7 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, accounts int) (*ERC20Application, error) {
+func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numAccounts int) (*ERC20Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -41,7 +41,7 @@ func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, accounts 
 
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accounts, regularGasPrice)
+	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numAccounts, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}

@@ -43,7 +43,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 		go runGeneratorLoop(gen, trigger, network)
 		accounts = append(accounts, gen)
 		if i%100 == 0 {
-			log.Printf("initialized %d generators of %d...\n", i, generators)
+			log.Printf("initialized %d of %d generators ...\n", i+1, generators)
 		}
 	}
 
