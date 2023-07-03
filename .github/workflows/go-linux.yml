@@ -7,6 +7,8 @@ on:
       - '.github/workflows/go-linux.yml'
       - '**.go'
       - '**.yml'
+      - '**.R'
+      - '**.Rmd'
   pull_request:
     branches: [ "main" ]
     paths:
