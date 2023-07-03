@@ -42,12 +42,17 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 
 		go runGeneratorLoop(gen, trigger, network)
 		accounts = append(accounts, gen)
+		if i%100 == 0 {
+			log.Printf("initialized %d of %d generators ...\n", i+1, generators)
+		}
 	}
 
 	// wait until all changes are on the chain
+	log.Printf("waiting until all app generators are deployed...\n")
 	if err := application.WaitUntilApplicationIsDeployed(rpcClient); err != nil {
 		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
 	}
+	log.Printf("the app is deployed\n")
 
 	return &AppController{
 		shaper:      shaper,
