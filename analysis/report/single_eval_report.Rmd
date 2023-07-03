@@ -131,10 +131,18 @@ sent_rate <- all_data %>%
                 time = (max(time)+min(time))/2
             )
         }
-    ) %>%
-    drop_na(rate) %>%
-    # convert time from UNIX to DateTime type
-    mutate(date = as_datetime(time/1e9))
+    )
+
+if (nrow(sent_rate) > 0) {
+    sent_rate <- sent_rate %>%
+        drop_na(rate) %>%
+        # convert time from UNIX to DateTime type
+        mutate(date = as_datetime(time/1e9))
+} else {
+    sent_rate <- sent_rate %>%
+        mutate(rate = 0) %>%
+        mutate(date = as_datetime(0))
+}
 
 
 # compute the number of received (=committed) transactions
@@ -165,10 +173,18 @@ received_rate <- all_data %>%
                 time = (max(time)+min(time))/2
             )
         }
-    ) %>%
-    drop_na(rate) %>%
-    # convert time from UNIX to DateTime type
-    mutate(date = as_datetime(time/1e9))
+    )
+
+if (nrow(sent_rate) > 0) {
+    received_rate <- received_rate %>%
+        drop_na(rate) %>%
+        # convert time from UNIX to DateTime type
+        mutate(date = as_datetime(time/1e9))
+} else {
+    received_rate <- received_rate %>%
+        mutate(rate = 0) %>%
+        mutate(date = as_datetime(0))
+}
 
 ggplot() +
     geom_line(data=sent_rate, aes(x=date, y=rate, color = "incomming [5s window]")) +
