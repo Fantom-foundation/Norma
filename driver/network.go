@@ -77,6 +77,9 @@ type NodeConfig struct {
 type ApplicationConfig struct {
 	Name string
 
+	// Type defines the on-chain app which should generate the traffic.
+	Type string
+
 	// Rate defines the Tx/s config the source should produce while active.
 	Rate *parser.Rate
 

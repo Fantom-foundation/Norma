@@ -16,7 +16,7 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numAccounts int) (*ERC20Application, error) {
+func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*ERC20Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -41,7 +41,7 @@ func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numAccoun
 
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numAccounts, regularGasPrice)
+	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numUsers, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient RpcClient) e
 	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
 }
 
-func (f *ERC20Application) GetReceivedTransations(rpcClient RpcClient) (uint64, error) {
+func (f *ERC20Application) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
 	if err != nil {
@@ -149,7 +149,7 @@ func (f *ERC20Application) GetReceivedTransations(rpcClient RpcClient) (uint64, 
 	return totalReceived, nil
 }
 
-// ERC20Generator is a txs app transferring ERC20 tokens.
+// ERC20User represents a user sending txs to transfer ERC20 tokens.
 // A generator is supposed to be used in a single thread.
 type ERC20User struct {
 	abi        *abi.ABI

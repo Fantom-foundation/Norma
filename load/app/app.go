@@ -17,7 +17,7 @@ type Application interface {
 
 	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
 
-	GetReceivedTransations(rpcClient RpcClient) (uint64, error)
+	GetReceivedTransactions(rpcClient RpcClient) (uint64, error)
 }
 
 type RpcClient interface {

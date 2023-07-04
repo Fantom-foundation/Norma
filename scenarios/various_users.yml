@@ -15,9 +15,10 @@ duration: 600
 # The number of validator nodes in the network.
 num_validators: 1
 
-# In the network there is a single application producing constant load.
+# In the network there are multiple applications, always at most one produces load.
 applications:
   - name: phase-1
+    type: Counter
     start: 0             # start time
     end: 60              # termination time
     users: 5             # number of users using the app
@@ -25,6 +26,7 @@ applications:
       constant: 2000     # Tx/s
 
   - name: phase-2
+    type: ERC20
     start: 120           # start time
     end: 180             # termination time
     users: 10            # number of users using the app
@@ -32,6 +34,7 @@ applications:
       constant: 2000     # Tx/s
 
   - name: phase-3
+    type: ERC20
     start: 240           # start time
     end: 300             # termination time
     users: 20            # number of users using the app
@@ -39,6 +42,7 @@ applications:
       constant: 2000     # Tx/s
 
   - name: phase-4
+    type: ERC20
     start: 360           # start time
     end: 420             # termination time
     users: 50            # number of users using the app
@@ -46,6 +50,7 @@ applications:
       constant: 2000     # Tx/s
 
   - name: phase-5
+    type: ERC20
     start: 480           # start time
     end: 540             # termination time
     users: 100           # number of users using the app
