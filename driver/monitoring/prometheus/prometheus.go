@@ -64,9 +64,9 @@ func Start(net driver.Network, dn *docker.Network) (*Prometheus, error) {
 		return nil, err
 	}
 
-	// wait until the prometheus inside the Container is ready. (15 seconds max)
+	// wait until the prometheus inside the Container is ready. (30 seconds max)
 	// this is necessary for SIGHUP signal to be delivered correctly
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 30; i++ {
 		// send get request to `<url>/-/ready` which contains status, from prometheus docs:
 		// "The readiness endpoint returns a 200 OK HTTP status code if Prometheus is ready to serve traffic."
 		resp, err := http.Get(prometheus.GetUrl() + "/-/ready")
