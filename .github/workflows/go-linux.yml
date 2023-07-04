@@ -50,7 +50,7 @@ jobs:
 
     - name: Create Docker Cache Storage Backend
       run: |
-        docker buildx create --name=linux-builder --use --driver=docker-container
+        docker buildx create --use --driver=docker-container
 
     - name: Build Docker Image
       uses: docker/build-push-action@v4
@@ -59,8 +59,8 @@ jobs:
         tags: opera
         load: true
         push: false
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,key=buildx-linux-cache
+        cache-to: type=gha,mode=max,key=action1,key=buildx-linux-cache
 
     - name: Build
       working-directory: ./
