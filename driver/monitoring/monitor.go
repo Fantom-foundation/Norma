@@ -21,6 +21,7 @@ type Monitor struct {
 	network         driver.Network
 	config          MonitorConfig
 	nodeLogProvider NodeLogProvider
+	promLogProvider PrometheusLogProvider
 	sources         map[string]source
 }
 
@@ -42,6 +43,7 @@ func NewMonitor(network driver.Network, config MonitorConfig) (*Monitor, error) 
 		network:         network,
 		config:          config,
 		nodeLogProvider: dispatcher,
+		promLogProvider: NewPrometheusLogDispatcher(network),
 		sources:         map[string]source{},
 	}, nil
 }
@@ -54,6 +56,7 @@ func (m *Monitor) GetMeasurementFileName() string {
 // Shutdown disconnects all sources, stopping the collection of data. This
 // should be called before abandoning the Monitor instance.
 func (m *Monitor) Shutdown() error {
+	m.promLogProvider.Shutdown()
 	var errs = []error{}
 
 	// Shut down all sources.
@@ -143,4 +146,9 @@ func (m *Monitor) Config() MonitorConfig {
 // NodeLogProvider returns a reference to the log parser instance.
 func (m *Monitor) NodeLogProvider() NodeLogProvider {
 	return m.nodeLogProvider
+}
+
+// PrometheusLogProvider returns a reference to the Prometheus log provider instance.
+func (m *Monitor) PrometheusLogProvider() PrometheusLogProvider {
+	return m.promLogProvider
 }

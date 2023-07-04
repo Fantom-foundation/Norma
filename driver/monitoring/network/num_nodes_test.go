@@ -25,6 +25,8 @@ func TestNumNodeRetrievesNodeCount(t *testing.T) {
 			node := driver.NewMockNode(ctrl)
 			node.EXPECT().GetLabel().Return(fmt.Sprintf("%d", i)).AnyTimes()
 			node.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
+			url1 := driver.URL("node")
+			node.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url1)
 			nodes = append(nodes, node)
 		}
 		return nodes
