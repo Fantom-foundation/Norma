@@ -55,13 +55,19 @@ jobs:
     - name: Fetch Prometheus image
       run: docker image pull prom/prometheus:v2.44.0
 
-      # Cache of docker layers
-    - uses: satackey/action-docker-layer-caching@v0.0.11
-      continue-on-error: true
+    - name: Create Docker Cache Storage Backend
+      run: |
+        docker buildx create --use --driver=docker-container
 
     - name: Build Docker Image
-      working-directory: ./
-      run: docker build . -t opera
+      uses: docker/build-push-action@v4
+      with:
+        context: ./
+        tags: opera
+        load: true
+        push: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
   
     - name: Build
       working-directory: ./
