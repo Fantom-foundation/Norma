@@ -18,7 +18,7 @@ num_validators: 1
 # In the network there are multiple applications, always at most one produces load.
 applications:
   - name: phase-1
-    type: Counter
+    type: ERC20
     start: 0             # start time
     end: 60              # termination time
     users: 5             # number of users using the app
