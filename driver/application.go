@@ -12,12 +12,12 @@ type Application interface {
 	// Config returns current application configuration.
 	Config() *ApplicationConfig
 
-	// GetNumberOfAccounts retrieves the number of accounts interacting with this application.
+	// GetNumberOfUsers retrieves the number of users interacting with this application.
 	// This value is expected to be a constant over the life-time of an application.
-	GetNumberOfAccounts() int
+	GetNumberOfUsers() int
 
-	// GetSentTransactions returns the number of transactions send from a given account.
-	GetSentTransactions(account int) (uint64, error)
+	// GetSentTransactions returns the number of transactions sent by a given user.
+	GetSentTransactions(user int) (uint64, error)
 
 	// GetReceivedTransactions returns the number fo transactions received by the appliation
 	// on the network.

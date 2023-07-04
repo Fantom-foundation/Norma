@@ -53,7 +53,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, want := app.GetNumberOfAccounts(), numGenerators; got != want {
+	if got, want := app.GetNumberOfUsers(), numGenerators; got != want {
 		t.Errorf("unexpected number of accounts, wanted %d, got %d", want, got)
 	}
 
@@ -71,7 +71,7 @@ func TestTrafficGenerating(t *testing.T) {
 
 	// get amount of txs applied to the chain
 	sum := uint64(0)
-	for i := 0; i < app.GetNumberOfAccounts(); i++ {
+	for i := 0; i < app.GetNumberOfUsers(); i++ {
 		count, err := app.GetSentTransactions(i)
 		if err != nil {
 			t.Fatalf("failed to fetch sent transactions from account %d: %v", i, err)

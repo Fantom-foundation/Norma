@@ -55,7 +55,7 @@ func TestGenerators(t *testing.T) {
 }
 
 func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Client) {
-	gen, err := app.CreateGenerator(rpcClient)
+	gen, err := app.CreateUser(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}

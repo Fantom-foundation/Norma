@@ -87,8 +87,8 @@ type ERC20Application struct {
 	numAccounts      int64
 }
 
-// CreateGenerator creates a new transaction generator for the app.
-func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
+// CreateUser creates a new user for the app.
+func (f *ERC20Application) CreateUser(rpcClient RpcClient) (User, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -119,7 +119,7 @@ func (f *ERC20Application) CreateGenerator(rpcClient RpcClient) (TransactionGene
 		return nil, fmt.Errorf("failed to mint ERC-20; %v", err)
 	}
 
-	return &ERC20Generator{
+	return &ERC20User{
 		abi:        f.abi,
 		sender:     workerAccount,
 		gasPrice:   regularGasPrice,
@@ -151,7 +151,7 @@ func (f *ERC20Application) GetReceivedTransations(rpcClient RpcClient) (uint64, 
 
 // ERC20Generator is a txs app transferring ERC20 tokens.
 // A generator is supposed to be used in a single thread.
-type ERC20Generator struct {
+type ERC20User struct {
 	abi        *abi.ABI
 	sender     *Account
 	gasPrice   *big.Int
@@ -160,7 +160,7 @@ type ERC20Generator struct {
 	sentTxs    uint64
 }
 
-func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
+func (g *ERC20User) GenerateTx() (*types.Transaction, error) {
 	// choose random recipient
 	recipient := g.recipients[rand.Intn(len(g.recipients))]
 
@@ -179,6 +179,6 @@ func (g *ERC20Generator) GenerateTx() (*types.Transaction, error) {
 	return tx, err
 }
 
-func (g *ERC20Generator) GetSentTransactions() uint64 {
+func (g *ERC20User) GetSentTransactions() uint64 {
 	return atomic.LoadUint64(&g.sentTxs)
 }

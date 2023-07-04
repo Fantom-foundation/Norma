@@ -1,13 +1,13 @@
 # This scenario simulates a small network
 # running the simple Counter application
-# with various number of workers (i.e. accounts sending transactions)
+# with various number of users (i.e. accounts sending transactions)
 # and rather high tx/s.
 # It tests how many transactions can pass through
 # application layers from the RPC endpoint to block processing
 # and how many transaction is Opera able to accept.
 
 # The name of the scenario
-name: Various Number of Workers
+name: Various Number of Users
 
 # The duration of the scenario's runtime, in seconds.
 duration: 600
@@ -18,36 +18,36 @@ num_validators: 1
 # In the network there is a single application producing constant load.
 applications:
   - name: phase-1
-    start: 0          # start time
-    end: 60            # termination time
-    accounts: 5       # accounts generating txs
+    start: 0             # start time
+    end: 60              # termination time
+    users: 5             # number of users using the app
     rate:
       constant: 2000     # Tx/s
 
   - name: phase-2
-    start: 120          # start time
-    end: 180            # termination time
-    accounts: 10       # accounts generating txs
+    start: 120           # start time
+    end: 180             # termination time
+    users: 10            # number of users using the app
     rate:
       constant: 2000     # Tx/s
 
   - name: phase-3
-    start: 240          # start time
-    end: 300            # termination time
-    accounts: 20       # accounts generating txs
+    start: 240           # start time
+    end: 300             # termination time
+    users: 20            # number of users using the app
     rate:
       constant: 2000     # Tx/s
 
   - name: phase-4
-    start: 360          # start time
-    end: 420            # termination time
-    accounts: 50       # accounts generating txs
+    start: 360           # start time
+    end: 420             # termination time
+    users: 50            # number of users using the app
     rate:
       constant: 2000     # Tx/s
 
   - name: phase-5
-    start: 480          # start time
-    end: 540            # termination time
-    accounts: 100       # accounts generating txs
+    start: 480           # start time
+    end: 540             # termination time
+    users: 100           # number of users using the app
     rate:
       constant: 2000     # Tx/s

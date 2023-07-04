@@ -324,17 +324,17 @@ data <- all_data %>%
     dplyr::filter(metric == "SentTransactions") %>%  # filter metric
     mutate(date = as_datetime(as.numeric(time) / 1e9)) %>%   # UNIX time to date
     mutate(value = as.numeric(value)) %>%              # convert value to int
-    mutate(account = paste(app, "_", workers))         # add an account name
+    mutate(account = paste(app, "_", workers))         # add an user name
 
 ggplot(data = data) +
     geom_line(
         aes(x = date, y = value, group = account, colour = factor(account)),
         show.legend = FALSE
     ) +
-    ggtitle("Sent Transactions per Account") +         # chart title
+    ggtitle("Sent Transactions per User") +            # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Total Number of Transactions") +             # y-axis title
-    labs(colour="Accounts") +                              # legend title
+    labs(colour = "User") +                            # legend title
     theme(plot.title = element_text(hjust = 0.5)) +    # center title
     scale_x_datetime(date_labels = "%c")               # format date labels
 ```
@@ -344,17 +344,17 @@ The following chart shows the send-rate of individual accounts (legend omitted f
 ```{r send_rate_per_account, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 sent_rate <- sent_rate %>%
     mutate(date = as_datetime(as.numeric(time) / 1e9)) %>%
-    mutate(account = paste(app, "_", workers))         # add an account name
+    mutate(account = paste(app, "_", workers))         # add an user name
 
 ggplot(data = sent_rate) +
     geom_line(
         aes(x = date, y = rate, group = account, colour = factor(account)),
         show.legend = FALSE
     ) +
-    ggtitle("Sent Rate of Transactions per Account") +         # chart title
+    ggtitle("Sent Rate of Transactions per User") +    # chart title
     xlab("Time") +                                     # x-axis title
-    ylab("Rate [Tx/s]") +             # y-axis title
-    labs(colour="Account") +                              # legend title
+    ylab("Rate [Tx/s]") +                              # y-axis title
+    labs(colour = "User") +                            # legend title
     theme(plot.title = element_text(hjust = 0.5)) +    # center title
     scale_x_datetime(date_labels = "%c")               # format date labels
 ```

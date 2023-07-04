@@ -6,9 +6,9 @@ import (
 	"log"
 )
 
-func runGeneratorLoop(generator app.TransactionGenerator, trigger <-chan struct{}, network driver.Network) {
+func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Network) {
 	for range trigger {
-		tx, err := generator.GenerateTx()
+		tx, err := user.GenerateTx()
 		if err != nil {
 			log.Printf("failed to generate tx; %v", err)
 		} else {

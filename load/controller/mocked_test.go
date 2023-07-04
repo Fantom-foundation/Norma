@@ -2,13 +2,14 @@ package controller
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
-	"testing"
-	"time"
 )
 
 func TestMockedTrafficGenerating(t *testing.T) {
@@ -17,8 +18,8 @@ func TestMockedTrafficGenerating(t *testing.T) {
 
 	var demoTx types.Transaction
 
-	workers := 2
-	mockedGenerator := app.NewMockTransactionGenerator(mockCtrl)
+	numUsers := 2
+	mockedGenerator := app.NewMockUser(mockCtrl)
 
 	mockedRpcClient := app.NewMockRpcClient(mockCtrl)
 	mockedRpcClient.EXPECT().Close()
@@ -27,7 +28,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	mockedNetwork.EXPECT().DialRandomRpc().Return(mockedRpcClient, nil)
 
 	mockedApp := app.NewMockApplication(mockCtrl)
-	mockedApp.EXPECT().CreateGenerator(mockedRpcClient).Return(mockedGenerator, nil).Times(workers)
+	mockedApp.EXPECT().CreateUser(mockedRpcClient).Return(mockedGenerator, nil).Times(numUsers)
 	mockedApp.EXPECT().WaitUntilApplicationIsDeployed(mockedRpcClient).Return(nil)
 
 	// app should be called 10-times to generate 10 txs
@@ -38,7 +39,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec
 
-	appController, err := NewAppController(mockedApp, constantShaper, workers, mockedNetwork)
+	appController, err := NewAppController(mockedApp, constantShaper, numUsers, mockedNetwork)
 	if err != nil {
 		t.Fatal(err)
 	}

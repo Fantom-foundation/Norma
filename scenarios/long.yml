@@ -1,11 +1,11 @@
-# This scenario similuates a small network running a few thousand
-# transactions on a small number of nodes and applications.
+# This scenario similuates a small network running for 10 minutes
+# processing a constant number of transactions.
 
 # The name of the scenario
-name: Small Network
+name: Long-Running Network
 
 # The duration of the scenario's runtime, in seconds.
-duration: 60
+duration: 600
 
 # The number of validator nodes in the network.
 num_validators: 1
@@ -19,8 +19,8 @@ nodes:
 # In the network there is a single application producing constant load.
 applications:
   - name: counter
-    start: 10          # start time
-    end: 50            # termination time
-    users: 20          # number of users using the app
+    start: 10           # start time
+    end: 570            # termination time
+    users: 20           # number of users / accounts generating txs
     rate:
-      constant: 10     # Tx/s
+      constant: 100     # Tx/s

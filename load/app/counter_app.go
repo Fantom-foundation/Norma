@@ -70,8 +70,8 @@ type CounterApplication struct {
 	numAccounts      int64
 }
 
-// CreateGenerator creates a new transaction generator for the app.
-func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
+// CreateUser creates a new user for the app.
+func (f *CounterApplication) CreateUser(rpcClient RpcClient) (User, error) {
 
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
@@ -87,7 +87,7 @@ func (f *CounterApplication) CreateGenerator(rpcClient RpcClient) (TransactionGe
 		return nil, err
 	}
 
-	gen := &CounterGenerator{
+	gen := &CounterUser{
 		abi:      f.abi,
 		sender:   workerAccount,
 		gasPrice: regularGasPrice,
@@ -113,9 +113,9 @@ func (f *CounterApplication) GetReceivedTransations(rpcClient RpcClient) (uint64
 	return count.Uint64(), nil
 }
 
-// CounterGenerator is a txs generator incrementing trivial Counter contract.
+// CounterUser is a txs generator incrementing trivial Counter contract.
 // A generator is supposed to be used in a single thread.
-type CounterGenerator struct {
+type CounterUser struct {
 	abi      *abi.ABI
 	sender   *Account
 	gasPrice *big.Int
@@ -123,7 +123,7 @@ type CounterGenerator struct {
 	sentTxs  uint64
 }
 
-func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
+func (g *CounterUser) GenerateTx() (*types.Transaction, error) {
 	// prepare tx data
 	data, err := g.abi.Pack("incrementCounter")
 	if err != nil || data == nil {
@@ -139,6 +139,6 @@ func (g *CounterGenerator) GenerateTx() (*types.Transaction, error) {
 	return tx, err
 }
 
-func (g *CounterGenerator) GetSentTransactions() uint64 {
+func (g *CounterUser) GetSentTransactions() uint64 {
 	return atomic.LoadUint64(&g.sentTxs)
 }
