@@ -26,29 +26,29 @@ jobs:
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
-#    - name: Set up Go
-#      uses: actions/setup-go@v4
-#      with:
-#        go-version: '1.20'
-#
-#    - name: Set up R
-#      uses: r-lib/actions/setup-r@v2
-#
-#    - name: Install R dependencies
-#      uses: r-lib/actions/setup-r-dependencies@v2
-#      with:
-#        working-directory: ./analysis/report
-#
-#    - name: Fetch Docker test-image
-#      run: docker image pull hello-world
-#
-#    - name: Fetch Docker alpine-image
-#      run: docker image pull alpine
-#
-#    - name: Fetch Prometheus image
-#      run: docker image pull prom/prometheus:v2.44.0
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
 
-    - name: Create Docker Cacha Storage Backend
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+
+    - name: Install R dependencies
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        working-directory: ./analysis/report
+
+    - name: Fetch Docker test-image
+      run: docker image pull hello-world
+
+    - name: Fetch Docker alpine-image
+      run: docker image pull alpine
+
+    - name: Fetch Prometheus image
+      run: docker image pull prom/prometheus:v2.44.0
+
+    - name: Create Docker Cache Storage Backend
       run: |
         docker buildx create --use --driver=docker-container
 
@@ -62,11 +62,11 @@ jobs:
         push: false
         cache-from: type=gha
         cache-to: type=gha,mode=max
-#
-#    - name: Build
-#      working-directory: ./
-#      run: go build -v ./...
-#
-#    - name: Test
-#      working-directory: ./
-#      run: go test -count=1 ./...
+
+    - name: Build
+      working-directory: ./
+      run: go build -v ./...
+
+    - name: Test
+      working-directory: ./
+      run: go test -count=1 ./...
