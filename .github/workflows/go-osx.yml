@@ -1,33 +1,28 @@
-name: Go-Linux
+name: Go-OSX
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - '.github/workflows/go-linux.yml'
+      - '.github/workflows/go-osx.yml'
       - '**.go'
-      - '**.yml'
-      - '**.R'
-      - '**.Rmd'
   pull_request:
     branches: [ "main" ]
     paths:
-      - '.github/workflows/go-linux.yml'
-      - '**.go'
-      - '**.yml'
+      - '.github/workflows/go-osx.yml'
 
 jobs:
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+    - name: Install pandoc
+      run: brew install pandoc
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -41,6 +36,15 @@ jobs:
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
         working-directory: ./analysis/report
+
+    - name: Set up Docker
+      run: |
+        brew install docker
+        colima start --memory 8
+
+    # required for enabling the BuildKit
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     - name: Fetch Docker test-image
       run: docker image pull hello-world
@@ -89,3 +93,5 @@ jobs:
     - name: Test
       working-directory: ./
       run: go test -count=1 ./...
+      env:
+        DOCKER_HOST: "unix:///Users/runner/.colima/default/docker.sock"
