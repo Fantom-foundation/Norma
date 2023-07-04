@@ -211,6 +211,7 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
 			Name:  name,
+			Type:  source.Type,
 			Rate:  &source.Rate,
 			Users: users,
 		}); err == nil { // schedule application only when it could be created

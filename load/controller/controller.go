@@ -113,7 +113,7 @@ func (ac *AppController) GetSentTransactions(user int) (uint64, error) {
 func (ac *AppController) GetReceivedTransactions() (uint64, error) {
 	for retry := 0; ; retry++ {
 		// fetch transaction data from the network
-		res, err := ac.application.GetReceivedTransations(ac.rpcClient)
+		res, err := ac.application.GetReceivedTransactions(ac.rpcClient)
 		if err == nil {
 			return res, nil
 		}

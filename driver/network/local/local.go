@@ -253,9 +253,9 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 	defer rpcClient.Close()
 
-	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount, config.Users)
+	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
+		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)
 	}
 
 	sh, err := shaper.ParseRate(config.Rate)
@@ -263,7 +263,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	appController, err := controller.NewAppController(generatorFactory, sh, config.Users, n)
+	appController, err := controller.NewAppController(application, sh, config.Users, n)
 	if err != nil {
 		return nil, err
 	}
