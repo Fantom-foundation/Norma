@@ -3,6 +3,7 @@ package rpc
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/node"
@@ -30,7 +31,11 @@ func (p RpcWorkerPool) AfterNodeCreation(newNode driver.Node) {
 		return
 	}
 	for i := 0; i < 150; i++ {
-		go runRpcSenderLoop(*rpcUrl, p.txs)
+		go func() {
+			if err := runRpcSenderLoop(*rpcUrl, 60, p.txs); err != nil {
+				log.Printf("failed to open RPC connection; %v", err)
+			}
+		}()
 	}
 }
 
@@ -43,11 +48,21 @@ func (p RpcWorkerPool) Close() error {
 	return nil
 }
 
-func runRpcSenderLoop(rpcUrl driver.URL, txs <-chan *types.Transaction) {
-	rpcClient, err := ethclient.Dial(string(rpcUrl))
-	if err != nil {
-		log.Printf("failed to open RPC connection; %v", err)
+func runRpcSenderLoop(rpcUrl driver.URL, connectAttempts int, txs <-chan *types.Transaction) error {
+	var rpcClient *ethclient.Client
+	var err error
+	for i := 0; i < connectAttempts; i++ {
+		rpcClient, err = ethclient.Dial(string(rpcUrl))
+		if err == nil {
+			break
+		}
+		time.Sleep(1 * time.Second)
 	}
+
+	if err != nil {
+		return err
+	}
+
 	defer rpcClient.Close()
 
 	for tx := range txs {
@@ -56,4 +71,6 @@ func runRpcSenderLoop(rpcUrl driver.URL, txs <-chan *types.Transaction) {
 			log.Printf("failed to send tx; %v", err)
 		}
 	}
+
+	return nil
 }
