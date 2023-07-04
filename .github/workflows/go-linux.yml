@@ -45,12 +45,6 @@ jobs:
       with:
         working-directory: ./analysis/report
 
-    - name: Cache R dependencies
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.R_LIBS_USER }}
-        key: ${{ runner.os }}-r-packages-${{ hashFiles('analysis/report/DESCRIPTION') }}
-
 #    - name: Fetch Docker test-image
 #      run: docker image pull hello-world
 #
