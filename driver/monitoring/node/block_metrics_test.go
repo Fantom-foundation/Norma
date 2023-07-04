@@ -1,14 +1,12 @@
 package nodemon
 
 import (
-	"io"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
+	"io"
+	"strings"
+	"testing"
 )
 
 func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {
@@ -44,9 +42,15 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	node2.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node2TestId))
 	node3.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node3TestId))
 
-	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
-	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
-	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
+	node1.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil
+	})
+	node2.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil
+	})
+	node3.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil
+	})
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
@@ -62,18 +66,22 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 
 	// add first node
 	reg.AfterNodeCreation(node1)
-	// pre-existing node with some blocks
+	reg.WaitForLogsToBeConsumed()
+
+	// add first node
 	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId}, source)
 	testNodeSeriesData(t, monitoring.Node1TestId, monitoring.NodeBlockTestData[monitoring.Node1TestId], source)
 
 	// add second node
 	reg.AfterNodeCreation(node2)
+	reg.WaitForLogsToBeConsumed()
 	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId, monitoring.Node2TestId}, source)
 	testNodeSeriesData(t, monitoring.Node2TestId, monitoring.NodeBlockTestData[monitoring.Node2TestId], source)
 
 	// next node will NOT be registered, since the metric is shutdown
 	_ = source.Shutdown()
 	reg.AfterNodeCreation(node3)
+	reg.WaitForLogsToBeConsumed()
 	testNodeSubjects(t, []monitoring.Node{monitoring.Node1TestId, monitoring.Node2TestId}, source)
 	// series not created at all
 	if _, exists := source.GetData(monitoring.Node3TestId); exists {
@@ -85,18 +93,11 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 func testNodeSubjects[T any](t *testing.T, expected []monitoring.Node, source *BlockNodeMetricSource[T]) {
 	for _, want := range expected {
 		var found bool
-		// query the data for some time due to async goroutine
-		for i := 0; i < 1000; i++ {
-			for _, got := range source.GetSubjects() {
-				if got == want {
-					found = true
-					break
-				}
-			}
-			if found {
+		for _, got := range source.GetSubjects() {
+			if got == want {
+				found = true
 				break
 			}
-			time.Sleep(10 * time.Millisecond)
 		}
 		if !found {
 			t.Errorf("Node %v not found in: %v", want, source.GetSubjects())
@@ -110,26 +111,18 @@ func testNodeSubjects[T any](t *testing.T, expected []monitoring.Node, source *B
 
 // testNodeSeriesData verifies if series contains the expected blocks, it queries a few times as data arrive from the goroutine
 func testNodeSeriesData[T comparable](t *testing.T, node monitoring.Node, expectedBlocks []monitoring.Block, source *BlockNodeMetricSource[T]) {
-	// wait for data for some time due to async goroutine
 	// match the series contains expected blocks, loop a few times to let the goroutine provide the data
 	for _, want := range expectedBlocks {
 		var found bool
-		for i := 0; i < 1000; i++ {
-			series, exists := source.GetData(node)
-			if exists {
-				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-					if source.getBlockProperty(want) == got.Value {
-						found = true
-						break
-					}
+		series, exists := source.GetData(node)
+		if exists {
+			for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+				if source.getBlockProperty(want) == got.Value {
+					found = true
+					break
 				}
 			}
-			if found {
-				break
-			}
-			time.Sleep(10 * time.Millisecond)
 		}
-
 		if !found {
 			t.Errorf("value: %v not found for block: %v", source.getBlockProperty(want), want)
 		}

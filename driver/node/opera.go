@@ -109,13 +109,12 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		label: config.Label,
 	}
 
-	// Wait until the OperaNode inside the Container is ready. (3 minutes max)
-	for i := 0; i < 3*60; i++ {
+	// Wait until the OperaNode inside the Container is ready.
+	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		_, err := node.GetNodeID()
-		if err == nil {
-			return node, nil
-		}
-		time.Sleep(time.Second)
+		return err
+	}); err == nil {
+		return node, nil
 	}
 
 	// The node did not show up in time, so we consider the start to have failed.
@@ -189,11 +188,17 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 	if url == nil {
 		return fmt.Errorf("node does not export an RPC server")
 	}
-	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+
+	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*rpc.Client, error) {
+		return rpc.DialContext(context.Background(), string(*url))
+	})
 	if err != nil {
 		return err
 	}
-	return rpcClient.Call(nil, "admin_addPeer", id)
+
+	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return rpcClient.Call(nil, "admin_addPeer", id)
+	})
 }
 
 // RemovePeer informs the client instance represented by the OperaNode
@@ -203,9 +208,15 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 	if url == nil {
 		return fmt.Errorf("node does not export an RPC server")
 	}
-	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+
+	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*rpc.Client, error) {
+		return rpc.DialContext(context.Background(), string(*url))
+	})
 	if err != nil {
 		return err
 	}
-	return rpcClient.Call(nil, "admin_removePeer", id)
+
+	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return rpcClient.Call(nil, "admin_removePeer", id)
+	})
 }

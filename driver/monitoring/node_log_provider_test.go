@@ -49,6 +49,8 @@ func TestRegisterLogParser(t *testing.T) {
 	reg.AfterNodeCreation(node2)
 	reg.AfterNodeCreation(node3)
 
+	reg.WaitForLogsToBeConsumed()
+
 	// drain 3 nodes from the channel
 	for _, node := range []Node{<-ch, <-ch, <-ch} {
 		got := listener.getBlocks(node)
@@ -63,8 +65,6 @@ func TestRegisterLogParser(t *testing.T) {
 	if len(reg.getNodes()) != 3 {
 		t.Errorf("wrong number of iterations")
 	}
-
-	reg.WaitForLogsToBeConsumed()
 
 	// Check that log got copied to output files.
 	logs := []struct {

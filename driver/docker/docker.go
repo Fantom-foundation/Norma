@@ -162,7 +162,9 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}
 	}
 
-	if err := c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
+	}); err != nil {
 		return nil, err
 	}
 

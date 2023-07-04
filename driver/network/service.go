@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // ServiceDescription is
@@ -96,4 +97,36 @@ func GetFreePorts(num int) ([]Port, error) {
 		}
 	}
 	return ports, nil
+}
+
+const DefaultRetryAttempts = 180
+
+// RetryReturn executes the input function until it produces no error.
+// It however executes only the configured number of times with the configured
+// delay between attempts. If the execution is not successful since,
+// the execution returns the last error.
+// When execution is successful, the execution result is returned from this method.
+func RetryReturn[Out any](numAttempts int, delay time.Duration, do func() (Out, error)) (Out, error) {
+	var out Out
+	var err error
+	for i := 0; i < numAttempts; i++ {
+		out, err = do()
+		if err == nil {
+			break
+		}
+		time.Sleep(delay)
+	}
+	return out, err
+}
+
+// Retry executes the input function until it produces no error.
+// It however executes only the configured number of times with the configured
+// delay between attempts. If the execution is not successful since,
+// the execution returns the last error.
+func Retry(numAttempts int, delay time.Duration, do func() error) error {
+	_, err := RetryReturn(numAttempts, delay, func() (*int, error) {
+		err := do()
+		return nil, err
+	})
+	return err
 }

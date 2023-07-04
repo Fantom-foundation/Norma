@@ -2,10 +2,9 @@ package local
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/golang/mock/gomock"
+	"testing"
 )
 
 func TestLocalNetworkIsNetwork(t *testing.T) {
@@ -24,7 +23,9 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
-			t.Cleanup(func() { net.Shutdown() })
+			t.Cleanup(func() {
+				_ = net.Shutdown()
+			})
 
 			nodes := []driver.Node{}
 			for i := 0; i < N; i++ {
@@ -33,8 +34,8 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 				})
 				if err != nil {
 					t.Errorf("failed to create node: %v", err)
+					continue
 				}
-				defer node.Cleanup()
 				nodes = append(nodes, node)
 			}
 
@@ -65,7 +66,9 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
-			t.Cleanup(func() { net.Shutdown() })
+			t.Cleanup(func() {
+				_ = net.Shutdown()
+			})
 
 			apps := []driver.Application{}
 			for i := 0; i < N; i++ {
@@ -74,13 +77,13 @@ func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
 				})
 				if err != nil {
 					t.Errorf("failed to create app: %v", err)
+					continue
 				}
 
 				if got, want := app.Config().Name, fmt.Sprintf("T-%d", i); got != want {
 					t.Errorf("app configurion not propagated: %v != %v", got, want)
 				}
 
-				defer app.Stop()
 				apps = append(apps, app)
 			}
 
@@ -108,7 +111,9 @@ func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
-	t.Cleanup(func() { net.Shutdown() })
+	t.Cleanup(func() {
+		_ = net.Shutdown()
+	})
 
 	for i := 0; i < N; i++ {
 		_, err := net.CreateNode(&driver.NodeConfig{
@@ -144,7 +149,9 @@ func TestLocalNetwork_CanRunWithMultipleValidators(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
-			t.Cleanup(func() { net.Shutdown() })
+			t.Cleanup(func() {
+				_ = net.Shutdown()
+			})
 
 			app, err := net.CreateApplication(&driver.ApplicationConfig{
 				Name: "TestApp",
@@ -152,7 +159,6 @@ func TestLocalNetwork_CanRunWithMultipleValidators(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create app: %v", err)
 			}
-			defer app.Stop()
 
 			if err := app.Start(); err != nil {
 				t.Errorf("failed to start app: %v", err)
@@ -175,7 +181,9 @@ func TestLocalNetwork_NotifiesListenersOnNodeStartup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
-	t.Cleanup(func() { net.Shutdown() })
+	t.Cleanup(func() {
+		_ = net.Shutdown()
+	})
 
 	activeNodes := net.GetActiveNodes()
 	if got, want := len(activeNodes), config.NumberOfValidators; got != want {
@@ -206,7 +214,9 @@ func TestLocalNetwork_NotifiesListenersOnAppStartup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create new local network: %v", err)
 	}
-	t.Cleanup(func() { net.Shutdown() })
+	t.Cleanup(func() {
+		_ = net.Shutdown()
+	})
 
 	net.RegisterListener(listener)
 	listener.EXPECT().AfterApplicationCreation(gomock.Any())
@@ -230,7 +240,9 @@ func TestLocalNetwork_CanRemoveNode(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}
-			t.Cleanup(func() { _ = net.Shutdown() })
+			t.Cleanup(func() {
+				_ = net.Shutdown()
+			})
 
 			nodes := make([]driver.Node, 0, N)
 			for i := 0; i < N; i++ {
