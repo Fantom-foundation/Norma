@@ -24,7 +24,7 @@ func (r *Record) SetSubject(subject any) *Record {
 		r.Node = string(value)
 	case App:
 		r.App = string(value)
-	case Account:
+	case User:
 		r.App = string(value.App)
 		var worker int64 = int64(value.Id)
 		r.Worker = &worker

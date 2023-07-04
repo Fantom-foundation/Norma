@@ -5,7 +5,7 @@
 name: Small Network
 
 # The duration of the scenario's runtime, in seconds.
-duration: 60
+duration: 120
 
 # The number of validator nodes in the network.
 num_validators: 1
@@ -14,13 +14,20 @@ num_validators: 1
 nodes:
   # We include three additional non-validator nodes for the full duration.
   - name: A
-    instances: 3
+    instances: 1
+
+
+  # We include three additional non-validator nodes for the full duration.
+  - name: B
+    instances: 1
+    start: 60
+
 
 # In the network there is a single application producing constant load.
 applications:
   - name: counter
-    start: 10          # start time
-    end: 50            # termination time
-    users: 20          # number of users using the app
+    start: 10           # start time
+    end: 110            # termination time
+    users: 20           # number of users / accounts generating txs
     rate:
-      constant: 10     # Tx/s
+      constant: 200     # Tx/s

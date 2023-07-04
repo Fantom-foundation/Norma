@@ -12,8 +12,8 @@ import (
 //go:generate mockgen -source app.go -destination app_mock.go -package app
 
 type Application interface {
-	// CreateGenerator creates a new transaction generator for given application
-	CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error)
+	// CreateUser creates a new user generating transactions for this application.
+	CreateUser(rpcClient RpcClient) (User, error)
 
 	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
 
@@ -26,9 +26,9 @@ type RpcClient interface {
 	Close()
 }
 
-// TransactionGenerator produces a stream of transactions to generate traffic on the chain.
-// Generators are not thread-safe.
-type TransactionGenerator interface {
+// User produces a stream of transactions to generate traffic on the chain.
+// Implementations are not required to be thread-safe.
+type User interface {
 	GenerateTx() (*types.Transaction, error)
 	GetSentTransactions() uint64
 }

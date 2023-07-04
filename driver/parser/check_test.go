@@ -207,16 +207,16 @@ func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	}
 }
 
-func TestApplication_NegativeAccountCounterIsNotAllowed(t *testing.T) {
+func TestApplication_NegativeUserCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
-	accounts := 5
-	app := Application{Name: "test", Accounts: &accounts, Rate: Rate{Constant: new(float32)}}
+	users := 5
+	app := Application{Name: "test", Users: &users, Rate: Rate{Constant: new(float32)}}
 	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
-	*app.Accounts = -1
-	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of accounts") {
-		t.Errorf("negative account counter was not detected")
+	*app.Users = -1
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of users") {
+		t.Errorf("negative user counter was not detected")
 	}
 }
 
