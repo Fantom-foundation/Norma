@@ -58,14 +58,7 @@ func TestIntegrateRegistryWithShutdownNodeMetrics(t *testing.T) {
 	}
 
 	source := NewBlockTimeSource(monitor)
-	reg, err := monitoring.NewNodeLogDispatcher(net, t.TempDir())
-	if err != nil {
-		t.Fatalf("failed to create node log dispatcher: %v", err)
-	}
-
-	// test the source is created later
-	time.Sleep(time.Second)
-	reg.RegisterLogListener(source)
+	reg := monitor.NodeLogProvider().(*monitoring.NodeLogDispatcher)
 
 	// add first node
 	reg.AfterNodeCreation(node1)
