@@ -50,7 +50,9 @@ jobs:
 
     - name: Build Docker Image
       working-directory: ./
-      run: docker build . -t opera
+      # DOCKER_BUILDKIT=1 is required for the build, because latest ubuntu image (currently)
+      # contains docker 20.10, which does not support BuildKit by default.
+      run: DOCKER_BUILDKIT=1 docker build . -t opera
 
     - name: Build
       working-directory: ./
