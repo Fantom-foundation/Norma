@@ -45,6 +45,13 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	node2.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node2TestId))
 	node3.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node3TestId))
 
+	urlA := driver.URL("A")
+	urlB := driver.URL("B")
+	urlC := driver.URL("C")
+	node1.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlA)
+	node2.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlB)
+	node3.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlC)
+
 	node1.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil })
 	node2.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil })
 	node3.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil })
