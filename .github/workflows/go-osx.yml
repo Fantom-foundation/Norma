@@ -39,6 +39,7 @@ jobs:
 
     - name: Set up Docker
       run: |
+        brew install docker
         colima start --memory 8
 
     # required for enabling the BuildKit
