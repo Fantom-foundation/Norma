@@ -51,9 +51,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /tmp/.docker-images
-        key: ${{ runner.os }}-docker-images-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-docker-images-
+        key: ${{ runner.os }}-docker-images
 
     - name: Fetch Docker test-image
       run: docker image pull hello-world
@@ -72,10 +70,6 @@ jobs:
     - name: Load Prometheus image
       if: steps.image_cache.outputs['cache-hit'] == 'true'
       run: docker load -i /tmp/.docker-images/prometheus.tar
-
-    - name: Debug cache hit
-      run:
-        echo "Cache hit: ${{ steps.image_cache.outputs['cache-hit'] }}"
 
       # Use custom cache, because build-push action does not
       # allow to specify cache name, so it interferes with
