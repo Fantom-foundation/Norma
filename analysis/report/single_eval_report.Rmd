@@ -121,12 +121,12 @@ sent_rate <- all_data %>%
     slide_period_dfr(
         as.POSIXct(.$time/1e9,origin="1970-01-01"),
         "second",
-        .before=5,
+        .every = 5,
         function(data) {
             summarize(
                 data,
                 # compute the rate over time window
-                rate = sum(increment) / ((max(time) - min(time)) / 1e9),
+                rate = sum(increment) / 5,
                 # associate rate to mid-point time
                 time = (max(time)+min(time))/2
             )
@@ -163,12 +163,12 @@ received_rate <- all_data %>%
     slide_period_dfr(
         as.POSIXct(.$time/1e9,origin="1970-01-01"),
         "second",
-        .before=5,
+        .every = 5,
         function(data) {
             summarize(
                 data,
                 # compute the rate over time window
-                rate = sum(increment) / ((max(time) - min(time)) / 1e9),
+                rate = sum(increment) / 5,
                 # associate rate to mid-point time
                 time = (max(time)+min(time))/2
             )
