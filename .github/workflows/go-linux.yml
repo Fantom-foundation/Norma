@@ -43,6 +43,7 @@ jobs:
 #        working-directory: ./analysis/report
 
       # Use cache for Docker images
+    - run: mkdir -p /tmp/.docker-images
     - name: Cache Docker images
       id: image-cache
       uses: actions/cache@v3
