@@ -2,6 +2,7 @@ package utils
 
 import (
 	"errors"
+	"math/rand"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -70,8 +71,13 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 			s.done <- err
 		}()
 
+		// Introduce random sampling offsets to avoid load peaks and to
+		// eliminate steps in aggregated metrics.
+		time.Sleep(time.Duration(float32(s.period) * rand.Float32()))
+
 		var errs []error
 		ticker := time.NewTicker(s.period)
+		defer ticker.Stop()
 		for {
 			select {
 			case now := <-ticker.C:
