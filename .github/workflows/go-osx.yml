@@ -37,6 +37,10 @@ jobs:
       with:
         working-directory: ./analysis/report
 
+    - name: Set up Docker
+      run: |
+        colima start --memory 8
+
     # required for enabling the BuildKit
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
