@@ -42,7 +42,7 @@ jobs:
         brew install docker
         colima start --memory 8
 
-    # required for enabling the BuildKit
+      # Required for enabling the BuildKit
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -110,8 +110,8 @@ jobs:
       working-directory: ./
       run: go build -v ./...
 
-#    - name: Test
-#      working-directory: ./
-#      run: go test -count=1 ./...
-#      env:
-#        DOCKER_HOST: "unix:///Users/runner/.colima/default/docker.sock"
+    - name: Test
+      working-directory: ./
+      run: go test -count=1 ./...
+      env:
+        DOCKER_HOST: "unix:///Users/runner/.colima/default/docker.sock"
