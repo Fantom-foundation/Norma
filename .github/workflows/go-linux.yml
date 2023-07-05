@@ -68,10 +68,14 @@ jobs:
         docker image pull prom/prometheus:v2.44.0
         docker save -o /tmp/.docker-images/prometheus.tar prom/prometheus:v2.44.0
 
-      # load prometheus image if cached
+      # Load prometheus image if cached
     - name: Load Prometheus image
       if: steps.image_cache.outputs['cache-hit'] == 'true'
       run: docker load -i /tmp/.docker-images/prometheus.tar
+
+    - name: Debug cache hit
+      run:
+        echo "Cache hit: ${{ steps.image_cache.outputs['cache-hit'] }}"
 
       # Use custom cache, because build-push action does not
       # allow to specify cache name, so it interferes with
