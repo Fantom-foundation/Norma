@@ -255,7 +255,7 @@ ggplot(data=data) +
 
 ### Block Height per Node
 
-The following char shows the time at which nodes have reached a given block height.
+The following chart shows the time at which nodes have reached a given block height.
 
 ```{r block_height_per_node, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
@@ -272,6 +272,96 @@ ggplot(data=data) +
     theme(plot.title = element_text(hjust = 0.5)) +    # center title
     scale_x_datetime(date_labels = "%c")               # format date labels
 ```
+
+### TxPool Per Node
+
+The following charts show statistics of transaction pool.
+
+* The number of received transactions - accumulated count over time
+```{r tx_pool_per_node_received_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_received") %>%         # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool over Time") +                      # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Received txs") +                             # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+* The number of valid transactions - accumulated count over time
+```{r tx_pool_per_node_valid_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_valid") %>%            # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool over Time") +                      # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Valid txs") +                                # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+* The number of invalid transactions - accumulated count over time
+```{r tx_pool_per_node_invalid_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_invalid") %>%          # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool over Time") +                      # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Invalid txs") +                              # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+* The number of underpriced transactions - accumulated count over time
+```{r tx_pool_per_node_underpriced_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_underpriced") %>%      # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool over Time") +                      # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Underpriced txs") +                          # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+* The number of overflowed transactions - accumulated count over time
+```{r tx_pool_per_node_overflowed_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_overflowed") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool over Time") +                      # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("Overflowed txs") +                           # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
 
 ## Application Metrics
 
