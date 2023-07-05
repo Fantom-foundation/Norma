@@ -47,7 +47,7 @@ jobs:
       # small and can be fetched quickly.
     - run: mkdir -p /tmp/.docker-images
     - name: Cache Docker images
-      id: image-cache
+      id: image_cache
       uses: actions/cache@v3
       with:
         path: /tmp/.docker-images
@@ -63,14 +63,14 @@ jobs:
 
       # Fetch prometheus image if not cached
     - name: Fetch Prometheus image
-      if: steps.image-cache.outputs.cache-hit != 'true'
+      if: steps.image_cache.outputs['cache-hit'] != 'true'
       run: |
         docker image pull prom/prometheus:v2.44.0
         docker save -o /tmp/.docker-images/prometheus.tar prom/prometheus:v2.44.0
 
       # load prometheus image if cached
     - name: Load Prometheus image
-      if: steps.image-cache.outputs.cache-hit == 'true'
+      if: steps.image_cache.outputs['cache-hit'] == 'true'
       run: docker load -i /tmp/.docker-images/prometheus.tar
 
       # Use custom cache, because build-push action does not
