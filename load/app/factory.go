@@ -11,6 +11,8 @@ func NewApplication(name string, rpcClient RpcClient, primaryAccount *Account, n
 		return NewERC20Application(rpcClient, primaryAccount, numUsers)
 	case "counter", "":
 		return NewCounterApplication(rpcClient, primaryAccount, numUsers)
+	case "store":
+		return NewStoreApplication(rpcClient, primaryAccount, numUsers)
 	}
 	return nil, fmt.Errorf("unknown application '%s'", name)
 }
