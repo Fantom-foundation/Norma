@@ -1,122 +1,69 @@
 package shaper
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 )
 
 func TestSlopeShaper(t *testing.T) {
-	// Create a SlopeShaper with a start frequency of 5 Hz and increment of 5 Hz
-	shaper, startTime := initializeSlopeShaper(5, 5)
-
-	// The equation for the slope is t(n) = s + n * i, where `s` is the start frequency,
-	// `n` is the time since start and `i` is the increment frequency.
-
 	tests := []struct {
-		second   float32
-		expected time.Duration
+		// Shaper properties
+		startFrequency float64
+		increment      float64
+		// Query properties
+		from     time.Duration
+		to       time.Duration
+		expected float64
 	}{
-		// t(0) = 5 + 0 * 5 = 5
-		{0, time.Duration(float32(time.Second) / 5)},
-		// t(0.2) = 5 + 0.2 * 5 = 6
-		{0.2, time.Duration(float32(time.Second) / 6)},
-		// t(0.5) = 5 + 0.5 * 5 = 7.5
-		{0.5, time.Duration(float32(time.Second) / 7.5)},
-		// t(1) = 5 + 1 * 5 = 10
-		{1, time.Duration(float32(time.Second) / 10)},
-		// t(5) = 5 + 5 * 5 = 30
-		{5, time.Duration(float32(time.Second) / 30)},
+		// With start-frequency zero and positive increase
+		{0, 1, 0 * time.Second, 1 * time.Second, 0.5},
+		{0, 1, 0 * time.Second, 2 * time.Second, 2},
+		{0, 1, 0 * time.Second, 3 * time.Second, 4.5},
+
+		{0, 1, 1 * time.Second, 2 * time.Second, 1.5},
+		{0, 1, 1 * time.Second, 3 * time.Second, 4},
+		{0, 1, 2 * time.Second, 3 * time.Second, 2.5},
+
+		// No increase - constant rate
+		{1, 0, 0 * time.Second, 1 * time.Second, 1},
+		{2, 0, 0 * time.Second, 1 * time.Second, 2},
+		{1, 0, 0 * time.Second, 2 * time.Second, 2},
+		{1, 0, 1 * time.Second, 2 * time.Second, 1},
+
+		// With initial frequency + increment
+		{1, 1, 0 * time.Second, 1 * time.Second, 1.5},
+		{1, 1, 0 * time.Second, 2 * time.Second, 4},
+
+		// With negative increment
+		{1, -1, 0 * time.Second, 1 * time.Second, 0.5},
+		{1, -1, 0 * time.Second, 2 * time.Second, 0.5},
+		{1, -1, 2 * time.Second, 3 * time.Second, 0},
+
+		// With negative start frequency
+		{-1, 1, 0 * time.Second, 1 * time.Second, 0},
+		{-1, 1, 0 * time.Second, 2 * time.Second, 0.5},
+		{-1, 1, 2 * time.Second, 3 * time.Second, 1.5},
 	}
 
 	for _, test := range tests {
-		waitTime, send := shaper.GetWaitTimeForTimeStamp(startTime.Add(time.Duration(test.second * float32(time.Second))))
-		if !send {
-			t.Fatalf("Expected send to be true for second %f", test.second)
-		}
-		if waitTime != test.expected {
-			t.Fatalf("Expected %d, got %d", test.expected, waitTime)
-		}
+		t.Run(fmt.Sprintf("start_frequency=%f,inc=%f,offset=%v,duration=%v",
+			test.startFrequency, test.increment, test.from, test.to,
+		), func(t *testing.T) {
+			shaper := NewSlopeShaper(test.startFrequency, test.increment)
+
+			startTime := time.Now()
+			if got, want := shaper.GetNumMessagesInInterval(startTime, time.Duration(0)), float64(0); got != want {
+				t.Errorf("failed to initialize shaper, wanted %f, got %f", want, got)
+			}
+
+			got := shaper.GetNumMessagesInInterval(startTime.Add(test.from), test.to-test.from)
+			want := test.expected
+
+			if math.Abs(float64(got-want)) > 1e-6 {
+				t.Errorf("expected number of messages %f, got %f", want, got)
+			}
+		})
 	}
-}
-
-func TestSlopeShaperNegativeIncrementFrequency(t *testing.T) {
-	// Create a SlopeShaper with a start frequency of 5 Hz and decrement of 5 Hz
-	shaper, startTime := initializeSlopeShaper(50, -5)
-
-	// The equation for the slope is t(n) = s - n * i, where `s` is the start frequency,
-	// `n` is the time since start and `i` is the decrement frequency.
-
-	tests := []struct {
-		second   float32
-		expected time.Duration
-	}{
-		// t(0) = 50 - 0 * 5 = 50
-		{0, time.Duration(float32(time.Second) / 50)},
-		// t(0.2) = 50 - 0.2 * 5 = 49
-		{0.2, time.Duration(float32(time.Second) / 49)},
-		// t(0.5) = 50 - 0.5 * 5 = 47.5
-		{0.5, time.Duration(float32(time.Second) / 47.5)},
-		// t(1) = 50 - 1 * 5 = 45
-		{1, time.Duration(float32(time.Second) / 45)},
-		// t(5) = 50 - 5 * 5 = 25
-		{5, time.Duration(float32(time.Second) / 25)},
-	}
-
-	for _, test := range tests {
-		waitTime, send := shaper.GetWaitTimeForTimeStamp(startTime.Add(time.Duration(test.second * float32(time.Second))))
-		if !send {
-			t.Fatalf("Expected send to be true for second %f", test.second)
-		}
-		if waitTime != test.expected {
-			t.Fatalf("Expected %d, got %d", test.expected, waitTime)
-		}
-	}
-}
-
-func TestSlopeShaperSignalsNoSendOnZeroStartFrequency(t *testing.T) {
-	// Create a SlopeShaper with a start frequency of 0 Hz and increment of 5 Hz
-	shaper, startTime := initializeSlopeShaper(0, 5)
-
-	// Shaper should signalize no send on second 0
-	_, send := shaper.GetWaitTimeForTimeStamp(startTime)
-	if send {
-		t.Fatal("Expected no send at second 0")
-	}
-
-	// Shaper should signalize send on second 1
-	_, send = shaper.GetWaitTimeForTimeStamp(startTime.Add(time.Second))
-	if !send {
-		t.Fatal("Expected send at second 1")
-	}
-}
-
-func TestSlopeShaperSignalsNoSendOnDecrementedZeroFrequency(t *testing.T) {
-	// Create a SlopeShaper with a start frequency of 10 Hz and decrement of 5 Hz
-	shaper, startTime := initializeSlopeShaper(10, -5)
-
-	// Shaper should signalize send on second 0
-	_, send := shaper.GetWaitTimeForTimeStamp(startTime)
-	if !send {
-		t.Fatal("Expected send at second 0")
-	}
-
-	// Shaper should signalize send on second 1
-	_, send = shaper.GetWaitTimeForTimeStamp(startTime.Add(time.Second))
-	if !send {
-		t.Fatal("Expected send at second 1")
-	}
-
-	// Shaper should signalize no send on second 2
-	_, send = shaper.GetWaitTimeForTimeStamp(startTime.Add(2 * time.Second))
-	if send {
-		t.Fatal("Expected no send at second 2")
-	}
-}
-
-// initializeSlopeShaper initializes a SlopeShaper with the given start frequency and increment frequency.
-func initializeSlopeShaper(startFrequency, incrementFrequency float32) (*SlopeShaper, time.Time) {
-	shaper := NewSlopeShaper(startFrequency, incrementFrequency)
-	startTime := time.Now()
-	shaper.startTimeStamp = startTime
-	return shaper, startTime
 }

@@ -25,7 +25,7 @@ type AppController struct {
 }
 
 func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
-	trigger := make(chan struct{})
+	trigger := make(chan struct{}, 100)
 
 	rpcClient, err := network.DialRandomRpc()
 	if err != nil {
@@ -67,34 +67,29 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 func (ac *AppController) Run(ctx context.Context) error {
 	defer close(ac.trigger)
 	defer ac.rpcClient.Close()
-	missed := 0
+	var pending float64
+	lastUpdate := time.Now()
+
 	for {
+		// re-plenish the number of pending messages
+		now := time.Now()
+		pending += ac.shaper.GetNumMessagesInInterval(lastUpdate, now.Sub(lastUpdate))
+		lastUpdate = now
+
+		for pending > 0 {
+			ac.trigger <- struct{}{}
+			pending -= 1
+		}
+
 		select {
+		case <-time.After(time.Millisecond):
+			// just waiting for next time to send messages.
 		case <-ctx.Done():
-			// interrupt the loop if the context has been cancelled
-			if missed != 0 {
-				log.Printf("sending not fast enough for the required frequency: %d times\n", missed)
-			}
 			err := ctx.Err()
 			if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil // terminated gracefully
 			}
 			return err
-		default:
-			waitTime, shouldSend := ac.shaper.GetNextWaitTime()
-
-			// send only if the shaper says so
-			if shouldSend {
-				// trigger a worker to send a tx
-				select {
-				case ac.trigger <- struct{}{}:
-				default:
-					missed++
-				}
-			}
-
-			// wait for time determined by the shaper
-			time.Sleep(waitTime)
 		}
 	}
 }
