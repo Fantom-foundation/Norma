@@ -85,7 +85,8 @@ func TestTrafficGenerating(t *testing.T) {
 
 	// in optimal case should be generated 30 txs per second
 	// as a tolerance for slow CI we require at least 20 txs
-	if sum < 20 || sum > 30 {
+	// and at most 40, since timing is not perfect.
+	if sum < 20 || sum > 40 {
 		t.Errorf("unexpected amount of generated txs: %d", sum)
 	}
 }

@@ -1,18 +1,21 @@
 package shaper
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // ConstantShaper is used to send txs with a constant frequency
 type ConstantShaper struct {
-	interval time.Duration
+	frequency float64
 }
 
-func NewConstantShaper(frequency float32) *ConstantShaper {
+func NewConstantShaper(frequency float64) *ConstantShaper {
 	return &ConstantShaper{
-		interval: time.Duration(float32(time.Second) / frequency),
+		frequency: frequency,
 	}
 }
 
-func (s *ConstantShaper) GetNextWaitTime() (time.Duration, bool) {
-	return s.interval, true
+func (s *ConstantShaper) GetNumMessagesInInterval(start time.Time, duration time.Duration) float64 {
+	return math.Max(duration.Seconds()*float64(s.frequency), 0)
 }
