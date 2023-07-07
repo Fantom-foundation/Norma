@@ -1,14 +1,12 @@
 package netmon
 
 import (
-	"io"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
+	"io"
+	"strings"
+	"testing"
 )
 
 func TestCaptureSeriesFromNodeBlocks(t *testing.T) {
@@ -65,32 +63,33 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
-	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
 	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
 
-	reg, err := monitoring.NewNodeLogDispatcher(net, t.TempDir())
-	if err != nil {
-		t.Fatalf("failed to create node log dispatcher: %v", err)
-	}
-	defer reg.WaitForLogsToBeConsumed()
+	reg := monitor.NodeLogProvider().(*monitoring.NodeLogDispatcher)
+
 	source := NewNumberOfTransactionsSource(monitor)
 	reg.RegisterLogListener(source)
 
-	// pre-existing node with some blocks
+	// add node with some blocks
+	reg.AfterNodeCreation(node1)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// add second node - but we got still the same blockchain
 	reg.AfterNodeCreation(node2)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// next node will NOT be registered, since the metric is shutdown,
 	// but we got the same blockchain as before, i.e. no new blocks
 	_ = source.Shutdown()
 	reg.AfterNodeCreation(node3)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	testNetworkSubjects(t, source)
@@ -124,20 +123,14 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 	var network monitoring.Network
 	for _, want := range expectedBlocks {
 		var found bool
-		for i := 0; i < 100; i++ {
-			series, exists := source.GetData(network)
-			if exists {
-				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-					if source.getBlockProperty(want) == got.Value {
-						found = true
-						break
-					}
-				}
-				if found {
+		series, exists := source.GetData(network)
+		if exists {
+			for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+				if source.getBlockProperty(want) == got.Value {
+					found = true
 					break
 				}
 			}
-			time.Sleep(2 * 10 * time.Millisecond)
 		}
 
 		if !found {
