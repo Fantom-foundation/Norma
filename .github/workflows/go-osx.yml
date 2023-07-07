@@ -112,6 +112,6 @@ jobs:
 
     - name: Test
       working-directory: ./
-      run: go test -count=1 ./...
+      run: go test -p 1 -count=1 ./...
       env:
         DOCKER_HOST: "unix:///Users/runner/.colima/default/docker.sock"
