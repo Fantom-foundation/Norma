@@ -26,6 +26,9 @@ jobs:
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -39,20 +42,65 @@ jobs:
       with:
         working-directory: ./analysis/report
 
+      # Use cache for Docker images
+      # Only cache prometheus image, because other images are
+      # small and can be fetched quickly.
+    - run: mkdir -p /tmp/.docker-images
+    - name: Cache Docker images
+      id: image_cache
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.docker-images
+        key: ${{ runner.os }}-docker-images
+
     - name: Fetch Docker test-image
       run: docker image pull hello-world
 
     - name: Fetch Docker alpine-image
       run: docker image pull alpine
 
+      # Fetch prometheus image if not cached
     - name: Fetch Prometheus image
-      run: docker image pull prom/prometheus:v2.44.0
+      if: steps.image_cache.outputs['cache-hit'] != 'true'
+      run: |
+        docker image pull prom/prometheus:v2.44.0
+        docker save -o /tmp/.docker-images/prometheus.tar prom/prometheus:v2.44.0
+
+      # Load prometheus image if cached
+    - name: Load Prometheus image
+      if: steps.image_cache.outputs['cache-hit'] == 'true'
+      run: docker load -i /tmp/.docker-images/prometheus.tar
+
+      # Use custom cache, because build-push action does not
+      # allow to specify cache name, so it interferes with
+      # other workflows.
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
 
     - name: Build Docker Image
-      working-directory: ./
-      # DOCKER_BUILDKIT=1 is required for the build, because latest ubuntu image (currently)
-      # contains docker 20.10, which does not support BuildKit by default.
-      run: DOCKER_BUILDKIT=1 docker build . -t opera
+      uses: docker/build-push-action@v4
+      with:
+        context: ./
+        tags: opera
+        load: true
+        push: false
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      # This ugly bit is necessary if you don't want your cache to grow forever
+      # until it hits GitHub's limit.
+      # Temp fix
+      # https://github.com/docker/build-push-action/issues/252
+      # https://github.com/moby/buildkit/issues/1896
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
     - name: Build
       working-directory: ./
