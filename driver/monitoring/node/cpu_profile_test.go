@@ -14,7 +14,9 @@ func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create a docker client: %v", err)
 	}
-	defer docker.Close()
+	t.Cleanup(func() {
+		_ = docker.Close()
+	})
 	node, err := opera.StartOperaDockerNode(docker, nil, &opera.OperaNodeConfig{
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
@@ -22,8 +24,9 @@ func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create an Opera node on Docker: %v", err)
 	}
-	defer node.Cleanup()
-
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
 	data, err := GetPprofData(node, time.Second)
 	if err != nil {
 		t.Errorf("failed to collect pprof data from node: %v", err)
