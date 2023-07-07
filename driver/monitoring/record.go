@@ -24,7 +24,7 @@ func (r *Record) SetSubject(subject any) *Record {
 		r.Node = string(value)
 	case App:
 		r.App = string(value)
-	case Account:
+	case User:
 		r.App = string(value.App)
 		var worker int64 = int64(value.Id)
 		r.Worker = &worker
@@ -57,6 +57,8 @@ func (r *Record) SetValue(value any) *Record {
 	switch v := value.(type) {
 	case int:
 		r.Value = fmt.Sprintf("%d", v)
+	case float64:
+		r.Value = fmt.Sprintf("%v", v)
 	case float32:
 		r.Value = fmt.Sprintf("%v", v)
 	case string:

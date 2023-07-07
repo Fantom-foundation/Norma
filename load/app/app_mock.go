@@ -38,34 +38,34 @@ func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
 }
 
-// CreateGenerator mocks base method.
-func (m *MockApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
+// CreateUser mocks base method.
+func (m *MockApplication) CreateUser(rpcClient RpcClient) (User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateGenerator", rpcClient)
-	ret0, _ := ret[0].(TransactionGenerator)
+	ret := m.ctrl.Call(m, "CreateUser", rpcClient)
+	ret0, _ := ret[0].(User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateGenerator indicates an expected call of CreateGenerator.
-func (mr *MockApplicationMockRecorder) CreateGenerator(rpcClient interface{}) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockApplicationMockRecorder) CreateUser(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenerator", reflect.TypeOf((*MockApplication)(nil).CreateGenerator), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockApplication)(nil).CreateUser), rpcClient)
 }
 
-// GetReceivedTransations mocks base method.
-func (m *MockApplication) GetReceivedTransations(rpcClient RpcClient) (uint64, error) {
+// GetReceivedTransactions mocks base method.
+func (m *MockApplication) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReceivedTransations", rpcClient)
+	ret := m.ctrl.Call(m, "GetReceivedTransactions", rpcClient)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetReceivedTransations indicates an expected call of GetReceivedTransations.
-func (mr *MockApplicationMockRecorder) GetReceivedTransations(rpcClient interface{}) *gomock.Call {
+// GetReceivedTransactions indicates an expected call of GetReceivedTransactions.
+func (mr *MockApplicationMockRecorder) GetReceivedTransactions(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransations", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransations), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransactions", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransactions), rpcClient)
 }
 
 // WaitUntilApplicationIsDeployed mocks base method.
@@ -296,31 +296,31 @@ func (mr *MockRpcClientMockRecorder) SuggestGasTipCap(ctx interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasTipCap", reflect.TypeOf((*MockRpcClient)(nil).SuggestGasTipCap), ctx)
 }
 
-// MockTransactionGenerator is a mock of TransactionGenerator interface.
-type MockTransactionGenerator struct {
+// MockUser is a mock of User interface.
+type MockUser struct {
 	ctrl     *gomock.Controller
-	recorder *MockTransactionGeneratorMockRecorder
+	recorder *MockUserMockRecorder
 }
 
-// MockTransactionGeneratorMockRecorder is the mock recorder for MockTransactionGenerator.
-type MockTransactionGeneratorMockRecorder struct {
-	mock *MockTransactionGenerator
+// MockUserMockRecorder is the mock recorder for MockUser.
+type MockUserMockRecorder struct {
+	mock *MockUser
 }
 
-// NewMockTransactionGenerator creates a new mock instance.
-func NewMockTransactionGenerator(ctrl *gomock.Controller) *MockTransactionGenerator {
-	mock := &MockTransactionGenerator{ctrl: ctrl}
-	mock.recorder = &MockTransactionGeneratorMockRecorder{mock}
+// NewMockUser creates a new mock instance.
+func NewMockUser(ctrl *gomock.Controller) *MockUser {
+	mock := &MockUser{ctrl: ctrl}
+	mock.recorder = &MockUserMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTransactionGenerator) EXPECT() *MockTransactionGeneratorMockRecorder {
+func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
 }
 
 // GenerateTx mocks base method.
-func (m *MockTransactionGenerator) GenerateTx() (*types.Transaction, error) {
+func (m *MockUser) GenerateTx() (*types.Transaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateTx")
 	ret0, _ := ret[0].(*types.Transaction)
@@ -329,13 +329,13 @@ func (m *MockTransactionGenerator) GenerateTx() (*types.Transaction, error) {
 }
 
 // GenerateTx indicates an expected call of GenerateTx.
-func (mr *MockTransactionGeneratorMockRecorder) GenerateTx() *gomock.Call {
+func (mr *MockUserMockRecorder) GenerateTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockTransactionGenerator)(nil).GenerateTx))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockUser)(nil).GenerateTx))
 }
 
 // GetSentTransactions mocks base method.
-func (m *MockTransactionGenerator) GetSentTransactions() uint64 {
+func (m *MockUser) GetSentTransactions() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSentTransactions")
 	ret0, _ := ret[0].(uint64)
@@ -343,7 +343,7 @@ func (m *MockTransactionGenerator) GetSentTransactions() uint64 {
 }
 
 // GetSentTransactions indicates an expected call of GetSentTransactions.
-func (mr *MockTransactionGeneratorMockRecorder) GetSentTransactions() *gomock.Call {
+func (mr *MockUserMockRecorder) GetSentTransactions() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockTransactionGenerator)(nil).GetSentTransactions))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockUser)(nil).GetSentTransactions))
 }

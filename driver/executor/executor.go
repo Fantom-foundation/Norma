@@ -194,9 +194,9 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	if source.Instances != nil {
 		instances = *source.Instances
 	}
-	accounts := 1
-	if source.Accounts != nil {
-		accounts = *source.Accounts
+	users := 1
+	if source.Users != nil {
+		users = *source.Users
 	}
 	startTime := Time(0)
 	if source.Start != nil {
@@ -210,9 +210,10 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-			Name:     name,
-			Rate:     &source.Rate,
-			Accounts: accounts,
+			Name:  name,
+			Type:  source.Type,
+			Rate:  &source.Rate,
+			Users: users,
 		}); err == nil { // schedule application only when it could be created
 			queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
 				return newApp.Start()

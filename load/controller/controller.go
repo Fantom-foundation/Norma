@@ -20,12 +20,12 @@ type AppController struct {
 	application app.Application
 	network     driver.Network
 	trigger     chan struct{}
-	accounts    []app.TransactionGenerator
+	users       []app.User
 	rpcClient   app.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, generators int, network driver.Network) (*AppController, error) {
-	trigger := make(chan struct{})
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
+	trigger := make(chan struct{}, 100)
 
 	rpcClient, err := network.DialRandomRpc()
 	if err != nil {
@@ -33,17 +33,17 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 	}
 
 	// initialize workers for individual generators
-	accounts := make([]app.TransactionGenerator, 0, generators)
-	for i := 0; i < generators; i++ {
-		gen, err := application.CreateGenerator(rpcClient)
+	users := make([]app.User, 0, numUsers)
+	for i := 0; i < numUsers; i++ {
+		gen, err := application.CreateUser(rpcClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
 
 		go runGeneratorLoop(gen, trigger, network)
-		accounts = append(accounts, gen)
+		users = append(users, gen)
 		if i%100 == 0 {
-			log.Printf("initialized %d of %d generators ...\n", i+1, generators)
+			log.Printf("initialized %d of %d users ...\n", i+1, numUsers)
 		}
 	}
 
@@ -59,7 +59,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 		application: application,
 		network:     network,
 		trigger:     trigger,
-		accounts:    accounts,
+		users:       users,
 		rpcClient:   rpcClient,
 	}, nil
 }
@@ -67,53 +67,48 @@ func NewAppController(application app.Application, shaper shaper.Shaper, generat
 func (ac *AppController) Run(ctx context.Context) error {
 	defer close(ac.trigger)
 	defer ac.rpcClient.Close()
-	missed := 0
+	var pending float64
+	lastUpdate := time.Now()
+
 	for {
+		// re-plenish the number of pending messages
+		now := time.Now()
+		pending += ac.shaper.GetNumMessagesInInterval(lastUpdate, now.Sub(lastUpdate))
+		lastUpdate = now
+
+		for pending > 0 {
+			ac.trigger <- struct{}{}
+			pending -= 1
+		}
+
 		select {
+		case <-time.After(time.Millisecond):
+			// just waiting for next time to send messages.
 		case <-ctx.Done():
-			// interrupt the loop if the context has been cancelled
-			if missed != 0 {
-				log.Printf("sending not fast enough for the required frequency: %d times\n", missed)
-			}
 			err := ctx.Err()
 			if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil // terminated gracefully
 			}
 			return err
-		default:
-			waitTime, shouldSend := ac.shaper.GetNextWaitTime()
-
-			// send only if the shaper says so
-			if shouldSend {
-				// trigger a worker to send a tx
-				select {
-				case ac.trigger <- struct{}{}:
-				default:
-					missed++
-				}
-			}
-
-			// wait for time determined by the shaper
-			time.Sleep(waitTime)
 		}
 	}
 }
 
-func (ac *AppController) GetNumberOfAccounts() int {
-	return len(ac.accounts)
+func (ac *AppController) GetNumberOfUsers() int {
+	return len(ac.users)
 }
 
-func (ac *AppController) GetSentTransactions(account int) (uint64, error) {
-	if account < 0 || account >= len(ac.accounts) {
+func (ac *AppController) GetSentTransactions(user int) (uint64, error) {
+	if user < 0 || user >= len(ac.users) {
 		return 0, nil
 	}
-	return ac.accounts[account].GetSentTransactions(), nil
+	return ac.users[user].GetSentTransactions(), nil
 }
 
 func (ac *AppController) GetReceivedTransactions() (uint64, error) {
 	for retry := 0; ; retry++ {
 		// fetch transaction data from the network
-		res, err := ac.application.GetReceivedTransations(ac.rpcClient)
+		res, err := ac.application.GetReceivedTransactions(ac.rpcClient)
 		if err == nil {
 			return res, nil
 		}

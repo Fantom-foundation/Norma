@@ -17,13 +17,13 @@ type Network struct{}
 // App is an identifier of an application deployed in the network
 type App string
 
-// Account is an identifier of an account interacting with an application
-type Account struct {
+// User is an identifier of a user/account interacting with an application.
+type User struct {
 	App App // The application being a part of.
-	Id  int // A unique identifier of the account.
+	Id  int // A unique identifier of the user/account.
 }
 
-func (a *Account) Less(b *Account) bool {
+func (a *User) Less(b *User) bool {
 	return a.App < b.App || (a.App == b.App && a.Id < b.Id)
 }
 

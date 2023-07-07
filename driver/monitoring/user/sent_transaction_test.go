@@ -1,4 +1,4 @@
-package accountmon
+package user
 
 import (
 	"testing"

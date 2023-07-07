@@ -80,6 +80,18 @@ func (mr *MockPrometheusLogProviderMockRecorder) RegisterLogListener(key, listen
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterLogListener", reflect.TypeOf((*MockPrometheusLogProvider)(nil).RegisterLogListener), key, listener)
 }
 
+// Shutdown mocks base method.
+func (m *MockPrometheusLogProvider) Shutdown() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Shutdown")
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *MockPrometheusLogProviderMockRecorder) Shutdown() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockPrometheusLogProvider)(nil).Shutdown))
+}
+
 // UnregisterLogListener mocks base method.
 func (m *MockPrometheusLogProvider) UnregisterLogListener(key PrometheusLogKey, listener TimeLogListener) {
 	m.ctrl.T.Helper()

@@ -186,3 +186,25 @@ func TestMonitorIntegrationPrometheusLogReceived(t *testing.T) {
 
 	<-done
 }
+
+func TestMonitor_GetPrometheusLog(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+
+	// simulate existing nodes
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	outDir := t.TempDir()
+	monitor, err := NewMonitor(net, MonitorConfig{OutputDir: outDir})
+	if err != nil {
+		t.Fatalf("failed to create monitor instance: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = monitor.Shutdown()
+	})
+
+	if monitor.PrometheusLogProvider() == nil {
+		t.Errorf("prometheus log provider not configured")
+	}
+}

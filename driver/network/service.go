@@ -64,6 +64,7 @@ func GetFreePorts(num int) ([]Port, error) {
 				log.Printf("failed to create a new listening port")
 				continue
 			}
+			// make sure to close the listener in case of an error
 			defer listener.Close()
 
 			port := listener.Addr().String()
@@ -79,6 +80,14 @@ func GetFreePorts(num int) ([]Port, error) {
 				log.Printf("invalid port format: %s, err: %v", port, err)
 				continue
 			}
+
+			// close the listener, if it fails, we will not be able to use the port,
+			// because it is bound
+			if err := listener.Close(); err != nil {
+				log.Printf("failed to close listener: %v", err)
+				continue
+			}
+
 			ports = append(ports, Port(res))
 			found = true
 		}

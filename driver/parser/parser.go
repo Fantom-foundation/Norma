@@ -35,8 +35,9 @@ type Node struct {
 // shape (see Rate below), and a number of instances.
 type Application struct {
 	Name      string
+	Type      string   `yaml:",omitempty"` // empty is interpreted as the default app type
 	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
-	Accounts  *int     `yaml:",omitempty"` // nil is interpreted as 1
+	Users     *int     `yaml:",omitempty"` // nil is interpreted as 1
 	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
 	Rate      Rate
