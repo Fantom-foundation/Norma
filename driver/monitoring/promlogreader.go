@@ -13,9 +13,10 @@ import (
 // PrometheusLogValue is one measured value obtained from Prometheus.
 // It contains the measured value itself, and  the metrics' categorisation
 // falling into one of the: counter, gauge, summary.
-// For the summary, the underlying value can come from the Meter or Timer. If the metric is summary,
-// it contains additionally percentile.
+// If the metric is summary, it contains additionally percentile.
 // For more information about metrics type, the reader can have a look at: https://geth.ethereum.org/docs/monitoring/metrics
+// Notice that a metric type of meter can be used in addition to the three mentioned above,
+// however, it shows as gauge in the output.
 type PrometheusLogValue struct {
 	PrometheusLogKey
 	metricType PrometheusMetricType
@@ -36,7 +37,7 @@ type PrometheusMetricType string
 const (
 	counterPrometheusMetricType PrometheusMetricType = "counter" // a counter can be increased or decreased
 	gaugePrometheusMetricType                        = "gauge"   // a gauge works as the counter, but can be also set to a direct value
-	summaryPrometheusMetricType                      = "summary" // summary is either a Meter or a Timer, they both measure throughput
+	summaryPrometheusMetricType                      = "summary" // summary measure throughput split into quantiles
 )
 
 // ParsePrometheusLogReader reads text logs from the input reader, and produces the output slice of parsed representation of the log.

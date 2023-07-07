@@ -57,6 +57,8 @@ func (r *Record) SetValue(value any) *Record {
 	switch v := value.(type) {
 	case int:
 		r.Value = fmt.Sprintf("%d", v)
+	case float64:
+		r.Value = fmt.Sprintf("%v", v)
 	case float32:
 		r.Value = fmt.Sprintf("%v", v)
 	case string:
