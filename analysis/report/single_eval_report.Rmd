@@ -286,7 +286,7 @@ data <- all_data %>%
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
-    ggtitle("TxPool over Time") +                      # chart title
+    ggtitle("TxPool Received Transactions over Time") +  # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Received txs") +                             # y-axis title
     labs(colour="Nodes") +                             # legend title
@@ -303,7 +303,7 @@ data <- all_data %>%
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
-    ggtitle("TxPool over Time") +                      # chart title
+    ggtitle("TxPool Valid Transactions over Time") +   # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Valid txs") +                                # y-axis title
     labs(colour="Nodes") +                             # legend title
@@ -320,7 +320,7 @@ data <- all_data %>%
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
-    ggtitle("TxPool over Time") +                      # chart title
+    ggtitle("TxPool Invalid Transactions over Time") +   # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Invalid txs") +                              # y-axis title
     labs(colour="Nodes") +                             # legend title
@@ -337,7 +337,7 @@ data <- all_data %>%
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
-    ggtitle("TxPool over Time") +                      # chart title
+    ggtitle("TxPool Underpriced Transactions over Time") +  # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Underpriced txs") +                          # y-axis title
     labs(colour="Nodes") +                             # legend title
@@ -354,7 +354,7 @@ data <- all_data %>%
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
-    ggtitle("TxPool over Time") +                      # chart title
+    ggtitle("TxPool Overflowed Transactions over Time") +   # chart title
     xlab("Time") +                                     # x-axis title
     ylab("Overflowed txs") +                           # y-axis title
     labs(colour="Nodes") +                             # legend title
@@ -362,6 +362,43 @@ ggplot(data=data) +
     scale_x_datetime(date_labels = "%c")               # format date labels
 ```
 
+#### TxPool - Queued to Pending Transitions
+
+* The number of transactions in the queued state - current count over time
+
+```{r tx_pool_per_node_quedued_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_queued") %>%           # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool Queued Transactions over Time") +  # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("gueued txs") +                               # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+* The number of transactions in the pending state - current count over time
+
+```{r tx_pool_per_node_pending_txs, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "txpool_pending") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))                      # convert value to int
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("TxPool Pending Transactions over Time") + # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("pending txs") +                              # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
 
 ## Application Metrics
 
