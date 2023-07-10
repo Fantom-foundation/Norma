@@ -79,6 +79,10 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
+	if err := scenario.Check(); err != nil {
+		return err
+	}
+
 	fmt.Printf("Starting evaluation %s\n", label)
 	outputDir, err := os.MkdirTemp("", fmt.Sprintf("norma_data_%s_", label))
 	if err != nil {

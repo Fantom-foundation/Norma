@@ -70,6 +70,8 @@ func (ac *AppController) Run(ctx context.Context) error {
 	var pending float64
 	lastUpdate := time.Now()
 
+	ac.shaper.Start(lastUpdate, ac)
+
 	for {
 		// re-plenish the number of pending messages
 		now := time.Now()
@@ -98,11 +100,20 @@ func (ac *AppController) GetNumberOfUsers() int {
 	return len(ac.users)
 }
 
-func (ac *AppController) GetSentTransactions(user int) (uint64, error) {
+func (ac *AppController) GetTransactionsSentBy(user int) (uint64, error) {
 	if user < 0 || user >= len(ac.users) {
 		return 0, nil
 	}
 	return ac.users[user].GetSentTransactions(), nil
+}
+
+func (ac *AppController) GetSentTransactions() (uint64, error) {
+	sum := uint64(0)
+	for i := 0; i < ac.GetNumberOfUsers(); i++ {
+		cur, _ := ac.GetTransactionsSentBy(i)
+		sum += cur
+	}
+	return sum, nil
 }
 
 func (ac *AppController) GetReceivedTransactions() (uint64, error) {

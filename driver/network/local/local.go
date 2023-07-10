@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"log"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -232,7 +233,7 @@ func (a *localApplication) GetNumberOfUsers() int {
 }
 
 func (a *localApplication) GetSentTransactions(user int) (uint64, error) {
-	return a.controller.GetSentTransactions(user)
+	return a.controller.GetTransactionsSentBy(user)
 }
 
 func (a *localApplication) GetReceivedTransactions() (uint64, error) {
