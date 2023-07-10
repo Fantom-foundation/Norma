@@ -110,3 +110,36 @@ ggplot() +
     labs(colour = "Runs") +                            # legend title
     theme(plot.title = element_text(hjust = 0.5))      # center title
 ```
+
+## Node Metrics
+
+### Block Processing Time
+
+The following chart shows the time required by each node for processing each individual block.
+
+```{r block_processing_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockEventAndTxsProcessingTime") %>%
+    mutate(value = as.numeric(value)) %>%
+    mutate(label = paste(run, node))
+
+ggplot(data = data) +
+    geom_point(aes(x=block, y=value/1e6, group=label, colour = factor(label))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour = "Nodes") +                      # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
+```
+
+While the individual sample points may provide the highest level of detail, the smoothed out trend lines of the following plot may provide a cleaner comparison between the processing times of individual nodes.
+
+```{r block_processing_time_smooth, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+ggplot(data = data) +
+    geom_smooth(aes(x=block, y=value/1.e6, group=label, colour = factor(label))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour = "Nodes") +                      # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
+```
