@@ -21,14 +21,13 @@ func NewSlopeShaper(startFrequency, incrementFrequency float64) *SlopeShaper {
 	}
 }
 
+func (s *SlopeShaper) Start(start time.Time, info LoadInfoSource) {
+	s.startTimeStamp = start
+}
+
 // GetNumMessagesInInterval provides the number of messages to be produced
 // in the given time interval.
 func (s *SlopeShaper) GetNumMessagesInInterval(start time.Time, duration time.Duration) float64 {
-	// the shaper starts its slope the first time it is called.
-	if s.startTimeStamp.IsZero() {
-		s.startTimeStamp = start
-	}
-
 	// The number of messages to be sent in the interval is equal to the area
 	// under the frequency-time curve given by
 	//

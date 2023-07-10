@@ -54,9 +54,7 @@ func TestSlopeShaper(t *testing.T) {
 			shaper := NewSlopeShaper(test.startFrequency, test.increment)
 
 			startTime := time.Now()
-			if got, want := shaper.GetNumMessagesInInterval(startTime, time.Duration(0)), float64(0); got != want {
-				t.Errorf("failed to initialize shaper, wanted %f, got %f", want, got)
-			}
+			shaper.Start(startTime, nil)
 
 			got := shaper.GetNumMessagesInInterval(startTime.Add(test.from), test.to-test.from)
 			want := test.expected

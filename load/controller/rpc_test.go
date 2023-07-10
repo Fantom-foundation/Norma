@@ -2,9 +2,10 @@ package controller_test
 
 import (
 	"context"
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
@@ -73,13 +74,9 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	sum := uint64(0)
-	for i := 0; i < app.GetNumberOfUsers(); i++ {
-		count, err := app.GetSentTransactions(i)
-		if err != nil {
-			t.Fatalf("failed to fetch sent transactions from account %d: %v", i, err)
-		}
-		sum += count
+	sum, err := app.GetSentTransactions()
+	if err != nil {
+		t.Fatalf("failed to fetch sent transactions: %v", err)
 	}
 
 	if received, err := app.GetReceivedTransactions(); err != nil || received != sum {

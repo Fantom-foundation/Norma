@@ -70,6 +70,44 @@ func TestTimeRange_StartTimeBiggerThanEndTimeIsDetected(t *testing.T) {
 	}
 }
 
+func TestAutoCheck_DefaultValueIsValid(t *testing.T) {
+	auto := Auto{}
+	if err := auto.Check(); err != nil {
+		t.Errorf("issue reported for valid auto-shape: %v", err)
+	}
+}
+
+func TestAutoCheck_NegativeIncreaseIsDetected(t *testing.T) {
+	auto := Auto{Increase: new(float32)}
+	if err := auto.Check(); err == nil {
+		t.Errorf("zero increase rate should be detected")
+	}
+	*auto.Increase = -10
+	if err := auto.Check(); err == nil {
+		t.Errorf("negative increase rate should be detected")
+	}
+}
+
+func TestAutoCheck_InvalidDecreaseRateIsDetected(t *testing.T) {
+	auto := Auto{Decrease: new(float32)}
+	*auto.Decrease = 0
+	if err := auto.Check(); err != nil {
+		t.Errorf("zero decrease ratio should be fine")
+	}
+	*auto.Decrease = 1
+	if err := auto.Check(); err != nil {
+		t.Errorf("100%% decrease ratio should be fine")
+	}
+	*auto.Decrease = -0.1
+	if err := auto.Check(); err == nil {
+		t.Errorf("negative decrease rate should be detected")
+	}
+	*auto.Decrease = 1.1
+	if err := auto.Check(); err == nil {
+		t.Errorf(">100%% decrease rate should be detected")
+	}
+}
+
 func TestWaveCheck_CorrectWaveDefinitionIsExcepted(t *testing.T) {
 	wave := Wave{}
 	wave.Max = 20
