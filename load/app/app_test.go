@@ -98,4 +98,12 @@ func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Clien
 	if got, want := gen.GetSentTransactions(), numTransactions; got != uint64(want) {
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
 	}
+
+	if received, err := app.GetReceivedTransactions(rpcClient); err != nil {
+		t.Fatalf("unable to get amount of received txs; %v", err)
+	} else {
+		if received != 10 {
+			t.Errorf("unexpected amount of txs in chain (%d)", received)
+		}
+	}
 }
