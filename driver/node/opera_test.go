@@ -31,6 +31,10 @@ func TestOperaNode_StartAndStop(t *testing.T) {
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
 	if err != nil {
 		t.Fatalf("failed to create an Opera node on Docker: %v", err)
 	}
@@ -54,6 +58,10 @@ func TestOperaNode_RpcServiceIsReadyAfterStartup(t *testing.T) {
 		Label:         "test",
 		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
 	})
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
 	if err != nil {
 		t.Fatalf("failed to create an Opera node on Docker: %v", err)
 	}
@@ -62,9 +70,6 @@ func TestOperaNode_RpcServiceIsReadyAfterStartup(t *testing.T) {
 	})
 	if id, err := node.GetNodeID(); err != nil || len(id) == 0 {
 		t.Errorf("failed to fetch NodeID from Opera node: '%v', err: %v", id, err)
-	}
-	if err = node.host.Stop(); err != nil {
-		t.Errorf("failed to stop Opera node: %v", err)
 	}
 }
 

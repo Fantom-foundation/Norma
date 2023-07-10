@@ -64,30 +64,26 @@ func Start(net driver.Network, dn *docker.Network) (*Prometheus, error) {
 		return nil, err
 	}
 
-	// wait until the prometheus inside the Container is ready. (30 seconds max)
+	// wait until the prometheus inside the Container is ready.
 	// this is necessary for SIGHUP signal to be delivered correctly
-	for i := 0; i < 30; i++ {
-		// send get request to `<url>/-/ready` which contains status, from prometheus docs:
-		// "The readiness endpoint returns a 200 OK HTTP status code if Prometheus is ready to serve traffic."
+	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		resp, err := http.Get(prometheus.GetUrl() + "/-/ready")
-		if err == nil {
-			if resp.StatusCode != http.StatusOK {
-				continue
-			}
-
-			log.Printf("started Prometheus on %s", prometheus.GetUrl())
-
-			// listen for new Nodes
-			net.RegisterListener(prometheus)
-
-			// get nodes that have been started before this instance creation
-			for _, node := range prometheus.net.GetActiveNodes() {
-				prometheus.AfterNodeCreation(node)
-			}
-
-			return prometheus, nil
+		if err == nil && resp.StatusCode != http.StatusOK {
+			err = fmt.Errorf("not yet HTTP OK")
 		}
-		time.Sleep(time.Second)
+		return err
+	}); err == nil {
+		log.Printf("started Prometheus on %s", prometheus.GetUrl())
+
+		// listen for new Nodes
+		net.RegisterListener(prometheus)
+
+		// get nodes that have been started before this instance creation
+		for _, node := range prometheus.net.GetActiveNodes() {
+			prometheus.AfterNodeCreation(node)
+		}
+
+		return prometheus, nil
 	}
 
 	// if we reach this point, the prometheus instance is not ready

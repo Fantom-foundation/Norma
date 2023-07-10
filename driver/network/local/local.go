@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"log"
 	"math/rand"
 	"sync"
+	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -184,7 +186,9 @@ func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
 	if rpcUrl == nil {
 		return nil, fmt.Errorf("websocket service is not available")
 	}
-	return ethclient.Dial(string(*rpcUrl))
+	return network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
+		return ethclient.Dial(string(*rpcUrl))
+	})
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to
@@ -247,7 +251,9 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("primary node is not running an RPC server")
 	}
 
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
+		return ethclient.Dial(string(*rpcUrl))
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}

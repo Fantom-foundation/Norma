@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"testing"
 	"time"
 
@@ -28,7 +29,10 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("websocket service is not available")
 	}
 
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
+		return ethclient.Dial(string(*rpcUrl))
+	})
+
 	if err != nil {
 		t.Fatal("unable to connect the the rpc")
 	}

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"log"
 	"time"
 
@@ -32,7 +33,7 @@ func (p RpcWorkerPool) AfterNodeCreation(newNode driver.Node) {
 	}
 	for i := 0; i < 150; i++ {
 		go func() {
-			if err := runRpcSenderLoop(*rpcUrl, 60, p.txs); err != nil {
+			if err := runRpcSenderLoop(*rpcUrl, network.DefaultRetryAttempts, p.txs); err != nil {
 				log.Printf("failed to open RPC connection; %v", err)
 			}
 		}()
@@ -49,15 +50,9 @@ func (p RpcWorkerPool) Close() error {
 }
 
 func runRpcSenderLoop(rpcUrl driver.URL, connectAttempts int, txs <-chan *types.Transaction) error {
-	var rpcClient *ethclient.Client
-	var err error
-	for i := 0; i < connectAttempts; i++ {
-		rpcClient, err = ethclient.Dial(string(rpcUrl))
-		if err == nil {
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
+	rpcClient, err := network.RetryReturn(connectAttempts, 1*time.Second, func() (*ethclient.Client, error) {
+		return ethclient.Dial(string(rpcUrl))
+	})
 
 	if err != nil {
 		return err

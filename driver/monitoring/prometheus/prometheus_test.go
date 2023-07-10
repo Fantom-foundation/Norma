@@ -2,6 +2,8 @@ package prometheusmon
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"io"
 	"net/http"
 	"testing"
@@ -60,30 +62,32 @@ func TestNodeCanBeAdded(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 	// wait for prometheus to reload config
-	loaded := false
-	for i := 0; i < 50; i++ {
+	err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		// verify node is added by calling prometheus API
 		resp, err := http.Get(prom.GetUrl() + "/api/v1/targets")
 		if err != nil {
-			t.Fatalf("error: %v", err)
+			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+			return fmt.Errorf("status code not HTTP OK: %d", resp.StatusCode)
 		}
+
 		// check response contains the node's label
 		rawResponse, err := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
 		if err != nil {
-			t.Fatalf("error: %v", err)
+			return err
 		}
+		_ = resp.Body.Close()
+
 		if bytes.Contains(rawResponse, []byte(node.GetLabel())) {
-			loaded = true
-			break
+			return fmt.Errorf("response does not contain Node Label: %s", rawResponse)
 		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	if !loaded {
-		t.Fatalf("node '%s' not added into prometheus", node.GetLabel())
+
+		return nil
+	})
+
+	if err != nil {
+		t.Fatalf("node '%s' not added into prometheus: %s", node.GetLabel(), err)
 	}
 }
 
