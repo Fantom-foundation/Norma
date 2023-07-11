@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -18,9 +19,11 @@ type Sensor[T any] interface {
 // node-associated sensors for data.
 type PeriodicDataSource[S comparable, T any] struct {
 	*SyncedSeriesSource[S, monitoring.Time, T]
-	period time.Duration
-	stop   chan bool  // used to signal per-node collectors about the shutdown
-	done   chan error // used to signal collector shutdown to source
+	period   time.Duration
+	stop     chan bool // used to signal per-node collectors about the shutdown
+	done     *sync.WaitGroup
+	errors   []error
+	errorsMu *sync.Mutex
 }
 
 // NewPeriodicDataSource creates a new data source managing per-node sensor
@@ -40,13 +43,14 @@ func NewPeriodicDataSourceWithPeriod[S comparable, T any](
 	period time.Duration,
 ) *PeriodicDataSource[S, T] {
 	stop := make(chan bool)
-	done := make(chan error)
 
 	res := &PeriodicDataSource[S, T]{
 		SyncedSeriesSource: NewSyncedSeriesSource(metric),
 		period:             period,
 		stop:               stop,
-		done:               done,
+		done:               &sync.WaitGroup{},
+		errorsMu:           &sync.Mutex{},
+		errors:             make([]error, 0, 10),
 	}
 
 	return res
@@ -54,8 +58,11 @@ func NewPeriodicDataSourceWithPeriod[S comparable, T any](
 
 func (s *PeriodicDataSource[S, T]) Shutdown() error {
 	close(s.stop)
-	<-s.done
-	return s.SyncedSeriesSource.Shutdown()
+	s.done.Wait()
+	s.errorsMu.Lock()
+	err := errors.Join(s.errors...)
+	s.errorsMu.Unlock()
+	return errors.Join(err, s.SyncedSeriesSource.Shutdown())
 }
 
 func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error {
@@ -65,11 +72,9 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 	}
 
 	// Start background routine collecting sensor data.
+	s.done.Add(1)
 	go func() {
-		var err error
-		defer func() {
-			s.done <- err
-		}()
+		defer s.done.Done()
 
 		// Introduce random sampling offsets to avoid load peaks and to
 		// eliminate steps in aggregated metrics.
@@ -85,10 +90,14 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 				if err != nil {
 					errs = append(errs, err)
 				} else {
-					data.Append(monitoring.NewTime(now), value)
+					if err := data.Append(monitoring.NewTime(now), value); err != nil {
+						errs = append(errs, err)
+					}
 				}
 			case <-s.stop:
-				err = errors.Join(errs...)
+				s.errorsMu.Lock()
+				s.errors = append(s.errors, errs...)
+				s.errorsMu.Unlock()
 				return
 			}
 		}
