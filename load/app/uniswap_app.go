@@ -13,14 +13,16 @@ import (
 	"sync/atomic"
 )
 
-const TokensInChain = 3
+const TokensInChain = 4
 const PairsInChain = TokensInChain - 1
 
 var AmountSwapped = big.NewInt(100) // swapped in one tx
-var WorkerInitialBalance = big.NewInt(1_000000000000000000)
-var PairLiquidity = big.NewInt(0).Mul(big.NewInt(10_000_000_000), big.NewInt(1_000000000000000000))
+var WorkerInitialBalance = big.NewInt(0).Mul(big.NewInt(1_000_000_000), big.NewInt(1_000000000000000000))
+var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.NewInt(1_000000000000000000))
 
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
+// Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
+// This app swaps first token for the last one, using all interleaving tokens.
 func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*UniswapApplication, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
@@ -41,9 +43,9 @@ func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUser
 
 	// Deploy router
 	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-	routerAddress, _, _, err := contract.DeploySimpleRouter(txOpts, rpcClient)
+	routerAddress, _, _, err := contract.DeployUniswapRouter(txOpts, rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deploy SimpleRouter; %v", err)
+		return nil, fmt.Errorf("failed to deploy UniswapRouter; %v", err)
 	}
 
 	// Deploy tokens
@@ -90,7 +92,6 @@ func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUser
 			tokenAAddress, tokenBAddress = tokenBAddress, tokenAAddress
 		}
 		txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-		fmt.Printf("initilize pair %x to connect %x with %x\n", pairsAddresses[i], tokenAAddress, tokenBAddress)
 		_, err = pairsContracts[i].Initialize(txOpts, tokenAAddress, tokenBAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Uniswap pair; %v", err)
@@ -105,7 +106,7 @@ func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUser
 	}
 
 	// parse ABI for generating txs data
-	routerAbi, err := contract.SimpleRouterMetaData.GetAbi()
+	routerAbi, err := contract.UniswapRouterMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
@@ -178,55 +179,6 @@ func (f *UniswapApplication) CreateUser(rpcClient RpcClient) (User, error) {
 		return nil, fmt.Errorf("failed to mint ERC-20; %v", err)
 	}
 
-	// TEMPORARY TEST
-	// wait until funds are available
-	err = waitUntilAccountNonceIs(startingAccount.address, startingAccount.getCurrentNonce(), rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait until funded; %v", err)
-	}
-
-	for i := 0; i < TokensInChain; i++ {
-		tokenContract, err := contract.NewERC20(f.tokensAddresses[i], rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get token representation; %v", err)
-		}
-		balance, err := tokenContract.BalanceOf(nil, workerAccount.address)
-		fmt.Printf("token %d (%x) balance: %s, %s\n", i, f.tokensAddresses[i], balance.String(), err)
-	}
-
-	routerContract, err := contract.NewSimpleRouter(f.routerAddress, rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to crete SimpleRouter; %v", err)
-	}
-	txOpts, err = bind.NewKeyedTransactorWithChainID(workerAccount.privateKey, workerAccount.chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts; %v", err)
-	}
-	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(workerAccount.getNextNonce()))
-
-	fmt.Printf("tokens param: %v\n", f.tokensAddresses)
-	fmt.Printf("pairs param: %v\n", f.pairsAddresses)
-
-	tx, err := routerContract.SwapExactTokensForTokens(txOpts, AmountSwapped, f.tokensAddresses, f.pairsAddresses)
-	if err != nil {
-		return nil, fmt.Errorf("failed to SwapExactTokensForTokens; %v", err)
-	}
-	fmt.Printf("SwapExactTokensForTokens successful, gas: %d\n", tx.Gas())
-
-	err = waitUntilAccountNonceIs(workerAccount.address, workerAccount.getCurrentNonce(), rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait until funded; %v", err)
-	}
-	for i := 0; i < TokensInChain; i++ {
-		tokenContract, err := contract.NewERC20(f.tokensAddresses[i], rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get token representation; %v", err)
-		}
-		balance, err := tokenContract.BalanceOf(nil, workerAccount.address)
-		fmt.Printf("token %d (%x) balance: %s, %s\n", i, f.tokensAddresses[i], balance.String(), err)
-	}
-
 	return &UniswapUser{
 		routerAbi:               f.routerAbi,
 		sender:                  workerAccount,
@@ -245,9 +197,9 @@ func (f *UniswapApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient)
 
 func (f *UniswapApplication) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
-	routerContract, err := contract.NewSimpleRouter(f.routerAddress, rpcClient)
+	routerContract, err := contract.NewUniswapRouter(f.routerAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get SimpleRouter representation; %v", err)
+		return 0, fmt.Errorf("failed to get UniswapRouter representation; %v", err)
 	}
 	count, err := routerContract.GetCount(nil)
 	if err != nil {
@@ -276,10 +228,10 @@ func (g *UniswapUser) GenerateTx() (*types.Transaction, error) {
 
 	// prepare tx data
 	if rand.Intn(2) == 0 {
-		// swap from token1 to tokenN
+		// swap token1 for tokenN (forward)
 		data, err = g.routerAbi.Pack("swapExactTokensForTokens", AmountSwapped, g.tokensAddresses, g.pairsAddresses)
 	} else {
-		// swap from tokenN to token1
+		// swap tokenN for token1 (backward)
 		data, err = g.routerAbi.Pack("swapExactTokensForTokens", AmountSwapped, g.tokensAddressesReversed, g.pairsAddressesReversed)
 	}
 	if err != nil || data == nil {
@@ -287,7 +239,8 @@ func (g *UniswapUser) GenerateTx() (*types.Transaction, error) {
 	}
 
 	// prepare tx
-	const gasLimit = 500000 // swapExactTokensForTokens consumes 157571 with 1 pair, 251884 with 2 pairs
+	// swapExactTokensForTokens consumes 157571 for 2 tokens + cca 94314 for each additional token
+	const gasLimit = 160_000 + (TokensInChain-2)*95000
 	tx, err := createTx(g.sender, g.routerAddress, big.NewInt(0), data, g.gasPrice, gasLimit)
 	if err == nil {
 		atomic.AddUint64(&g.sentTxs, 1)

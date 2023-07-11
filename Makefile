@@ -16,7 +16,7 @@ pull-prometheus-image:
 build-opera-docker-image:
 	DOCKER_BUILDKIT=1 docker build . -t opera
 
-generate-abi: load/contracts/abi/Counter.abi load/contracts/abi/ERC20.abi load/contracts/abi/Store.abi load/contracts/abi/UniswapV2Pair.abi load/contracts/abi/SimpleRouter.abi # requires installed solc and Ethereum abigen - check README.md
+generate-abi: load/contracts/abi/Counter.abi load/contracts/abi/ERC20.abi load/contracts/abi/Store.abi load/contracts/abi/UniswapV2Pair.abi load/contracts/abi/UniswapRouter.abi # requires installed solc and Ethereum abigen - check README.md
 
 load/contracts/abi/Counter.abi: load/contracts/Counter.sol
 	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/Counter.sol
@@ -34,9 +34,9 @@ load/contracts/abi/UniswapV2Pair.abi: load/contracts/UniswapV2Pair.sol
 	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/UniswapV2Pair.sol
 	abigen --type UniswapV2Pair --pkg abi --abi load/contracts/abi/UniswapV2Pair.abi --bin load/contracts/abi/UniswapV2Pair.bin --out load/contracts/abi/UniswapV2Pair.go
 
-load/contracts/abi/SimpleRouter.abi: load/contracts/SimpleRouter.sol
-	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/SimpleRouter.sol
-	abigen --type SimpleRouter --pkg abi --abi load/contracts/abi/SimpleRouter.abi --bin load/contracts/abi/SimpleRouter.bin --out load/contracts/abi/SimpleRouter.go
+load/contracts/abi/UniswapRouter.abi: load/contracts/UniswapRouter.sol
+	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/UniswapRouter.sol
+	abigen --type UniswapRouter --pkg abi --abi load/contracts/abi/UniswapRouter.abi --bin load/contracts/abi/UniswapRouter.bin --out load/contracts/abi/UniswapRouter.go
 
 generate-mocks: # requires installed mockgen
 	go generate ./...

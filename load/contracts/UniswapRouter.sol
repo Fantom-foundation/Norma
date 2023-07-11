@@ -22,7 +22,7 @@ library SafeMath {
 }
 
 // Based on https://github.com/Uniswap/v2-periphery/blob/master/contracts/UniswapV2Router02.sol
-contract SimpleRouter {
+contract UniswapRouter {
     using SafeMath for uint;
     int private count = 0;
 
