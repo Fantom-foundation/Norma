@@ -28,12 +28,12 @@ contract SimpleRouter {
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
-    function _swap(uint[] memory amounts, address[] memory path, address[] calldata pairsPath, address _to) internal virtual {
-        for (uint i; i < path.length - 1; i++) {
+    function _swap(uint[] memory amounts, address[] memory path, address[] memory pairsPath, address _to) internal virtual {
+        for (uint i; i < pairsPath.length; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             uint amountOut = amounts[i + 1];
             (uint amount0Out, uint amount1Out) = input < output ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? pairsPath[i+1] : _to;
+            address to = i+1 < pairsPath.length ? pairsPath[i+1] : _to;
             IUniswapV2Pair(pairsPath[i]).swap(
                 amount0Out, amount1Out, to, new bytes(0)
             );
@@ -56,8 +56,9 @@ contract SimpleRouter {
     }
 
     // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOut(uint amountIn, address[] memory path, address[] calldata pairsPath) internal view returns (uint[] memory amounts) {
+    function getAmountsOut(uint amountIn, address[] memory path, address[] memory pairsPath) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
+        require(path.length == pairsPath.length+1, 'invalid length of pairsPath param');
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
