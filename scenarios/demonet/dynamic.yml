@@ -1,0 +1,24 @@
+# This scenario is a test case for the anticipated initial configuration of
+# the Demonet comprising a mix of validator and RPC nodes, and a single
+# low-complexity application maximizing throughput.
+
+name: Demonet
+duration: 120
+num_validators: 8
+
+# Besides the 8 validators, there are 2 additional RPC nodes.
+nodes:
+  - name: RPC
+    instances: 2
+
+# There is a single application
+applications:
+  - name: counter
+    start: 10           # start time
+    end: 110            # termination time
+    users: 200          # number of users using the app
+    rate:
+      auto:
+        increase: 20    # +20 Tx/s every second if network is good
+        decrease: 0.2   # -20% decrease every second if network is overloaded
+
