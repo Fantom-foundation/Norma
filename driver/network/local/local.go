@@ -199,15 +199,19 @@ const treasureAccountPrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e
 const fakeNetworkID = 0xfa3
 
 type localApplication struct {
+	name       string
 	controller *controller.AppController
 	config     *driver.ApplicationConfig
 	cancel     context.CancelFunc
+	done       *sync.WaitGroup
 }
 
 func (a *localApplication) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancel = cancel
+	a.done.Add(1)
 	go func() {
+		defer a.done.Done()
 		err := a.controller.Run(ctx)
 		if err != nil {
 			log.Printf("Failed to run load app: %v", err)
@@ -221,6 +225,9 @@ func (a *localApplication) Stop() error {
 		a.cancel()
 	}
 	a.cancel = nil
+	log.Printf("waiting for application to stop: %s", a.name)
+	a.done.Wait()
+	log.Printf("application has stoped: %s", a.name)
 	return nil
 }
 
@@ -270,14 +277,17 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	appController, err := controller.NewAppController(application, sh, config.Users, n)
+	done := &sync.WaitGroup{}
+	appController, err := controller.NewAppController(application, sh, config.Users, n, done)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &localApplication{
+		name:       config.Name,
 		controller: appController,
 		config:     config,
+		done:       done,
 	}
 
 	n.appsMutex.Lock()
@@ -333,6 +343,7 @@ func (n *LocalNetwork) getListeners() []driver.NetworkListener {
 
 func (n *LocalNetwork) Shutdown() error {
 	var errs []error
+
 	// First stop all generators.
 	for _, app := range n.apps {
 		// TODO: shutdown apps in parallel.
@@ -360,6 +371,8 @@ func (n *LocalNetwork) Shutdown() error {
 			errs = append(errs, err)
 		}
 	}
+
+	errs = append(errs, n.rpcWorkerPool.Close())
 
 	return errors.Join(errs...)
 }

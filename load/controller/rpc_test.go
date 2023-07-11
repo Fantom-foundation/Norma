@@ -2,10 +2,10 @@ package controller_test
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/driver/network"
+	"sync"
 	"testing"
 	"time"
-
-	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
@@ -52,7 +52,8 @@ func TestTrafficGenerating(t *testing.T) {
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
 	numGenerators := 5 // 5 parallel workers
-	app, err := controller.NewAppController(application, constantShaper, numGenerators, net)
+	wg := &sync.WaitGroup{}
+	app, err := controller.NewAppController(application, constantShaper, numGenerators, net, wg)
 	if err != nil {
 		t.Fatal(err)
 	}
