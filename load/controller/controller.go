@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -24,7 +25,7 @@ type AppController struct {
 	rpcClient   app.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network, done *sync.WaitGroup) (*AppController, error) {
 	trigger := make(chan struct{}, 100)
 
 	rpcClient, err := network.DialRandomRpc()
@@ -39,8 +40,11 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 		if err != nil {
 			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
-
-		go runGeneratorLoop(gen, trigger, network)
+		done.Add(1)
+		go func() {
+			defer done.Done()
+			runGeneratorLoop(gen, trigger, network)
+		}()
 		users = append(users, gen)
 		if i%100 == 0 {
 			log.Printf("initialized %d of %d users ...\n", i+1, numUsers)

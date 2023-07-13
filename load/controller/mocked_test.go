@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -39,7 +40,8 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec
 
-	appController, err := NewAppController(mockedApp, constantShaper, numUsers, mockedNetwork)
+	wg := &sync.WaitGroup{}
+	appController, err := NewAppController(mockedApp, constantShaper, numUsers, mockedNetwork, wg)
 	if err != nil {
 		t.Fatal(err)
 	}
