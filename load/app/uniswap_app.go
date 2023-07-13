@@ -22,7 +22,7 @@ var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.New
 
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
 // Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
-// This app swaps first token for the last one, using all interleaving tokens.
+// This app swaps first token for the last one, using all intermediate tokens.
 func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*UniswapApplication, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
