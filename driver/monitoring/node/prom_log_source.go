@@ -19,6 +19,11 @@ var (
 
 		monitoring.NewPrometheusNameKey("txpool_pending"),
 		monitoring.NewPrometheusNameKey("txpool_queued"),
+
+		monitoring.NewPrometheusNameKey("system_cpu_procload"),
+		monitoring.NewPrometheusNameKey("system_memory_used"),
+		monitoring.NewPrometheusNameKey("db_size"),
+		monitoring.NewPrometheusNameKey("statedb_disksize"),
 	}
 )
 

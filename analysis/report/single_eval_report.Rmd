@@ -400,6 +400,84 @@ ggplot(data=data) +
     scale_x_datetime(date_labels = "%c")               # format date labels
 ```
 
+### Consumed Disk Space
+
+Following charts show the disk space consumed by each Node. The charts
+provide space consumption exclusively by the State DB only 
+and the total size of the Node data directory, which contains
+the State DB and other files. 
+
+```{r state_db_size, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "statedb_disksize") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value)/1024/1024)            # convert value to int and MB
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("Actual Size of StateDB over Time") + # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("MB") +                                       # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+```{r total_db_size, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "db_size") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value)/1024/1024)            # convert value to int and MB
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("Actual Size of Data Dir including StateDB over Time") + # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("MB") +                                       # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+### System Properties
+
+Following charts provide memory and CPU load of each Node. 
+
+* maximal utilization of one CPU core is 100%, i.e. the CPU Load chart 
+may grow above 100% depending on the number of cores. 
+
+```{r system_cpu_procload, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "system_cpu_procload") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value))            # convert value to int 
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("CPU Load") + # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("%") +                                       # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
+```{r system_memory_used, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "system_memory_used") %>%       # filter metric of interrest
+    mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
+    mutate(value = as.numeric(value)/1024/1024)            # convert value to int 
+
+ggplot(data=data) +
+    geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
+    ggtitle("Memory Load") + # chart title
+    xlab("Time") +                                     # x-axis title
+    ylab("MB") +                                       # y-axis title
+    labs(colour="Nodes") +                             # legend title
+    theme(plot.title = element_text(hjust = 0.5)) +    # center title
+    scale_x_datetime(date_labels = "%c")               # format date labels
+```
+
 ## Application Metrics
 
 ### Transactions Send vs. Received
