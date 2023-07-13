@@ -87,3 +87,11 @@ func generateStartingAccounts(rpcClient RpcClient, primaryAccount *Account, numA
 	}
 	return startingAccounts, nil
 }
+
+func reverseAddresses(in []common.Address) []common.Address {
+	out := make([]common.Address, len(in))
+	for i := 0; i < len(in); i++ {
+		out[i] = in[len(in)-1-i]
+	}
+	return out
+}

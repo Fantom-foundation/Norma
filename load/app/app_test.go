@@ -56,6 +56,20 @@ func TestGenerators(t *testing.T) {
 		}
 		testGenerator(t, erc20app, rpcClient)
 	})
+	t.Run("Store", func(t *testing.T) {
+		storeApp, err := app.NewStoreApplication(rpcClient, primaryAccount, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testGenerator(t, storeApp, rpcClient)
+	})
+	t.Run("Uniswap", func(t *testing.T) {
+		uniswapApp, err := app.NewUniswapApplication(rpcClient, primaryAccount, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testGenerator(t, uniswapApp, rpcClient)
+	})
 }
 
 func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Client) {
@@ -83,5 +97,13 @@ func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Clien
 
 	if got, want := gen.GetSentTransactions(), numTransactions; got != uint64(want) {
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
+	}
+
+	if received, err := app.GetReceivedTransactions(rpcClient); err != nil {
+		t.Fatalf("unable to get amount of received txs; %v", err)
+	} else {
+		if received != 10 {
+			t.Errorf("unexpected amount of txs in chain (%d)", received)
+		}
 	}
 }

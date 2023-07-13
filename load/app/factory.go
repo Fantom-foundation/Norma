@@ -13,6 +13,8 @@ func NewApplication(name string, rpcClient RpcClient, primaryAccount *Account, n
 		return NewCounterApplication(rpcClient, primaryAccount, numUsers)
 	case "store":
 		return NewStoreApplication(rpcClient, primaryAccount, numUsers)
+	case "uniswap":
+		return NewUniswapApplication(rpcClient, primaryAccount, numUsers)
 	}
 	return nil, fmt.Errorf("unknown application '%s'", name)
 }
