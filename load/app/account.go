@@ -60,10 +60,10 @@ func GenerateAndFundAccount(sourceAccount *Account, rpcClient RpcClient, regular
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate account; %v", err)
 	}
-	// transfers (tokens) FTM to the new account - finances to cover transaction fees
-	workerBudget := big.NewInt(0).Mul(big.NewInt(endowment), big.NewInt(1_000_000_000_000_000_000))
-	if err := transferValue(rpcClient, sourceAccount, account.address, workerBudget, priorityGasPrice); err != nil {
-		return nil, fmt.Errorf("failed to fund account: %v", err)
+	// transfers (tokens) FTM to the new account
+	value := big.NewInt(0).Mul(big.NewInt(endowment), big.NewInt(1_000_000_000_000_000_000)) // FTM to wei
+	if err := transferValue(rpcClient, sourceAccount, account.address, value, priorityGasPrice); err != nil {
+		return nil, fmt.Errorf("failed to transfer (value: %s, gasPrice: %s): %v", value, priorityGasPrice, err)
 	}
 	return account, nil
 }

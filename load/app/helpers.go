@@ -82,7 +82,7 @@ func generateStartingAccounts(rpcClient RpcClient, primaryAccount *Account, numA
 	for i := 0; i < len(startingAccounts); i++ {
 		startingAccounts[i], err = GenerateAndFundAccount(primaryAccount, rpcClient, regularGasPrice, i, 1_000_000)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to fund starting account %d; %v", i, err)
 		}
 	}
 	return startingAccounts, nil
