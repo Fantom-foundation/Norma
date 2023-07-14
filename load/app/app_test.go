@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/network"
 	"testing"
 	"time"
@@ -99,11 +100,17 @@ func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Clien
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
 	}
 
-	if received, err := app.GetReceivedTransactions(rpcClient); err != nil {
-		t.Fatalf("unable to get amount of received txs; %v", err)
-	} else {
-		if received != 10 {
-			t.Errorf("unexpected amount of txs in chain (%d)", received)
+	err = network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		received, err := app.GetReceivedTransactions(rpcClient)
+		if err != nil {
+			return fmt.Errorf("unable to get amount of received txs; %v", err)
 		}
+		if received != 10 {
+			return fmt.Errorf("unexpected amount of txs in chain (%d)", received)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
 	}
 }

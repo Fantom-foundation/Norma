@@ -83,7 +83,7 @@ func (f *StoreApplication) CreateUser(rpcClient RpcClient) (User, error) {
 	startingAccount := f.startingAccounts[id%int64(len(f.startingAccounts))]
 	workerAccount, err := GenerateAndFundAccount(startingAccount, rpcClient, regularGasPrice, int(id), 1000)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fund worker account %d; %v", id, err)
 	}
 
 	gen := &StoreUser{
