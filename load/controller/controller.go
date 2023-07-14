@@ -25,7 +25,7 @@ type AppController struct {
 	rpcClient   app.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network, done *sync.WaitGroup) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
 	trigger := make(chan struct{}, 100)
 
 	rpcClient, err := network.DialRandomRpc()
@@ -40,11 +40,6 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 		if err != nil {
 			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
-		done.Add(1)
-		go func() {
-			defer done.Done()
-			runGeneratorLoop(gen, trigger, network)
-		}()
 		users = append(users, gen)
 		if i%100 == 0 {
 			log.Printf("initialized %d of %d users ...\n", i+1, numUsers)
@@ -69,11 +64,21 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 }
 
 func (ac *AppController) Run(ctx context.Context) error {
-	defer close(ac.trigger)
 	defer ac.rpcClient.Close()
+
+	// start generators for each user
+	var done sync.WaitGroup
+	for _, user := range ac.users {
+		user := user
+		done.Add(1)
+		go func() {
+			defer done.Done()
+			runGeneratorLoop(user, ac.trigger, ac.network)
+		}()
+	}
+
 	var pending float64
 	lastUpdate := time.Now()
-
 	ac.shaper.Start(lastUpdate, ac)
 
 	for {
@@ -91,6 +96,8 @@ func (ac *AppController) Run(ctx context.Context) error {
 		case <-time.After(time.Millisecond):
 			// just waiting for next time to send messages.
 		case <-ctx.Done():
+			close(ac.trigger)
+			done.Wait()
 			err := ctx.Err()
 			if err == context.DeadlineExceeded || err == context.Canceled {
 				return nil // terminated gracefully
