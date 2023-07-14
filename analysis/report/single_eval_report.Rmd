@@ -466,7 +466,7 @@ ggplot(data=data) +
 data <- all_data %>%
     dplyr::filter(metric == "system_memory_used") %>%       # filter metric of interrest
     mutate(date = as_datetime(as.numeric(time)/1e9)) %>%   # UNIX time to date
-    mutate(value = as.numeric(value)/1024/1024)            # convert value to int 
+    mutate(value = as.numeric(value)/1024/1024)            # convert value to MB 
 
 ggplot(data=data) +
     geom_line(aes(x=date, y=value, group=node, colour = factor(node))) +
