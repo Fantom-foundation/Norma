@@ -209,6 +209,7 @@ type localApplication struct {
 func (a *localApplication) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancel = cancel
+
 	a.done.Add(1)
 	go func() {
 		defer a.done.Done()
@@ -277,8 +278,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	done := &sync.WaitGroup{}
-	appController, err := controller.NewAppController(application, sh, config.Users, n, done)
+	appController, err := controller.NewAppController(application, sh, config.Users, n)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		name:       config.Name,
 		controller: appController,
 		config:     config,
-		done:       done,
+		done:       &sync.WaitGroup{},
 	}
 
 	n.appsMutex.Lock()

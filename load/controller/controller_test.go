@@ -47,8 +47,7 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			user.EXPECT().GenerateTx().AnyTimes().Return(&transaction, nil)
 
 			shaper := shaper.NewConstantShaper(float64(rate))
-			wg := &sync.WaitGroup{}
-			controller, err := NewAppController(application, shaper, 100, net, wg)
+			controller, err := NewAppController(application, shaper, 100, net)
 			if err != nil {
 				t.Fatalf("failed to create app controller: %v", err)
 			}
