@@ -205,7 +205,6 @@ func (n *OperaNode) AddPeer(id driver.NodeID) error {
 	if err != nil {
 		return err
 	}
-
 	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		return rpcClient.Call(nil, "admin_addPeer", id)
 	})
@@ -218,7 +217,6 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 	if err != nil {
 		return err
 	}
-
 	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		return rpcClient.Call(nil, "admin_removePeer", id)
 	})

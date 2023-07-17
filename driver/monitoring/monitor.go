@@ -62,7 +62,7 @@ func (m *Monitor) Shutdown() error {
 	// Shut down all sources.
 	for _, source := range m.sources {
 		if err := source.Shutdown(); err != nil {
-			errs = append(errs, err)
+			errs = append(errs, fmt.Errorf("source shutdown failed: %v", err))
 		}
 	}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/checking"
 	"log"
 	"os"
 	"sort"
@@ -132,14 +133,14 @@ func run(ctx *cli.Context) (err error) {
 	defer func() {
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
-			fmt.Printf("error during monitor shutdown:\n%v", err)
+			fmt.Printf("error during monitor shutdown:\n%v\n", err)
 		}
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
 
 		fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
 		if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
-			fmt.Printf("Report generation failed:\n%v", err)
+			fmt.Printf("Report generation failed:\n%v\n", err)
 		} else {
 			fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
 		}
@@ -174,6 +175,13 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 	fmt.Printf("Execution completed successfully!\n")
+
+	fmt.Printf("Checking network consistency ...\n")
+	err = checking.CheckNetworkConsistency(net)
+	if err != nil {
+		return fmt.Errorf("Checking the network consistency failed: %v\n", err)
+	}
+	fmt.Printf("Network checks succeed.\n")
 
 	return nil
 }
