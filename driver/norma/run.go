@@ -33,6 +33,7 @@ var runCommand = cli.Command{
 		&dbImpl,
 		&evalLabel,
 		&keepPrometheusRunning,
+		&numValidators,
 	},
 }
 
@@ -51,6 +52,10 @@ var (
 		Name:    "keep-prometheus-running",
 		Usage:   "if set, the Prometheus instance will not be shut down after the run is complete.",
 		Aliases: []string{"kpr"},
+	}
+	numValidators = cli.IntFlag{
+		Name:  "num-validators",
+		Usage: "overrides the number of validators specified in the scenario file.",
 	}
 )
 
@@ -77,6 +82,11 @@ func run(ctx *cli.Context) (err error) {
 	scenario, err := parser.ParseFile(path)
 	if err != nil {
 		return err
+	}
+
+	if num := ctx.Int(numValidators.Name); num > 0 {
+		fmt.Printf("Overriding number of validators to %d (--%s)\n", num, numValidators.Name)
+		scenario.NumValidators = &num
 	}
 
 	if err := scenario.Check(); err != nil {
