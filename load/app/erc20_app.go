@@ -3,6 +3,7 @@ package app
 import (
 	crand "crypto/rand"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"math/rand"
 	"sync/atomic"
@@ -16,7 +17,7 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -88,7 +89,7 @@ type ERC20Application struct {
 }
 
 // CreateUser creates a new user for the app.
-func (f *ERC20Application) CreateUser(rpcClient RpcClient) (User, error) {
+func (f *ERC20Application) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -128,11 +129,11 @@ func (f *ERC20Application) CreateUser(rpcClient RpcClient) (User, error) {
 	}, nil
 }
 
-func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
+func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
 	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
 }
 
-func (f *ERC20Application) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
+func (f *ERC20Application) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
 	if err != nil {

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"testing"
 	"time"
 
@@ -21,7 +22,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	numUsers := 2
 	mockedGenerator := app.NewMockUser(mockCtrl)
 
-	mockedRpcClient := app.NewMockRpcClient(mockCtrl)
+	mockedRpcClient := rpc.NewMockRpcClient(mockCtrl)
 	mockedRpcClient.EXPECT().Close()
 
 	mockedNetwork := driver.NewMockNetwork(mockCtrl)

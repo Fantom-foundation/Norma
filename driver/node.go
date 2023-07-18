@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"io"
 
 	"github.com/Fantom-foundation/Norma/driver/network"
@@ -32,6 +33,9 @@ type Node interface {
 	// GetServiceUrl returns the URL of a service running on the
 	// represented node. May be nil if no such service is offered.
 	GetServiceUrl(*network.ServiceDescription) *URL
+
+	// DialRpc establish an RPC connection with the node and returns the RPC client.
+	DialRpc() (rpc.RpcClient, error)
 
 	// StreamLog provides a reader that is continuously providing the host log.
 	// It is up to the caller to close the stream.

@@ -2,17 +2,14 @@ package controller_test
 
 import (
 	"context"
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"testing"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
-	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -26,14 +23,7 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcUrl := net.GetActiveNodes()[0].GetServiceUrl(&node.OperaWsService)
-	if rpcUrl == nil {
-		t.Fatal("websocket service is not available")
-	}
-
-	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
-		return ethclient.Dial(string(*rpcUrl))
-	})
+	rpcClient, err := net.DialRandomRpc()
 	if err != nil {
 		t.Fatal("unable to connect the the rpc")
 	}

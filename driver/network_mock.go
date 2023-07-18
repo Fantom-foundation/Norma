@@ -7,7 +7,7 @@ package driver
 import (
 	reflect "reflect"
 
-	app "github.com/Fantom-foundation/Norma/load/app"
+	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -66,10 +66,10 @@ func (mr *MockNetworkMockRecorder) CreateNode(config interface{}) *gomock.Call {
 }
 
 // DialRandomRpc mocks base method.
-func (m *MockNetwork) DialRandomRpc() (app.RpcClient, error) {
+func (m *MockNetwork) DialRandomRpc() (rpc.RpcClient, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DialRandomRpc")
-	ret0, _ := ret[0].(app.RpcClient)
+	ret0, _ := ret[0].(rpc.RpcClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

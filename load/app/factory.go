@@ -2,10 +2,11 @@ package app
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"strings"
 )
 
-func NewApplication(appType string, rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewApplication(appType string, rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	if factory := getFactory(appType); factory != nil {
 		return factory(rpcClient, primaryAccount, numUsers)
 	}
@@ -16,7 +17,7 @@ func IsSupportedApplicationType(appType string) bool {
 	return getFactory(appType) != nil
 }
 
-func getFactory(appType string) func(RpcClient, *Account, int) (Application, error) {
+func getFactory(appType string) func(rpc.RpcClient, *Account, int) (Application, error) {
 	switch strings.ToLower(appType) {
 	case "erc20":
 		return NewERC20Application
