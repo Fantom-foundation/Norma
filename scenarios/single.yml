@@ -12,7 +12,8 @@ num_validators: 1
 
 # In the network there is a single application producing constant load.
 applications:
-  - name: counter
+  - name: load
+    type: counter
     start: 10          # start time
     end: 50            # termination time
     rate:

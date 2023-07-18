@@ -15,7 +15,7 @@ import (
 // NewCounterApplication deploys a Counter contract to the chain.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*CounterApplication, error) {
+func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {

@@ -233,9 +233,21 @@ func TestApplication_InvalidNameIsDetected(t *testing.T) {
 	}
 }
 
+func TestApplication_InvalidApplicationTypeIsDetected(t *testing.T) {
+	scenario := Scenario{}
+	app := Application{}
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "application type must be specified") {
+		t.Errorf("missing type was not detected")
+	}
+	app.Type = "something_that_will_hopefully_never_exist"
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "unknown application type") {
+		t.Errorf("invalid type was not detected")
+	}
+}
+
 func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
-	app := Application{Name: "test", Instances: new(int), Rate: Rate{Constant: new(float32)}}
+	app := Application{Name: "test", Type: "counter", Instances: new(int), Rate: Rate{Constant: new(float32)}}
 	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
@@ -248,7 +260,7 @@ func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 func TestApplication_NegativeUserCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
 	users := 5
-	app := Application{Name: "test", Users: &users, Rate: Rate{Constant: new(float32)}}
+	app := Application{Name: "test", Type: "counter", Users: &users, Rate: Rate{Constant: new(float32)}}
 	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
@@ -262,6 +274,7 @@ func TestApplication_DetectsTimingIssue(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{
 		Name:  "test",
+		Type:  "counter",
 		Rate:  Rate{Constant: new(float32)},
 		Start: new(float32),
 	}
@@ -278,6 +291,7 @@ func TestApplication_DetectsShapeIssue(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{
 		Name: "test",
+		Type: "counter",
 		Rate: Rate{Constant: new(float32)},
 	}
 	if err := app.Check(&scenario); err != nil {

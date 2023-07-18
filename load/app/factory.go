@@ -5,16 +5,27 @@ import (
 	"strings"
 )
 
-func NewApplication(name string, rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
-	switch strings.ToLower(name) {
-	case "erc20":
-		return NewERC20Application(rpcClient, primaryAccount, numUsers)
-	case "counter", "":
-		return NewCounterApplication(rpcClient, primaryAccount, numUsers)
-	case "store":
-		return NewStoreApplication(rpcClient, primaryAccount, numUsers)
-	case "uniswap":
-		return NewUniswapApplication(rpcClient, primaryAccount, numUsers)
+func NewApplication(appType string, rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+	if factory := getFactory(appType); factory != nil {
+		return factory(rpcClient, primaryAccount, numUsers)
 	}
-	return nil, fmt.Errorf("unknown application '%s'", name)
+	return nil, fmt.Errorf("unknown application type '%s'", appType)
+}
+
+func IsSupportedApplicationType(appType string) bool {
+	return getFactory(appType) != nil
+}
+
+func getFactory(appType string) func(RpcClient, *Account, int) (Application, error) {
+	switch strings.ToLower(appType) {
+	case "erc20":
+		return NewERC20Application
+	case "counter", "":
+		return NewCounterApplication
+	case "store":
+		return NewStoreApplication
+	case "uniswap":
+		return NewUniswapApplication
+	}
+	return nil
 }

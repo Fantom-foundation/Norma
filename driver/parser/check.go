@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/Fantom-foundation/Norma/load/app"
 )
 
 const namePatternStr = "^[A-Za-z0-9-]+$"
@@ -71,6 +73,12 @@ func (a *Application) Check(scenario *Scenario) error {
 
 	if !namePattern.Match([]byte(a.Name)) {
 		errs = append(errs, fmt.Errorf("application name must match %v, got %v", namePatternStr, a.Name))
+	}
+
+	if a.Type == "" {
+		errs = append(errs, fmt.Errorf("application type must be specified"))
+	} else if !app.IsSupportedApplicationType(a.Type) {
+		errs = append(errs, fmt.Errorf("unknown application type: %v", a.Type))
 	}
 
 	if a.Instances != nil && *a.Instances < 0 {

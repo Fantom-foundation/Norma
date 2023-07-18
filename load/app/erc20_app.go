@@ -16,7 +16,7 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*ERC20Application, error) {
+func NewERC20Application(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {

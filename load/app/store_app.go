@@ -15,7 +15,7 @@ import (
 // NewStoreApplication deploys a Store contract to the chain.
 // The Store contract is a simple contract managing a user-private key/value store.
 // It is intended to produce state-heavy transactions.
-func NewStoreApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*StoreApplication, error) {
+func NewStoreApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
