@@ -3,14 +3,15 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"math/big"
+	"math/rand"
+	"sync/atomic"
+
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
-	"math/rand"
-	"sync/atomic"
 )
 
 const TokensInChain = 4
@@ -23,7 +24,7 @@ var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.New
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
 // Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
 // This app swaps first token for the last one, using all intermediate tokens.
-func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (*UniswapApplication, error) {
+func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
