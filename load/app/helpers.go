@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
@@ -11,7 +12,7 @@ import (
 
 // transferValue transfer a financial value from account identified by given privateKey, to given toAddress.
 // It returns when the value is already available on the target account.
-func transferValue(rpcClient RpcClient, from *Account, toAddress common.Address, value *big.Int, gasPrice *big.Int) (err error) {
+func transferValue(rpcClient rpc.RpcClient, from *Account, toAddress common.Address, value *big.Int, gasPrice *big.Int) (err error) {
 	signedTx, err := createTx(from, toAddress, value, nil, gasPrice, 21000)
 	if err != nil {
 		return err
@@ -32,7 +33,7 @@ func createTx(from *Account, toAddress common.Address, value *big.Int, data []by
 }
 
 // waitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
-func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient RpcClient) error {
+func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient rpc.RpcClient) error {
 	var nonce uint64
 	var err error
 	for i := 0; i < 300; i++ {
@@ -49,7 +50,7 @@ func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 }
 
 // waitUntilAllSentTxsAreOnChain blocks until all txs sent from given accounts are on the chain (by account nonce)
-func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient RpcClient) error {
+func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient rpc.RpcClient) error {
 	for i := 0; i < len(accounts); i++ {
 		err := waitUntilAccountNonceIs(accounts[i].address, accounts[i].getCurrentNonce(), rpcClient)
 		if err != nil {
@@ -60,7 +61,7 @@ func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient RpcClient) err
 }
 
 // getGasPrice obtains optimal gasPrice for regular transactions
-func getGasPrice(rpcClient RpcClient) (*big.Int, error) {
+func getGasPrice(rpcClient rpc.RpcClient) (*big.Int, error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to suggest gas price; %v", err)
@@ -76,7 +77,7 @@ func getPriorityGasPrice(regularGasPrice *big.Int) *big.Int {
 	return &priorityPrice
 }
 
-func generateStartingAccounts(rpcClient RpcClient, primaryAccount *Account, numAccounts int, regularGasPrice *big.Int) ([]*Account, error) {
+func generateStartingAccounts(rpcClient rpc.RpcClient, primaryAccount *Account, numAccounts int, regularGasPrice *big.Int) ([]*Account, error) {
 	var err error
 	startingAccounts := make([]*Account, numAccounts/500+1)
 	for i := 0; i < len(startingAccounts); i++ {

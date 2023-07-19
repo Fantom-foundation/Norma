@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"sync/atomic"
 
@@ -54,7 +55,7 @@ func GenerateAccount(id int, chainID int64) (*Account, error) {
 }
 
 // GenerateAndFundAccount creates a new Account with a random private key and transfer finances to cover txs fees
-func GenerateAndFundAccount(sourceAccount *Account, rpcClient RpcClient, regularGasPrice *big.Int, accountId int, endowment int64) (*Account, error) {
+func GenerateAndFundAccount(sourceAccount *Account, rpcClient rpc.RpcClient, regularGasPrice *big.Int, accountId int, endowment int64) (*Account, error) {
 	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
 	account, err := GenerateAccount(accountId, sourceAccount.chainID.Int64())
 	if err != nil {

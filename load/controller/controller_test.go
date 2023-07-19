@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -26,7 +27,7 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 		t.Run(fmt.Sprintf("linear rate %v", rate), func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			net := driver.NewMockNetwork(ctrl)
-			rpcClient := app.NewMockRpcClient(ctrl)
+			rpcClient := rpc.NewMockRpcClient(ctrl)
 			application := app.NewMockApplication(ctrl)
 			user := app.NewMockUser(ctrl)
 			transaction := types.Transaction{}

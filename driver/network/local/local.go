@@ -4,21 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
 	"log"
 	"math/rand"
 	"sync"
-	"time"
-
-	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/node"
-	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
@@ -169,7 +165,7 @@ func (n *LocalNetwork) RemoveNode(node driver.Node) error {
 	for _, other := range n.nodes {
 		if err = other.RemovePeer(id); err != nil {
 			n.nodesMutex.Unlock()
-			return fmt.Errorf("failed to add peer; %v", err)
+			return fmt.Errorf("failed to remove peer; %v", err)
 		}
 	}
 	n.nodesMutex.Unlock()
@@ -181,15 +177,9 @@ func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
 	n.rpcWorkerPool.SendTransaction(tx)
 }
 
-func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
+func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
 	nodes := n.GetActiveNodes()
-	rpcUrl := nodes[rand.Intn(len(nodes))].GetServiceUrl(&node.OperaWsService)
-	if rpcUrl == nil {
-		return nil, fmt.Errorf("websocket service is not available")
-	}
-	return network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
-		return ethclient.Dial(string(*rpcUrl))
-	})
+	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
 
 // reasureAccountPrivateKey is an account with tokens that can be used to
@@ -249,20 +239,7 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 }
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
-
-	node, err := n.getRandomValidator()
-	if err != nil {
-		return nil, err
-	}
-
-	rpcUrl := node.GetServiceUrl(&opera.OperaWsService)
-	if rpcUrl == nil {
-		return nil, fmt.Errorf("primary node is not running an RPC server")
-	}
-
-	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*ethclient.Client, error) {
-		return ethclient.Dial(string(*rpcUrl))
-	})
+	rpcClient, err := n.DialRandomRpc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}
@@ -380,11 +357,4 @@ func (n *LocalNetwork) Shutdown() error {
 // GetDockerNetwork returns the underlying docker network.
 func (n *LocalNetwork) GetDockerNetwork() *docker.Network {
 	return n.network
-}
-
-func (n *LocalNetwork) getRandomValidator() (driver.Node, error) {
-	if len(n.validators) == 0 {
-		return nil, fmt.Errorf("network is empty")
-	}
-	return n.validators[rand.Intn(len(n.validators))], nil
 }

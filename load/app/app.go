@@ -1,11 +1,7 @@
 package app
 
 import (
-	"context"
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -13,17 +9,11 @@ import (
 
 type Application interface {
 	// CreateUser creates a new user generating transactions for this application.
-	CreateUser(rpcClient RpcClient) (User, error)
+	CreateUser(rpcClient rpc.RpcClient) (User, error)
 
-	WaitUntilApplicationIsDeployed(rpcClient RpcClient) error
+	WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error
 
-	GetReceivedTransactions(rpcClient RpcClient) (uint64, error)
-}
-
-type RpcClient interface {
-	bind.ContractBackend
-	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
-	Close()
+	GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error)
 }
 
 // User produces a stream of transactions to generate traffic on the chain.

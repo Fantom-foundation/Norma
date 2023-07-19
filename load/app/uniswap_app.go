@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"math/rand"
 	"sync/atomic"
@@ -24,7 +25,7 @@ var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.New
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
 // Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
 // This app swaps first token for the last one, using all intermediate tokens.
-func NewUniswapApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -140,7 +141,7 @@ type UniswapApplication struct {
 }
 
 // CreateUser creates a new user for the app.
-func (f *UniswapApplication) CreateUser(rpcClient RpcClient) (User, error) {
+func (f *UniswapApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -192,11 +193,11 @@ func (f *UniswapApplication) CreateUser(rpcClient RpcClient) (User, error) {
 	}, nil
 }
 
-func (f *UniswapApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
+func (f *UniswapApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
 	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
 }
 
-func (f *UniswapApplication) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
+func (f *UniswapApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	routerContract, err := contract.NewUniswapRouter(f.routerAddress, rpcClient)
 	if err != nil {

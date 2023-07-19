@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"sync/atomic"
 
@@ -15,7 +16,7 @@ import (
 // NewStoreApplication deploys a Store contract to the chain.
 // The Store contract is a simple contract managing a user-private key/value store.
 // It is intended to produce state-heavy transactions.
-func NewStoreApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -70,7 +71,7 @@ type StoreApplication struct {
 }
 
 // CreateUser creates a new user for the app.
-func (f *StoreApplication) CreateUser(rpcClient RpcClient) (User, error) {
+func (f *StoreApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
@@ -95,11 +96,11 @@ func (f *StoreApplication) CreateUser(rpcClient RpcClient) (User, error) {
 	return gen, nil
 }
 
-func (f *StoreApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
+func (f *StoreApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
 	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
 }
 
-func (f *StoreApplication) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
+func (f *StoreApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	storeContract, err := contract.NewStore(f.contractAddress, rpcClient)
 	if err != nil {

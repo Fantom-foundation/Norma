@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"sync/atomic"
 
@@ -15,7 +16,7 @@ import (
 // NewCounterApplication deploys a Counter contract to the chain.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterApplication(rpcClient RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -71,7 +72,7 @@ type CounterApplication struct {
 }
 
 // CreateUser creates a new user for the app.
-func (f *CounterApplication) CreateUser(rpcClient RpcClient) (User, error) {
+func (f *CounterApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
@@ -96,11 +97,11 @@ func (f *CounterApplication) CreateUser(rpcClient RpcClient) (User, error) {
 	return gen, nil
 }
 
-func (f *CounterApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
+func (f *CounterApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
 	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
 }
 
-func (f *CounterApplication) GetReceivedTransactions(rpcClient RpcClient) (uint64, error) {
+func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	counterContract, err := contract.NewCounter(f.contractAddress, rpcClient)
 	if err != nil {

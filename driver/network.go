@@ -2,7 +2,7 @@ package driver
 
 import (
 	"github.com/Fantom-foundation/Norma/driver/parser"
-	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -45,7 +45,7 @@ type Network interface {
 
 	SendTransaction(tx *types.Transaction)
 
-	DialRandomRpc() (app.RpcClient, error)
+	DialRandomRpc() (rpc.RpcClient, error)
 }
 
 // NetworkConfig is a collection of network parameters to be used by factories

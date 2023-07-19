@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"log"
 	"sync"
 	"time"
@@ -22,7 +23,7 @@ type AppController struct {
 	network     driver.Network
 	trigger     chan struct{}
 	users       []app.User
-	rpcClient   app.RpcClient
+	rpcClient   rpc.RpcClient
 }
 
 func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
