@@ -53,7 +53,9 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	// Deploy tokens
 	for i := 0; i < TokensInChain; i++ {
 		txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-		tokenAddresses[i], _, tokenContracts[i], err = contract.DeployERC20(txOpts, rpcClient)
+		name := fmt.Sprintf("Testing token %d", i)
+		symbol := fmt.Sprintf("TOK%d", i)
+		tokenAddresses[i], _, tokenContracts[i], err = contract.DeployERC20(txOpts, rpcClient, name, symbol)
 		if err != nil {
 			return nil, fmt.Errorf("failed to deploy ERC-20 token %d; %v", i, err)
 		}
@@ -97,6 +99,15 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 		_, err = pairsContracts[i].Initialize(txOpts, tokenAAddress, tokenBAddress)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize Uniswap pair; %v", err)
+		}
+	}
+
+	// Whitelist Uniswap router in the token (skip setting allowance by every user)
+	for i := 0; i < TokensInChain; i++ {
+		txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
+		_, err = tokenContracts[i].WhitelistSpender(txOpts, routerAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to whitelist Uniswap contract in the ERC-20 token %d; %v", i, err)
 		}
 	}
 
