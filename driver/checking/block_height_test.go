@@ -24,11 +24,11 @@ func TestBlockHeightCheckerValid(t *testing.T) {
 
 	err := new(BlockHeightChecker).Check(net)
 	if err != nil {
-		t.Errorf("unexpected error from BlocksHashesChecker: %v", err)
+		t.Errorf("unexpected error from BlockHeightChecker: %v", err)
 	}
 }
 
-func TestBlockHeightCheckerInvalid(t *testing.T) {
+func TestBlockHeightCheckerInvalidDesc(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 	node1 := driver.NewMockNode(ctrl)
@@ -50,6 +50,32 @@ func TestBlockHeightCheckerInvalid(t *testing.T) {
 
 	err := new(BlockHeightChecker).Check(net)
 	if err == nil || !strings.Contains(err.Error(), "reports too old block") {
-		t.Errorf("unexpected error from BlocksHashesChecker: %v", err)
+		t.Errorf("unexpected error from BlockHeightChecker: %v", err)
+	}
+}
+
+func TestBlockHeightCheckerInvalidAsc(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+	node1 := driver.NewMockNode(ctrl)
+	node2 := driver.NewMockNode(ctrl)
+	rpc1 := rpc.NewMockRpcClient(ctrl)
+	rpc2 := rpc.NewMockRpcClient(ctrl)
+	net.EXPECT().GetActiveNodes().MinTimes(1).Return([]driver.Node{node1, node2})
+	node1.EXPECT().DialRpc().MinTimes(1).Return(rpc1, nil)
+	node2.EXPECT().DialRpc().MinTimes(1).Return(rpc2, nil)
+	node1.EXPECT().GetLabel().AnyTimes().Return("node1")
+	node2.EXPECT().GetLabel().AnyTimes().Return("node2")
+
+	blockHeight1 := "0x42"
+	blockHeight2 := "0x1234"
+	rpc1.EXPECT().Call(gomock.Any(), "eth_blockNumber").SetArg(0, blockHeight1)
+	rpc2.EXPECT().Call(gomock.Any(), "eth_blockNumber").SetArg(0, blockHeight2)
+	rpc1.EXPECT().Close()
+	rpc2.EXPECT().Close()
+
+	err := new(BlockHeightChecker).Check(net)
+	if err == nil || !strings.Contains(err.Error(), "reports too old block") {
+		t.Errorf("unexpected error from BlockHeightChecker: %v", err)
 	}
 }

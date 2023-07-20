@@ -28,7 +28,8 @@ func (*BlocksHashesChecker) Check(net driver.Network) (err error) {
 	}()
 
 	for blockNumber := uint64(0); ; blockNumber++ {
-		var prevHashes *blockHashes
+		var referenceHashes *blockHashes
+		var nodesLackingTheBlock = 0
 		for i, n := range nodes {
 			block, err := getBlockHashes(rpcClients[i], blockNumber)
 			if err != nil {
@@ -37,23 +38,26 @@ func (*BlocksHashesChecker) Check(net driver.Network) (err error) {
 			if block == nil { // block does not exist on the node
 				if blockNumber <= 2 {
 					return fmt.Errorf("unable to check block hashes - block %d does not exists at node %s", blockNumber, n.GetLabel())
-				} else {
-					return nil // no more blocks, check succeed
 				}
+				nodesLackingTheBlock++
+				continue
 			}
-			if prevHashes == nil {
-				prevHashes = block
+			if referenceHashes == nil {
+				referenceHashes = block
 			} else {
-				if prevHashes.StateRoot != block.StateRoot {
+				if referenceHashes.StateRoot != block.StateRoot {
 					return fmt.Errorf("stateRoot of the block %d does not match", blockNumber)
 				}
-				if prevHashes.ReceiptsRoot != block.ReceiptsRoot {
+				if referenceHashes.ReceiptsRoot != block.ReceiptsRoot {
 					return fmt.Errorf("receiptsRoot of the block %d does not match", blockNumber)
 				}
-				if prevHashes.Hash != block.Hash {
+				if referenceHashes.Hash != block.Hash {
 					return fmt.Errorf("hash of the block %d does not match", blockNumber)
 				}
 			}
+		}
+		if nodesLackingTheBlock == len(nodes) { // no node has the last block
+			return nil // finish successfully
 		}
 	}
 }

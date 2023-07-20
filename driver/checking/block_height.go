@@ -12,8 +12,10 @@ type BlockHeightChecker struct {
 }
 
 func (*BlockHeightChecker) Check(net driver.Network) error {
+	nodes := net.GetActiveNodes()
+	heights := make([]int64, len(nodes))
 	maxHeight := int64(0)
-	for _, n := range net.GetActiveNodes() {
+	for i, n := range nodes {
 		height, err := getBlockHeight(n)
 		if err != nil {
 			return fmt.Errorf("failed to get block height of node %s; %v", n.GetLabel(), err)
@@ -27,8 +29,11 @@ func (*BlockHeightChecker) Check(net driver.Network) error {
 		if maxHeight < height {
 			maxHeight = height
 		}
-		if height < maxHeight-1 {
-			return fmt.Errorf("node %s reports too old block %d (max block is %d)", n.GetLabel(), height, maxHeight)
+		heights[i] = height
+	}
+	for i, n := range nodes {
+		if heights[i] < maxHeight-1 {
+			return fmt.Errorf("node %s reports too old block %d (max block is %d)", n.GetLabel(), heights[i], maxHeight)
 		}
 	}
 	return nil

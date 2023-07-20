@@ -65,3 +65,47 @@ func TestBlockHashesCheckerInvalidStateRoot(t *testing.T) {
 		t.Errorf("unexpected error from BlocksHashesChecker: %v", err)
 	}
 }
+
+func TestBlockHashesCheckerInvalidLastBlock(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	net := driver.NewMockNetwork(ctrl)
+	node1 := driver.NewMockNode(ctrl)
+	node2 := driver.NewMockNode(ctrl)
+	node3 := driver.NewMockNode(ctrl)
+	rpc1 := rpc.NewMockRpcClient(ctrl)
+	rpc2 := rpc.NewMockRpcClient(ctrl)
+	rpc3 := rpc.NewMockRpcClient(ctrl)
+	net.EXPECT().GetActiveNodes().MinTimes(1).Return([]driver.Node{node1, node2, node3})
+	node1.EXPECT().DialRpc().MinTimes(1).Return(rpc1, nil)
+	node2.EXPECT().DialRpc().MinTimes(1).Return(rpc2, nil)
+	node3.EXPECT().DialRpc().MinTimes(1).Return(rpc3, nil)
+	result1 := blockHashes{
+		Hash:         common.Hash{0x11},
+		StateRoot:    common.Hash{0x22},
+		ReceiptsRoot: common.Hash{0x33},
+	}
+	result2 := blockHashes{
+		Hash:         common.Hash{0x11},
+		StateRoot:    common.Hash{0x22},
+		ReceiptsRoot: common.Hash{0xFF}, // different
+	}
+
+	rpc1.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).Times(4).SetArg(0, &result1)
+	rpc1.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).AnyTimes()
+
+	rpc2.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).Times(3).SetArg(0, &result1)
+	rpc2.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).AnyTimes() // does not have block 3 (should be ignored)
+
+	rpc3.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).Times(3).SetArg(0, &result1)
+	rpc3.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", "0x3", false).SetArg(0, &result2) // different block 3
+	rpc3.EXPECT().Call(gomock.Any(), "eth_getBlockByNumber", gomock.Any(), false).AnyTimes()
+
+	rpc1.EXPECT().Close()
+	rpc2.EXPECT().Close()
+	rpc3.EXPECT().Close()
+
+	err := new(BlocksHashesChecker).Check(net)
+	if err.Error() != "receiptsRoot of the block 3 does not match" {
+		t.Errorf("unexpected error from BlocksHashesChecker: %v", err)
+	}
+}
