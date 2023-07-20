@@ -182,7 +182,11 @@ func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
 	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
 
-// reasureAccountPrivateKey is an account with tokens that can be used to
+func (n *LocalNetwork) dialRandomValidatorRpc() (rpc2.RpcClient, error) {
+	return n.validators[rand.Intn(len(n.validators))].DialRpc()
+}
+
+// treasureAccountPrivateKey is an account with tokens that can be used to
 // initiate test applications and accounts.
 const treasureAccountPrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
 
@@ -239,7 +243,7 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 }
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
-	rpcClient, err := n.DialRandomRpc()
+	rpcClient, err := n.dialRandomValidatorRpc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}
