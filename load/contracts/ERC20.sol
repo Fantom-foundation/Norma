@@ -31,8 +31,11 @@ contract ERC20 is IERC20 {
     string public name;
     string public symbol;
     uint8 public decimals = 18;
+    address public owner;
+    mapping (address => bool) whitelist;
 
     constructor(string memory _name, string memory _symbol) {
+        owner = msg.sender;
         name = _name;
         symbol = _symbol;
     }
@@ -55,11 +58,18 @@ contract ERC20 is IERC20 {
         address recipient,
         uint amount
     ) external returns (bool) {
-        //allowance[sender][msg.sender] -= amount; // ignored for Norma testing
+        if(!whitelist[msg.sender]) { // ignore allowance for whitelisted contracts
+            allowance[sender][msg.sender] -= amount;
+        }
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
         emit Transfer(sender, recipient, amount);
         return true;
+    }
+
+    function whitelistSpender(address spender) external {
+        require(msg.sender == owner, "callable only by owner");
+        whitelist[spender] = true;
     }
 
     function mint(address recipient, uint256 amount) external {

@@ -102,6 +102,15 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 		}
 	}
 
+	// Whitelist Uniswap router in the token (skip setting allowance by every user)
+	for i := 0; i < TokensInChain; i++ {
+		txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
+		_, err = tokenContracts[i].WhitelistSpender(txOpts, routerAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to whitelist Uniswap contract in the ERC-20 token %d; %v", i, err)
+		}
+	}
+
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
 	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numUsers, regularGasPrice)
