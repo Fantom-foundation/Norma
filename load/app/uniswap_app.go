@@ -53,7 +53,9 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	// Deploy tokens
 	for i := 0; i < TokensInChain; i++ {
 		txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-		tokenAddresses[i], _, tokenContracts[i], err = contract.DeployERC20(txOpts, rpcClient)
+		name := fmt.Sprintf("Testing token %d", i)
+		symbol := fmt.Sprintf("TOK%d", i)
+		tokenAddresses[i], _, tokenContracts[i], err = contract.DeployERC20(txOpts, rpcClient, name, symbol)
 		if err != nil {
 			return nil, fmt.Errorf("failed to deploy ERC-20 token %d; %v", i, err)
 		}

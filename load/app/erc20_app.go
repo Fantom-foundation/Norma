@@ -31,7 +31,7 @@ func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 	}
 	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
 	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-	contractAddress, _, _, err := contract.DeployERC20(txOpts, rpcClient)
+	contractAddress, _, _, err := contract.DeployERC20(txOpts, rpcClient, "Testing Token", "TOK")
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy ERC20 contract; %v", err)
 	}
