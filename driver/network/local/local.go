@@ -58,18 +58,18 @@ type LocalNetwork struct {
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	client, err := docker.NewClient()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create docker client; %v", err)
 	}
 
 	dn, err := client.CreateBridgeNetwork()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create bridge network; %v", err)
 	}
 
 	// Create chain account, which will be used for the initialization
 	primaryAccount, err := app.NewAccount(0, treasureAccountPrivateKey, fakeNetworkID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create primary account; %v", err)
 	}
 
 	// Create the empty network.

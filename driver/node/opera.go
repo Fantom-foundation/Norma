@@ -82,25 +82,26 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	ports, err := network.GetFreePorts(len(operaServices.Services()))
-	portForwarding := make(map[network.Port]network.Port, len(ports))
-	for i, service := range operaServices.Services() {
-		portForwarding[service.Port] = ports[i]
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	host, err := client.Start(&docker.ContainerConfig{
-		ImageName:       operaDockerImageName,
-		ShutdownTimeout: &shutdownTimeout,
-		PortForwarding:  portForwarding,
-		Environment: map[string]string{
-			"VALIDATOR_NUMBER": validatorId,
-			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
-			"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
-		},
-		Network: dn,
+	host, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*docker.Container, error) {
+		ports, err := network.GetFreePorts(len(operaServices.Services()))
+		portForwarding := make(map[network.Port]network.Port, len(ports))
+		for i, service := range operaServices.Services() {
+			portForwarding[service.Port] = ports[i]
+		}
+		if err != nil {
+			return nil, err
+		}
+		return client.Start(&docker.ContainerConfig{
+			ImageName:       operaDockerImageName,
+			ShutdownTimeout: &shutdownTimeout,
+			PortForwarding:  portForwarding,
+			Environment: map[string]string{
+				"VALIDATOR_NUMBER": validatorId,
+				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
+				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
+			},
+			Network: dn,
+		})
 	})
 	if err != nil {
 		return nil, err
