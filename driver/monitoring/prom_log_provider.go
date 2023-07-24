@@ -246,7 +246,7 @@ func (n *PrometheusLogDispatcher) startNodeLogsDispatch(nodeId Node, url *driver
 			if logs, err := n.logReader(url); err == nil {
 				n.distributeLog(NewTime(time.Now()), node, logs)
 			} else {
-				log.Printf("failed to parse log: %s", err)
+				log.Printf("monitoring: failed to parse log: %s", err)
 			}
 		}
 	}(nodeId, *url)
