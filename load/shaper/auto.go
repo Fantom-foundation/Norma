@@ -34,8 +34,8 @@ func (s *autoShaper) GetNumMessagesInInterval(start time.Time, duration time.Dur
 
 	// The goal of this shaper is to maximize throughput without creating an overload scenario.
 	// To detect overloads, the gap between the submitted and received transactions is tracked.
-	// If the gap becomes > the current rate per second, the transaction rate is reduced by
-	// the configurable `decrease` factor. Otherwise, the transaction rate is increased a
+	// If the gap becomes > twice the current rate per second, the transaction rate is reduced
+	// by the configurable `decrease` factor. Otherwise, the transaction rate is increased a
 	// configurable `increase` constant.
 
 	// Periodically adjust the transfer rate.
@@ -45,7 +45,7 @@ func (s *autoShaper) GetNumMessagesInInterval(start time.Time, duration time.Dur
 		// Fetch the latest refresh rates.
 		gap := getProcessingGap(s.loadInfo)
 
-		if float64(gap) > s.rate {
+		if float64(gap) > 2*s.rate {
 			s.rate *= 1 - s.decrease
 		} else {
 			s.rate += s.increase
