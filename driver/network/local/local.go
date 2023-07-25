@@ -88,25 +88,27 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	net.RegisterListener(net.rpcWorkerPool)
 
 	// Start all validators.
-	nodeConfig := node.OperaNodeConfig{
-		ValidatorId:   new(int),
-		NetworkConfig: config,
-	}
-	var errs []error
+	net.validators = make([]*node.OperaNode, config.NumberOfValidators)
+	errs := make([]error, config.NumberOfValidators)
+	var wg sync.WaitGroup
 	for i := 0; i < config.NumberOfValidators; i++ {
-		// TODO: create nodes in parallel
-		*nodeConfig.ValidatorId = i + 1
-		nodeConfig.Label = fmt.Sprintf("_validator-%d", i+1)
-		validator, err := net.createNode(&nodeConfig)
-		if err != nil {
-			errs = append(errs, err)
-		} else {
-			net.validators = append(net.validators, validator)
-		}
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			validatorId := i + 1
+			nodeConfig := node.OperaNodeConfig{
+				ValidatorId:   &validatorId,
+				NetworkConfig: config,
+				Label:         fmt.Sprintf("_validator-%d", validatorId),
+			}
+			net.validators[i], errs[i] = net.createNode(&nodeConfig)
+		}()
 	}
+	wg.Wait()
 
-	// If starting the validators failed, the network statup should fail.
-	if len(errs) > 0 {
+	// If starting the validators failed, the network startup should fail.
+	if errors.Join(errs...) != nil {
 		err := net.Shutdown()
 		if err != nil {
 			errs = append(errs, err)
