@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
 	"log"
 	"math/rand"
 	"sync"
+
+	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
 
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -141,9 +142,11 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 	n.nodes[id] = node
 	n.nodesMutex.Unlock()
 
-	for _, listener := range n.getListeners() {
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
 		listener.AfterNodeCreation(node)
 	}
+	n.listenerMutex.Unlock()
 
 	return node, nil
 }
@@ -277,9 +280,11 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	n.apps = append(n.apps, app)
 	n.appsMutex.Unlock()
 
-	for _, listener := range n.getListeners() {
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
 		listener.AfterApplicationCreation(app)
 	}
+	n.listenerMutex.Unlock()
 
 	return app, nil
 }
@@ -312,16 +317,6 @@ func (n *LocalNetwork) UnregisterListener(listener driver.NetworkListener) {
 	n.listenerMutex.Lock()
 	delete(n.listeners, listener)
 	n.listenerMutex.Unlock()
-}
-
-func (n *LocalNetwork) getListeners() []driver.NetworkListener {
-	n.listenerMutex.Lock()
-	res := make([]driver.NetworkListener, 0, len(n.listeners))
-	for listener := range n.listeners {
-		res = append(res, listener)
-	}
-	n.listenerMutex.Unlock()
-	return res
 }
 
 func (n *LocalNetwork) Shutdown() error {
