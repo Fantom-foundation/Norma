@@ -28,7 +28,7 @@ DB_IMPLs = [
 ]
 
 # The number of validators to be evaluated.
-NUM_VALIDATORs = [1,2,4,6,8]
+NUM_VALIDATORs = [1,2,4,6,8,12]
 
 # ---------------------------------- Action -----------------------------------
 
