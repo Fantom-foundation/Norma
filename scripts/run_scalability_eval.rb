@@ -23,7 +23,7 @@ SCENARIO = "./scenarios/eval/scalability.yml"
 
 # The DB implementations Opera should be evaluated with.
 DB_IMPLs = [
-  #"geth",
+  "geth",
   "go-file",
 ]
 
