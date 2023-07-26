@@ -36,6 +36,8 @@ var runCommand = cli.Command{
 		&evalLabel,
 		&keepPrometheusRunning,
 		&numValidators,
+		&skipChecks,
+		&skipReportRendering,
 		&vmImpl,
 	},
 }
@@ -59,6 +61,14 @@ var (
 	numValidators = cli.IntFlag{
 		Name:  "num-validators",
 		Usage: "overrides the number of validators specified in the scenario file.",
+	}
+	skipChecks = cli.BoolFlag{
+		Name:  "skip-checks",
+		Usage: "disables the final network consistency checks",
+	}
+	skipReportRendering = cli.BoolFlag{
+		Name:  "skip-report-rendering",
+		Usage: "disables the rendering of the final summary report",
 	}
 	vmImpl = cli.StringFlag{
 		Name:  "vm-impl",
@@ -156,11 +166,16 @@ func run(ctx *cli.Context) (err error) {
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
 
-		fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
-		if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
-			fmt.Printf("Report generation failed:\n%v\n", err)
+		if !ctx.Bool(skipReportRendering.Name) {
+			fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
+			if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
+				fmt.Printf("Report generation failed:\n%v\n", err)
+			} else {
+				fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
+			}
 		} else {
-			fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
+			fmt.Printf("Report rendering skipped (--%s)\n", skipReportRendering.Name)
+			fmt.Printf("To render report run `norma render %s`\n", monitor.GetMeasurementFileName())
 		}
 	}()
 
@@ -194,12 +209,16 @@ func run(ctx *cli.Context) (err error) {
 	}
 	fmt.Printf("Execution completed successfully!\n")
 
-	fmt.Printf("Checking network consistency ...\n")
-	err = checking.CheckNetworkConsistency(net)
-	if err != nil {
-		return fmt.Errorf("Checking the network consistency failed: %v\n", err)
+	if !ctx.Bool(skipChecks.Name) {
+		fmt.Printf("Checking network consistency ...\n")
+		err = checking.CheckNetworkConsistency(net)
+		if err != nil {
+			return fmt.Errorf("checking the network consistency failed: %v", err)
+		}
+		fmt.Printf("Network checks succeed.\n")
+	} else {
+		fmt.Printf("Network checks skipped (--%s)\n", skipChecks.Name)
 	}
-	fmt.Printf("Network checks succeed.\n")
 
 	return nil
 }
