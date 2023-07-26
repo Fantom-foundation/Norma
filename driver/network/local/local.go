@@ -155,8 +155,9 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 // CreateNode creates non-validator nodes in the network.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
 	return n.createNode(&node.OperaNodeConfig{
-		Label:         config.Name,
-		NetworkConfig: &n.config,
+		Label:            config.Name,
+		NetworkConfig:    &n.config,
+		VmImplementation: n.config.VmImplementation,
 	})
 }
 
