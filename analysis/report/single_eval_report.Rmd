@@ -149,17 +149,19 @@ if (nrow(sent_rate) > 0) {
 received_rate <- all_data %>%
     # filter rows and columns
     dplyr::filter(metric == "ReceivedTransactions") %>%
-    select(time, value) %>%
+    select(time, app, value) %>%
     # convert value and time to numerical values
     mutate(value = as.numeric(value)) %>%
     mutate(time = as.numeric(time)) %>%
     # compute the individual increments
+    group_by(app) %>%
     arrange(time) %>%
     reframe(
         time = time,
         increment = value - lag(value, default=0),
     ) %>%
     # compute average rate over dynamic sized windows (each 5 seconds)
+    arrange(time) %>%
     slide_period_dfr(
         as.POSIXct(.$time/1e9,origin="1970-01-01"),
         "second",
