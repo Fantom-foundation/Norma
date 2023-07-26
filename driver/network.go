@@ -55,6 +55,8 @@ type NetworkConfig struct {
 	NumberOfValidators int
 	// The name of the StateDB implementation to be used by network nodes.
 	StateDbImplementation string
+	// The name of the EVM implementation to be used by network nodes.
+	VmImplementation string
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there

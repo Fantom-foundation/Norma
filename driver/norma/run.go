@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/checking"
 	"log"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/checking"
 
 	"github.com/Fantom-foundation/Norma/analysis/report"
 	"github.com/Fantom-foundation/Norma/driver"
@@ -35,6 +36,7 @@ var runCommand = cli.Command{
 		&evalLabel,
 		&keepPrometheusRunning,
 		&numValidators,
+		&vmImpl,
 	},
 }
 
@@ -58,6 +60,11 @@ var (
 		Name:  "num-validators",
 		Usage: "overrides the number of validators specified in the scenario file.",
 	}
+	vmImpl = cli.StringFlag{
+		Name:  "vm-impl",
+		Usage: "select the VM implementation to use (geth, tosca, lfvm, ...)",
+		Value: "tosca",
+	}
 )
 
 func run(ctx *cli.Context) (err error) {
@@ -66,6 +73,14 @@ func run(ctx *cli.Context) (err error) {
 		db = "go-file"
 	} else if db != "geth" {
 		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
+	}
+
+	vm := strings.ToLower(ctx.String(vmImpl.Name))
+	if vm == "tosca" {
+		vm = "lfvm"
+	}
+	if !isValidVmImpl(vm) {
+		return fmt.Errorf("unknown value fore --%v flag: %v", vmImpl.Name, vm)
 	}
 
 	label := ctx.String(evalLabel.Name)
@@ -106,11 +121,14 @@ func run(ctx *cli.Context) (err error) {
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators:    1,
 		StateDbImplementation: db,
+		VmImplementation:      vm,
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
-	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
+	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
+		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
+	)
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
@@ -282,4 +300,12 @@ func getLastValAsString[K constraints.Ordered, T any](exists bool, series monito
 		return "N/A"
 	}
 	return fmt.Sprintf("%v", point.Value)
+}
+
+func isValidVmImpl(name string) bool {
+	switch strings.ToLower(name) {
+	case "geth", "lfvm", "lfvm-si", "evmzero", "evmone":
+		return true
+	}
+	return false
 }
