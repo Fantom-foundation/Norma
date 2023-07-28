@@ -83,7 +83,7 @@ func (f *CounterApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	// generate a new account for each worker - avoid account nonces related bottlenecks
 	id := atomic.AddInt64(&f.numAccounts, 1)
 	startingAccount := f.startingAccounts[id%int64(len(f.startingAccounts))]
-	workerAccount, err := GenerateAndFundAccount(startingAccount, rpcClient, regularGasPrice, int(id), 1000)
+	workerAccount, err := GenerateAndFundAccount(startingAccount, rpcClient, regularGasPrice, int(id), 1_000_000)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fund worker account %d; %v", id, err)
 	}
