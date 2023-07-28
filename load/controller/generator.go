@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Network) {
+func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.NetworkConnection) {
 	for range trigger {
 		tx, err := user.GenerateTx()
 		if err != nil {

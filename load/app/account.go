@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
@@ -67,6 +68,16 @@ func GenerateAndFundAccount(sourceAccount *Account, rpcClient rpc.RpcClient, reg
 		return nil, fmt.Errorf("failed to transfer (value: %s, gasPrice: %s): %v", value, priorityGasPrice, err)
 	}
 	return account, nil
+}
+
+// LoadNonceFromNetwork loads the nonce of the account from RPC
+func (a *Account) LoadNonceFromNetwork(rpcClient rpc.RpcClient) error {
+	nonce, err := rpcClient.PendingNonceAt(context.Background(), a.address)
+	if err != nil {
+		return err
+	}
+	atomic.StoreUint64(&a.nonce, nonce)
+	return nil
 }
 
 // getNextNonce provides a nonce to be used for next transactions sent using this account

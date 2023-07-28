@@ -39,11 +39,15 @@ func (p *RpcWorkerPool) AfterNodeCreation(newNode driver.Node) {
 	if rpcUrl == nil {
 		return
 	}
+	p.AddRpcNode(*rpcUrl)
+}
+
+func (p *RpcWorkerPool) AddRpcNode(rpcUrl driver.URL) {
 	for i := 0; i < 150; i++ {
 		p.done.Add(1)
 		go func() {
 			defer p.done.Done()
-			if err := p.runRpcSenderLoop(*rpcUrl, network.DefaultRetryAttempts); err != nil {
+			if err := p.runRpcSenderLoop(rpcUrl, network.DefaultRetryAttempts); err != nil {
 				log.Printf("failed to open RPC connection; %v", err)
 				return
 			}

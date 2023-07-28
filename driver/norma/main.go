@@ -22,6 +22,7 @@ func main() {
 			&purgeCommand,
 			&renderCommand,
 			&diffCommand,
+			&feedCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {

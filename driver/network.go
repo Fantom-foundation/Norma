@@ -8,11 +8,19 @@ import (
 
 //go:generate mockgen -source network.go -destination network_mock.go -package driver
 
+// NetworkConnection represents a network, where can be txs feeded.
+type NetworkConnection interface {
+	DialRandomRpc() (rpc.RpcClient, error)
+	SendTransaction(tx *types.Transaction)
+}
+
 // Network abstracts an execution environment for running scenarios.
 // Implementations may run nodes and applications locally, in docker images, or
 // remotely, on actual nodes. The interface is used by the scenario driver
 // to execute scenario descriptions.
 type Network interface {
+	NetworkConnection
+
 	// CreateNode creates a new node instance running a network client based on
 	// the given configuration. It is used by the scenario executor to add
 	// nodes to the network as needed.
@@ -42,10 +50,6 @@ type Network interface {
 	// Shutdown stops all applications and nodes in the network and frees
 	// any potential other resources.
 	Shutdown() error
-
-	SendTransaction(tx *types.Transaction)
-
-	DialRandomRpc() (rpc.RpcClient, error)
 }
 
 // NetworkConfig is a collection of network parameters to be used by factories

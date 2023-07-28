@@ -20,13 +20,13 @@ import (
 type AppController struct {
 	shaper      shaper.Shaper
 	application app.Application
-	network     driver.Network
+	network     driver.NetworkConnection
 	trigger     chan struct{}
 	users       []app.User
 	rpcClient   rpc.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.NetworkConnection) (*AppController, error) {
 	trigger := make(chan struct{}, 100)
 
 	rpcClient, err := network.DialRandomRpc()
