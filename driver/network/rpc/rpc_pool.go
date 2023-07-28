@@ -85,7 +85,7 @@ func (p *RpcWorkerPool) runRpcSenderLoop(rpcUrl driver.URL, connectAttempts int)
 	for tx := range p.txs {
 		err := rpcClient.SendTransaction(context.Background(), tx)
 		if err != nil {
-			log.Printf("failed to send tx; %v", err)
+			log.Printf("failed to send tx; %v\n", err)
 		}
 	}
 

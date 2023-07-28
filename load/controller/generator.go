@@ -10,7 +10,7 @@ func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Net
 	for range trigger {
 		tx, err := user.GenerateTx()
 		if err != nil {
-			log.Printf("failed to generate tx; %v", err)
+			log.Printf("failed to generate tx; %v\n", err)
 		} else {
 			network.SendTransaction(tx)
 		}

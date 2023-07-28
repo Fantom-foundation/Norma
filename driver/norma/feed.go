@@ -107,7 +107,35 @@ func feed(ctx *cli.Context) (err error) {
 	}
 
 	log.Printf("running...\n")
-	return appController.Run(context.Background())
+	go func() {
+		err := appController.Run(context.Background())
+		if err != nil {
+			log.Printf("Failed to run load app: %v", err)
+		}
+	}()
+
+	for {
+		reportState(appController)
+		time.Sleep(5 * time.Second)
+	}
+}
+
+var lastSent, lastReceived uint64
+
+func reportState(appController *controller.AppController) {
+	sent, err := appController.GetSentTransactions()
+	if err != nil {
+		log.Printf("failed to get amount of sent txs; %v\n", err)
+		return
+	}
+	received, err := appController.GetReceivedTransactions()
+	if err != nil {
+		log.Printf("failed to get amount of received txs; %v\n", err)
+		return
+	}
+	log.Printf("sent/received txs: %d/%d, increment: %d/%d\n", sent, received, sent-lastSent, received-lastReceived)
+	lastSent = sent
+	lastReceived = received
 }
 
 func NewFeederNetworkConnection(rpcUrls []string) *FeederNetworkConnection {
