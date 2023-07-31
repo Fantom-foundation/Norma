@@ -63,6 +63,10 @@ func (s *periodicNodeDataSource[T]) AfterNodeCreation(node driver.Node) {
 	s.AddSubject(mon.Node(label), sensor)
 }
 
+func (s *periodicNodeDataSource[T]) AfterNodeRemoval(driver.Node) {
+
+}
+
 func (s *periodicNodeDataSource[T]) AfterApplicationCreation(driver.Application) {
 	// ignored
 }

@@ -118,6 +118,14 @@ func (n *NodeLogDispatcher) AfterNodeCreation(node driver.Node) {
 	}
 }
 
+func (n *NodeLogDispatcher) AfterNodeRemoval(node driver.Node) {
+	n.nodesLock.Lock()
+	defer n.nodesLock.Unlock()
+
+	nodeId := node.GetLabel()
+	delete(n.nodes, Node(nodeId))
+}
+
 func (n *NodeLogDispatcher) AfterApplicationCreation(driver.Application) {
 	// ignored
 }

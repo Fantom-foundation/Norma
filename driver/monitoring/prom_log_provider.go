@@ -154,10 +154,12 @@ func (n *PrometheusLogDispatcher) Shutdown() {
 	if n.stopped {
 		return
 	}
+	log.Printf("closing prometheus log parser")
 	n.stopped = true
 	n.ticker.Stop()
 	close(n.done)
 	n.wg.Wait()
+	log.Printf("prometheus log parser closed")
 }
 
 func (n *PrometheusLogDispatcher) RegisterLogListener(key PrometheusLogKey, listener TimeLogListener) {
@@ -201,6 +203,19 @@ func (n *PrometheusLogDispatcher) AfterNodeCreation(driverNode driver.Node) {
 	}
 }
 
+func (n *PrometheusLogDispatcher) AfterNodeRemoval(node driver.Node) {
+	n.nodesLock.Lock()
+	defer n.nodesLock.Unlock()
+
+	nodeId := Node(node.GetLabel())
+	ch := n.nodes[nodeId]
+	delete(n.nodes, nodeId)
+	close(ch)
+	// also drain the channel not to trigger more reads
+	for range ch {
+	}
+}
+
 func (n *PrometheusLogDispatcher) AfterApplicationCreation(driver.Application) {
 	// ignored
 }
@@ -219,6 +234,9 @@ func (n *PrometheusLogDispatcher) startPeriodicDispatch() {
 				n.nodesLock.Lock()
 				for _, ch := range n.nodes {
 					close(ch)
+					// also drain the channel not to trigger more reads
+					for range ch {
+					}
 				}
 				n.nodes = map[Node]chan Time{}
 				n.nodesLock.Unlock()
@@ -246,7 +264,12 @@ func (n *PrometheusLogDispatcher) startNodeLogsDispatch(nodeId Node, url *driver
 			if logs, err := n.logReader(url); err == nil {
 				n.distributeLog(NewTime(time.Now()), node, logs)
 			} else {
-				log.Printf("monitoring: failed to parse log: %s", err)
+				n.nodesLock.Lock()
+				// report only errors occurred before shutdown
+				if _, exists := n.nodes[node]; exists {
+					log.Printf("monitoring: failed to parse log: %s", err)
+				}
+				n.nodesLock.Unlock()
 			}
 		}
 	}(nodeId, *url)
