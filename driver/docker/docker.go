@@ -214,7 +214,8 @@ func (c *Container) Stop() error {
 		return nil
 	}
 	c.stopped = true
-	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
+	timeout := int(c.config.ShutdownTimeout.Seconds())
+	return c.client.cli.ContainerStop(context.Background(), c.id, container.StopOptions{Timeout: &timeout})
 }
 
 // Cleanup stops the container (unless it is already stopped) and frees any
