@@ -177,6 +177,12 @@ func (n *LocalNetwork) RemoveNode(node driver.Node) error {
 	}
 	n.nodesMutex.Unlock()
 
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
+		listener.AfterNodeRemoval(node)
+	}
+	n.listenerMutex.Unlock()
+
 	return nil
 }
 

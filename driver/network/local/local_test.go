@@ -237,6 +237,12 @@ func TestLocalNetwork_CanRemoveNode(t *testing.T) {
 		t.Run(fmt.Sprintf("num_nodes=%d", N), func(t *testing.T) {
 			t.Parallel()
 			net, err := NewLocalNetwork(&config)
+			ctrl := gomock.NewController(t)
+			listener := driver.NewMockNetworkListener(ctrl)
+			listener.EXPECT().AfterNodeCreation(gomock.Any()).Times(N)
+			listener.EXPECT().AfterNodeRemoval(gomock.Any()).Times(N)
+			net.RegisterListener(listener)
+
 			if err != nil {
 				t.Fatalf("failed to create new local network: %v", err)
 			}

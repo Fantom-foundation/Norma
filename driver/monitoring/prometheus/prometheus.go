@@ -123,6 +123,10 @@ func (p *Prometheus) AfterNodeCreation(node driver.Node) {
 	}
 }
 
+func (p *Prometheus) AfterNodeRemoval(driver.Node) {
+	// ignored
+}
+
 func (p *Prometheus) AfterApplicationCreation(driver.Application) {
 	// ignored
 }

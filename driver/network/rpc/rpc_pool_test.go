@@ -11,14 +11,12 @@ import (
 func TestRetryRpcReturnGracefully(t *testing.T) {
 	t.Parallel()
 
-	pool := NewRpcWorkerPool()
 	start := time.Now()
-	err := pool.runRpcSenderLoop("wrong", 6)
+	txs := make(chan *types.Transaction)
+	w := newWorker("wrong", txs)
 
-	// we expect error, but should not panic
-	if err == nil {
-		t.Errorf("method was expected to fail")
-	}
+	time.Sleep(6 * time.Second)
+	w.close()
 
 	if got, want := time.Now().Sub(start).Seconds(), float64(5); got < want {
 		t.Errorf("RPC should be attempted around 6s, was: %f < %f", got, want)
@@ -62,4 +60,19 @@ func TestClosePool(t *testing.T) {
 	if got, want := counter.Load(), int32(10); got > want {
 		t.Errorf("not all data read from the channel: %d != %d", got, want)
 	}
+}
+
+func TestCloseWorkerStartStop(t *testing.T) {
+	txs := make(chan *types.Transaction)
+	w := newWorker("wrong", txs)
+	w.close()
+}
+
+func TestCloseWorkerGroupStartStop(t *testing.T) {
+	txs := make(chan *types.Transaction)
+	wg := workerGroup{}
+	for i := 0; i < 150; i++ {
+		wg.add("wrong", txs)
+	}
+	wg.close()
 }

@@ -57,6 +57,10 @@ func (s *periodicAppDataSource[T]) AfterNodeCreation(driver.Node) {
 	// ignored
 }
 
+func (s *periodicAppDataSource[T]) AfterNodeRemoval(driver.Node) {
+	// ignored
+}
+
 func (s *periodicAppDataSource[T]) AfterApplicationCreation(app driver.Application) {
 	label := app.Config().Name
 	sensor, err := s.factory.CreateSensor(app)

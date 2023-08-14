@@ -57,6 +57,10 @@ func (s *periodicUserDataSource[T]) AfterNodeCreation(driver.Node) {
 	// ignored
 }
 
+func (s *periodicUserDataSource[T]) AfterNodeRemoval(driver.Node) {
+	// ignored
+}
+
 func (s *periodicUserDataSource[T]) AfterApplicationCreation(app driver.Application) {
 	label := mon.App(app.Config().Name)
 	for i := 0; i < app.Config().Users; i++ {
