@@ -1,14 +1,12 @@
 package netmon
 
 import (
-	"io"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/golang/mock/gomock"
+	"io"
+	"strings"
+	"testing"
 )
 
 func TestCaptureSeriesFromNodeBlocks(t *testing.T) {
@@ -45,34 +43,53 @@ func TestIntegrateRegistryWithShutdown(t *testing.T) {
 	node2.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node2TestId))
 	node3.EXPECT().GetLabel().AnyTimes().Return(string(monitoring.Node3TestId))
 
-	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil)
-	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil)
-	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil)
+	urlA := driver.URL("A")
+	urlB := driver.URL("B")
+	urlC := driver.URL("C")
+	node1.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlA)
+	node2.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlB)
+	node3.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&urlC)
+
+	node1.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node1TestLog)), nil })
+	node2.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node2TestLog)), nil })
+	node3.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(monitoring.Node3TestLog)), nil })
+
+	url1 := driver.URL("node1")
+	url2 := driver.URL("node2")
+	url3 := driver.URL("node3")
+	node1.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url1)
+	node2.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url2)
+	node3.EXPECT().GetServiceUrl(gomock.Any()).AnyTimes().Return(&url3)
 
 	net := driver.NewMockNetwork(ctrl)
 	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
-	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1})
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
 	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
 	if err != nil {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
 
-	reg := monitoring.NewNodeLogDispatcher(net)
+	reg := monitor.NodeLogProvider().(*monitoring.NodeLogDispatcher)
+
 	source := NewNumberOfTransactionsSource(monitor)
 	reg.RegisterLogListener(source)
 
-	// pre-existing node with some blocks
+	// add node with some blocks
+	reg.AfterNodeCreation(node1)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// add second node - but we got still the same blockchain
 	reg.AfterNodeCreation(node2)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	// next node will NOT be registered, since the metric is shutdown,
 	// but we got the same blockchain as before, i.e. no new blocks
 	_ = source.Shutdown()
 	reg.AfterNodeCreation(node3)
+	reg.WaitForLogsToBeConsumed()
 	testNetworkSeriesData(t, monitoring.BlockchainTestData, source)
 
 	testNetworkSubjects(t, source)
@@ -106,20 +123,14 @@ func testNetworkSeriesData[T comparable](t *testing.T, expectedBlocks []monitori
 	var network monitoring.Network
 	for _, want := range expectedBlocks {
 		var found bool
-		for i := 0; i < 100; i++ {
-			series, exists := source.GetData(network)
-			if exists {
-				for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
-					if source.getBlockProperty(want) == got.Value {
-						found = true
-						break
-					}
-				}
-				if found {
+		series, exists := source.GetData(network)
+		if exists {
+			for _, got := range series.GetRange(monitoring.BlockNumber(0), monitoring.BlockNumber(1000)) {
+				if source.getBlockProperty(want) == got.Value {
+					found = true
 					break
 				}
 			}
-			time.Sleep(2 * 10 * time.Millisecond)
 		}
 
 		if !found {

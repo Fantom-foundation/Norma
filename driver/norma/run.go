@@ -8,15 +8,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Fantom-foundation/Norma/driver/checking"
+
 	"github.com/Fantom-foundation/Norma/analysis/report"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	_ "github.com/Fantom-foundation/Norma/driver/monitoring/account"
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/app"
 	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
 	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
 	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
+	_ "github.com/Fantom-foundation/Norma/driver/monitoring/user"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/urfave/cli/v2"
@@ -33,6 +35,10 @@ var runCommand = cli.Command{
 		&dbImpl,
 		&evalLabel,
 		&keepPrometheusRunning,
+		&numValidators,
+		&skipChecks,
+		&skipReportRendering,
+		&vmImpl,
 	},
 }
 
@@ -52,6 +58,23 @@ var (
 		Usage:   "if set, the Prometheus instance will not be shut down after the run is complete.",
 		Aliases: []string{"kpr"},
 	}
+	numValidators = cli.IntFlag{
+		Name:  "num-validators",
+		Usage: "overrides the number of validators specified in the scenario file.",
+	}
+	skipChecks = cli.BoolFlag{
+		Name:  "skip-checks",
+		Usage: "disables the final network consistency checks",
+	}
+	skipReportRendering = cli.BoolFlag{
+		Name:  "skip-report-rendering",
+		Usage: "disables the rendering of the final summary report",
+	}
+	vmImpl = cli.StringFlag{
+		Name:  "vm-impl",
+		Usage: "select the VM implementation to use (geth, tosca, lfvm, ...)",
+		Value: "tosca",
+	}
 )
 
 func run(ctx *cli.Context) (err error) {
@@ -60,6 +83,14 @@ func run(ctx *cli.Context) (err error) {
 		db = "go-file"
 	} else if db != "geth" {
 		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
+	}
+
+	vm := strings.ToLower(ctx.String(vmImpl.Name))
+	if vm == "tosca" {
+		vm = "lfvm"
+	}
+	if !isValidVmImpl(vm) {
+		return fmt.Errorf("unknown value fore --%v flag: %v", vmImpl.Name, vm)
 	}
 
 	label := ctx.String(evalLabel.Name)
@@ -79,6 +110,15 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
+	if num := ctx.Int(numValidators.Name); num > 0 {
+		fmt.Printf("Overriding number of validators to %d (--%s)\n", num, numValidators.Name)
+		scenario.NumValidators = &num
+	}
+
+	if err := scenario.Check(); err != nil {
+		return err
+	}
+
 	fmt.Printf("Starting evaluation %s\n", label)
 	outputDir, err := os.MkdirTemp("", fmt.Sprintf("norma_data_%s_", label))
 	if err != nil {
@@ -91,11 +131,14 @@ func run(ctx *cli.Context) (err error) {
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators:    1,
 		StateDbImplementation: db,
+		VmImplementation:      vm,
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
-	fmt.Printf("Creating network with %d validator(s) using the `%v` DB implementation ...\n", netConfig.NumberOfValidators, netConfig.StateDbImplementation)
+	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
+		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
+	)
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
@@ -118,16 +161,21 @@ func run(ctx *cli.Context) (err error) {
 	defer func() {
 		fmt.Printf("Shutting down data monitor ...\n")
 		if err := monitor.Shutdown(); err != nil {
-			fmt.Printf("error during monitor shutdown:\n%v", err)
+			fmt.Printf("error during monitor shutdown:\n%v\n", err)
 		}
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
 
-		fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
-		if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
-			fmt.Printf("Report generation failed:\n%v", err)
+		if !ctx.Bool(skipReportRendering.Name) {
+			fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
+			if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
+				fmt.Printf("Report generation failed:\n%v\n", err)
+			} else {
+				fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
+			}
 		} else {
-			fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
+			fmt.Printf("Report rendering skipped (--%s)\n", skipReportRendering.Name)
+			fmt.Printf("To render report run `norma render %s`\n", monitor.GetMeasurementFileName())
 		}
 	}()
 
@@ -160,6 +208,17 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 	fmt.Printf("Execution completed successfully!\n")
+
+	if !ctx.Bool(skipChecks.Name) {
+		fmt.Printf("Checking network consistency ...\n")
+		err = checking.CheckNetworkConsistency(net)
+		if err != nil {
+			return fmt.Errorf("checking the network consistency failed: %v", err)
+		}
+		fmt.Printf("Network checks succeed.\n")
+	} else {
+		fmt.Printf("Network checks skipped (--%s)\n", skipChecks.Name)
+	}
 
 	return nil
 }
@@ -260,4 +319,12 @@ func getLastValAsString[K constraints.Ordered, T any](exists bool, series monito
 		return "N/A"
 	}
 	return fmt.Sprintf("%v", point.Value)
+}
+
+func isValidVmImpl(name string) bool {
+	switch strings.ToLower(name) {
+	case "geth", "lfvm", "lfvm-si", "evmzero", "evmone":
+		return true
+	}
+	return false
 }

@@ -113,6 +113,7 @@ func TestExecutor_RunSingleApplicationScenario(t *testing.T) {
 		Duration: 10,
 		Applications: []parser.Application{{
 			Name:  "A",
+			Type:  "counter",
 			Start: New[float32](3),
 			End:   New[float32](7),
 			Rate:  parser.Rate{Constant: New[float32](10)},
@@ -145,6 +146,7 @@ func TestExecutor_RunMultipleApplicationScenario(t *testing.T) {
 		Duration: 10,
 		Applications: []parser.Application{{
 			Name:      "A",
+			Type:      "counter",
 			Instances: New(2),
 			Start:     New[float32](3),
 			End:       New[float32](7),

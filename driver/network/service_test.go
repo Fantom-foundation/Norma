@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestGetFreePort(t *testing.T) {
@@ -54,4 +55,26 @@ func TestRegisterDuplicatedPortsForServices(t *testing.T) {
 		t.Errorf("first registration must fail")
 	}
 
+}
+
+func TestRetry(t *testing.T) {
+	t.Parallel()
+
+	var count int
+	err := Retry(5, 1*time.Millisecond, func() error {
+		count++
+		if count >= 5 {
+			return nil
+		} else {
+			return fmt.Errorf("no time to end yet")
+		}
+	})
+
+	if err != nil {
+		t.Errorf("Retry should success eventually")
+	}
+
+	if got, want := count, 5; got < want {
+		t.Errorf("Retry finished early: %d < %d", got, want)
+	}
 }

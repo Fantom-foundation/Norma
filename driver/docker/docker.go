@@ -162,7 +162,9 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}
 	}
 
-	if err := c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
+	}); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +214,8 @@ func (c *Container) Stop() error {
 		return nil
 	}
 	c.stopped = true
-	return c.client.cli.ContainerStop(context.Background(), c.id, c.config.ShutdownTimeout)
+	timeout := int(c.config.ShutdownTimeout.Seconds())
+	return c.client.cli.ContainerStop(context.Background(), c.id, container.StopOptions{Timeout: &timeout})
 }
 
 // Cleanup stops the container (unless it is already stopped) and frees any

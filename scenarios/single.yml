@@ -1,0 +1,20 @@
+# This scenario similuates a minimal network comprising only a single validator
+# running one application generating a small number of transactions.
+
+# The name of the scenario
+name: Single Validator Network
+
+# The duration of the scenario's runtime, in seconds.
+duration: 60
+
+# The number of validator nodes in the network.
+num_validators: 1
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 10          # start time
+    end: 50            # termination time
+    rate:
+      constant: 200    # Tx/s

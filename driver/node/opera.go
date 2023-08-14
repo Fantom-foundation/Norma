@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/network"
@@ -62,6 +64,8 @@ type OperaNodeConfig struct {
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
+	// The EVM implementation to be used on this node.
+	VmImplementation string
 }
 
 // labelPattern restricts labels for nodes to non-empty alpha-numerical strings
@@ -81,25 +85,27 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	ports, err := network.GetFreePorts(len(operaServices.Services()))
-	portForwarding := make(map[network.Port]network.Port, len(ports))
-	for i, service := range operaServices.Services() {
-		portForwarding[service.Port] = ports[i]
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	host, err := client.Start(&docker.ContainerConfig{
-		ImageName:       operaDockerImageName,
-		ShutdownTimeout: &shutdownTimeout,
-		PortForwarding:  portForwarding,
-		Environment: map[string]string{
-			"VALIDATOR_NUMBER": validatorId,
-			"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
-			"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
-		},
-		Network: dn,
+	host, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*docker.Container, error) {
+		ports, err := network.GetFreePorts(len(operaServices.Services()))
+		portForwarding := make(map[network.Port]network.Port, len(ports))
+		for i, service := range operaServices.Services() {
+			portForwarding[service.Port] = ports[i]
+		}
+		if err != nil {
+			return nil, err
+		}
+		return client.Start(&docker.ContainerConfig{
+			ImageName:       operaDockerImageName,
+			ShutdownTimeout: &shutdownTimeout,
+			PortForwarding:  portForwarding,
+			Environment: map[string]string{
+				"VALIDATOR_NUMBER": validatorId,
+				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
+				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
+				"VM_IMPL":          config.VmImplementation,
+			},
+			Network: dn,
+		})
 	})
 	if err != nil {
 		return nil, err
@@ -109,13 +115,12 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		label: config.Label,
 	}
 
-	// Wait until the OperaNode inside the Container is ready. (3 minutes max)
-	for i := 0; i < 3*60; i++ {
+	// Wait until the OperaNode inside the Container is ready.
+	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		_, err := node.GetNodeID()
-		if err == nil {
-			return node, nil
-		}
-		time.Sleep(time.Second)
+		return err
+	}); err == nil {
+		return node, nil
 	}
 
 	// The node did not show up in time, so we consider the start to have failed.
@@ -182,30 +187,41 @@ func (n *OperaNode) Cleanup() error {
 	return n.host.Cleanup()
 }
 
+func (n *OperaNode) DialRpc() (rpc2.RpcClient, error) {
+	url := n.GetServiceUrl(&OperaRpcService)
+	if url == nil {
+		return nil, fmt.Errorf("node %s does not export an RPC server", n.label)
+	}
+
+	rpcClient, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*rpc.Client, error) {
+		return rpc.DialContext(context.Background(), string(*url))
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial RPC for node %s; %v", n.label, err)
+	}
+	return rpc2.WrapRpcClient(rpcClient), nil
+}
+
 // AddPeer informs the client instance represented by the OperaNode about the
 // existence of another node, to which it may establish a connection.
 func (n *OperaNode) AddPeer(id driver.NodeID) error {
-	url := n.GetServiceUrl(&OperaRpcService)
-	if url == nil {
-		return fmt.Errorf("node does not export an RPC server")
-	}
-	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+	rpcClient, err := n.DialRpc()
 	if err != nil {
 		return err
 	}
-	return rpcClient.Call(nil, "admin_addPeer", id)
+	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return rpcClient.Call(nil, "admin_addPeer", id)
+	})
 }
 
 // RemovePeer informs the client instance represented by the OperaNode
 // that the input node is no more available in the network.
 func (n *OperaNode) RemovePeer(id driver.NodeID) error {
-	url := n.GetServiceUrl(&OperaRpcService)
-	if url == nil {
-		return fmt.Errorf("node does not export an RPC server")
-	}
-	rpcClient, err := rpc.DialContext(context.Background(), string(*url))
+	rpcClient, err := n.DialRpc()
 	if err != nil {
 		return err
 	}
-	return rpcClient.Call(nil, "admin_removePeer", id)
+	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		return rpcClient.Call(nil, "admin_removePeer", id)
+	})
 }

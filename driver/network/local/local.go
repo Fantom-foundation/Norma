@@ -8,14 +8,14 @@ import (
 	"math/rand"
 	"sync"
 
+	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
+
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/node"
-	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
@@ -59,18 +59,18 @@ type LocalNetwork struct {
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	client, err := docker.NewClient()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create docker client; %v", err)
 	}
 
 	dn, err := client.CreateBridgeNetwork()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create bridge network; %v", err)
 	}
 
 	// Create chain account, which will be used for the initialization
 	primaryAccount, err := app.NewAccount(0, treasureAccountPrivateKey, fakeNetworkID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create primary account; %v", err)
 	}
 
 	// Create the empty network.
@@ -89,25 +89,28 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	net.RegisterListener(net.rpcWorkerPool)
 
 	// Start all validators.
-	nodeConfig := node.OperaNodeConfig{
-		ValidatorId:   new(int),
-		NetworkConfig: config,
-	}
-	var errs []error
+	net.validators = make([]*node.OperaNode, config.NumberOfValidators)
+	errs := make([]error, config.NumberOfValidators)
+	var wg sync.WaitGroup
 	for i := 0; i < config.NumberOfValidators; i++ {
-		// TODO: create nodes in parallel
-		*nodeConfig.ValidatorId = i + 1
-		nodeConfig.Label = fmt.Sprintf("_validator-%d", i+1)
-		validator, err := net.createNode(&nodeConfig)
-		if err != nil {
-			errs = append(errs, err)
-		} else {
-			net.validators = append(net.validators, validator)
-		}
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			validatorId := i + 1
+			nodeConfig := node.OperaNodeConfig{
+				ValidatorId:      &validatorId,
+				NetworkConfig:    config,
+				Label:            fmt.Sprintf("_validator-%d", validatorId),
+				VmImplementation: config.VmImplementation,
+			}
+			net.validators[i], errs[i] = net.createNode(&nodeConfig)
+		}()
 	}
+	wg.Wait()
 
-	// If starting the validators failed, the network statup should fail.
-	if len(errs) > 0 {
+	// If starting the validators failed, the network startup should fail.
+	if errors.Join(errs...) != nil {
 		err := net.Shutdown()
 		if err != nil {
 			errs = append(errs, err)
@@ -140,9 +143,11 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 	n.nodes[id] = node
 	n.nodesMutex.Unlock()
 
-	for _, listener := range n.getListeners() {
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
 		listener.AfterNodeCreation(node)
 	}
+	n.listenerMutex.Unlock()
 
 	return node, nil
 }
@@ -150,8 +155,9 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 // CreateNode creates non-validator nodes in the network.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
 	return n.createNode(&node.OperaNodeConfig{
-		Label:         config.Name,
-		NetworkConfig: &n.config,
+		Label:            config.Name,
+		NetworkConfig:    &n.config,
+		VmImplementation: n.config.VmImplementation,
 	})
 }
 
@@ -166,7 +172,7 @@ func (n *LocalNetwork) RemoveNode(node driver.Node) error {
 	for _, other := range n.nodes {
 		if err = other.RemovePeer(id); err != nil {
 			n.nodesMutex.Unlock()
-			return fmt.Errorf("failed to add peer; %v", err)
+			return fmt.Errorf("failed to remove peer; %v", err)
 		}
 	}
 	n.nodesMutex.Unlock()
@@ -178,31 +184,36 @@ func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
 	n.rpcWorkerPool.SendTransaction(tx)
 }
 
-func (n *LocalNetwork) DialRandomRpc() (app.RpcClient, error) {
+func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
 	nodes := n.GetActiveNodes()
-	rpcUrl := nodes[rand.Intn(len(nodes))].GetServiceUrl(&node.OperaWsService)
-	if rpcUrl == nil {
-		return nil, fmt.Errorf("websocket service is not available")
-	}
-	return ethclient.Dial(string(*rpcUrl))
+	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
 
-// reasureAccountPrivateKey is an account with tokens that can be used to
+func (n *LocalNetwork) dialRandomValidatorRpc() (rpc2.RpcClient, error) {
+	return n.validators[rand.Intn(len(n.validators))].DialRpc()
+}
+
+// treasureAccountPrivateKey is an account with tokens that can be used to
 // initiate test applications and accounts.
 const treasureAccountPrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
 
 const fakeNetworkID = 0xfa3
 
 type localApplication struct {
+	name       string
 	controller *controller.AppController
 	config     *driver.ApplicationConfig
 	cancel     context.CancelFunc
+	done       *sync.WaitGroup
 }
 
 func (a *localApplication) Start() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancel = cancel
+
+	a.done.Add(1)
 	go func() {
+		defer a.done.Done()
 		err := a.controller.Run(ctx)
 		if err != nil {
 			log.Printf("Failed to run load app: %v", err)
@@ -216,6 +227,9 @@ func (a *localApplication) Stop() error {
 		a.cancel()
 	}
 	a.cancel = nil
+	log.Printf("waiting for application to stop: %s", a.name)
+	a.done.Wait()
+	log.Printf("application has stoped: %s", a.name)
 	return nil
 }
 
@@ -223,12 +237,12 @@ func (a *localApplication) Config() *driver.ApplicationConfig {
 	return a.config
 }
 
-func (a *localApplication) GetNumberOfAccounts() int {
-	return a.controller.GetNumberOfAccounts()
+func (a *localApplication) GetNumberOfUsers() int {
+	return a.controller.GetNumberOfUsers()
 }
 
-func (a *localApplication) GetSentTransactions(account int) (uint64, error) {
-	return a.controller.GetSentTransactions(account)
+func (a *localApplication) GetSentTransactions(user int) (uint64, error) {
+	return a.controller.GetTransactionsSentBy(user)
 }
 
 func (a *localApplication) GetReceivedTransactions() (uint64, error) {
@@ -236,26 +250,15 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 }
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
-
-	node, err := n.getRandomValidator()
-	if err != nil {
-		return nil, err
-	}
-
-	rpcUrl := node.GetServiceUrl(&opera.OperaWsService)
-	if rpcUrl == nil {
-		return nil, fmt.Errorf("primary node is not running an RPC server")
-	}
-
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	rpcClient, err := n.dialRandomValidatorRpc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}
 	defer rpcClient.Close()
 
-	generatorFactory, err := app.NewERC20Application(rpcClient, n.primaryAccount)
+	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize tx app; %v", err)
+		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)
 	}
 
 	sh, err := shaper.ParseRate(config.Rate)
@@ -263,23 +266,27 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	appController, err := controller.NewAppController(generatorFactory, sh, config.Accounts, n)
+	appController, err := controller.NewAppController(application, sh, config.Users, n)
 	if err != nil {
 		return nil, err
 	}
 
 	app := &localApplication{
+		name:       config.Name,
 		controller: appController,
 		config:     config,
+		done:       &sync.WaitGroup{},
 	}
 
 	n.appsMutex.Lock()
 	n.apps = append(n.apps, app)
 	n.appsMutex.Unlock()
 
-	for _, listener := range n.getListeners() {
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
 		listener.AfterApplicationCreation(app)
 	}
+	n.listenerMutex.Unlock()
 
 	return app, nil
 }
@@ -314,18 +321,9 @@ func (n *LocalNetwork) UnregisterListener(listener driver.NetworkListener) {
 	n.listenerMutex.Unlock()
 }
 
-func (n *LocalNetwork) getListeners() []driver.NetworkListener {
-	n.listenerMutex.Lock()
-	res := make([]driver.NetworkListener, 0, len(n.listeners))
-	for listener := range n.listeners {
-		res = append(res, listener)
-	}
-	n.listenerMutex.Unlock()
-	return res
-}
-
 func (n *LocalNetwork) Shutdown() error {
 	var errs []error
+
 	// First stop all generators.
 	for _, app := range n.apps {
 		// TODO: shutdown apps in parallel.
@@ -354,17 +352,12 @@ func (n *LocalNetwork) Shutdown() error {
 		}
 	}
 
+	errs = append(errs, n.rpcWorkerPool.Close())
+
 	return errors.Join(errs...)
 }
 
 // GetDockerNetwork returns the underlying docker network.
 func (n *LocalNetwork) GetDockerNetwork() *docker.Network {
 	return n.network
-}
-
-func (n *LocalNetwork) getRandomValidator() (driver.Node, error) {
-	if len(n.validators) == 0 {
-		return nil, fmt.Errorf("network is empty")
-	}
-	return n.validators[rand.Intn(len(n.validators))], nil
 }

@@ -32,7 +32,9 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 		scheduleNodeEvents(&node, queue, network, endTime)
 	}
 	for _, app := range scenario.Applications {
-		scheduleApplicationEvents(&app, queue, network, endTime)
+		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
+			return err
+		}
 	}
 
 	// Register a handler for Ctrl+C events.
@@ -189,14 +191,14 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 // scheduleApplicationEvents schedules a number of events covering the life-cycle of a class of
 // applications during the scenario execution. The nature of the scheduled applications is taken from the
 // given application description, and actions are applied to the given network.
-func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, net driver.Network, end Time) {
+func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, net driver.Network, end Time) error {
 	instances := 1
 	if source.Instances != nil {
 		instances = *source.Instances
 	}
-	accounts := 1
-	if source.Accounts != nil {
-		accounts = *source.Accounts
+	users := 1
+	if source.Users != nil {
+		users = *source.Users
 	}
 	startTime := Time(0)
 	if source.Start != nil {
@@ -210,9 +212,10 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-			Name:     name,
-			Rate:     &source.Rate,
-			Accounts: accounts,
+			Name:  name,
+			Type:  source.Type,
+			Rate:  &source.Rate,
+			Users: users,
 		}); err == nil { // schedule application only when it could be created
 			queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
 				return newApp.Start()
@@ -221,7 +224,8 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 				return newApp.Stop()
 			}))
 		} else {
-			log.Printf("cannot create application: %v", err)
+			return err
 		}
 	}
+	return nil
 }

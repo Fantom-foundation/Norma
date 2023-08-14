@@ -1,14 +1,19 @@
 package monitoring
 
 import (
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
 )
+
+func TestLogsParsersImplements(t *testing.T) {
+	var inst NodeLogDispatcher
+	var _ NodeLogProvider = &inst
+}
 
 func TestRegisterLogParser(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -22,21 +27,29 @@ func TestRegisterLogParser(t *testing.T) {
 	node2.EXPECT().GetLabel().AnyTimes().Return(string(Node2TestId))
 	node3.EXPECT().GetLabel().AnyTimes().Return(string(Node3TestId))
 
-	node1.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(Node1TestLog)), nil)
-	node2.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(Node2TestLog)), nil)
-	node3.EXPECT().StreamLog().AnyTimes().Return(io.NopCloser(strings.NewReader(Node3TestLog)), nil)
+	node1.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(Node1TestLog)), nil })
+	node2.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(Node2TestLog)), nil })
+	node3.EXPECT().StreamLog().AnyTimes().DoAndReturn(func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(Node3TestLog)), nil })
 
 	// simulate existing nodes
 	net.EXPECT().RegisterListener(gomock.Any())
-	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{node1, node2})
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
 
-	reg := NewNodeLogDispatcher(net)
+	dir := t.TempDir()
+	reg, err := NewNodeLogDispatcher(net, dir)
+	if err != nil {
+		t.Fatalf("failed to create log dispatcher: %v", err)
+	}
 	ch := make(chan Node, 10)
 	listener := &testBlockNodeListener{data: map[Node][]Block{}, ch: ch}
 	reg.RegisterLogListener(listener)
 
 	// simulate added node
+	reg.AfterNodeCreation(node1)
+	reg.AfterNodeCreation(node2)
 	reg.AfterNodeCreation(node3)
+
+	reg.WaitForLogsToBeConsumed()
 
 	// drain 3 nodes from the channel
 	for _, node := range []Node{<-ch, <-ch, <-ch} {
@@ -51,6 +64,25 @@ func TestRegisterLogParser(t *testing.T) {
 
 	if len(reg.getNodes()) != 3 {
 		t.Errorf("wrong number of iterations")
+	}
+
+	// Check that log got copied to output files.
+	logs := []struct {
+		path, content string
+	}{
+		{dir + "/node_logs/A.log", Node1TestLog},
+		{dir + "/node_logs/B.log", Node2TestLog},
+		{dir + "/node_logs/C.log", Node3TestLog},
+	}
+	for _, log := range logs {
+		content, err := os.ReadFile(log.path)
+		if err != nil {
+			t.Errorf("failed to read log file: %v", err)
+			continue
+		}
+		if got, want := log.content, string(content); got != want {
+			t.Errorf("invalid log, wanted:\n%s\ngot:\n%s", want, got)
+		}
 	}
 }
 

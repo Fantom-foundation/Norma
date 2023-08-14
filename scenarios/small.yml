@@ -18,9 +18,10 @@ nodes:
 
 # In the network there is a single application producing constant load.
 applications:
-  - name: counter
+  - name: load
+    type: counter
     start: 10          # start time
     end: 50            # termination time
-    accounts: 20       # accounts generating txs
+    users: 20          # number of users using the app
     rate:
       constant: 10     # Tx/s

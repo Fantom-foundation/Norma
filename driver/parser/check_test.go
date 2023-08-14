@@ -70,6 +70,44 @@ func TestTimeRange_StartTimeBiggerThanEndTimeIsDetected(t *testing.T) {
 	}
 }
 
+func TestAutoCheck_DefaultValueIsValid(t *testing.T) {
+	auto := Auto{}
+	if err := auto.Check(); err != nil {
+		t.Errorf("issue reported for valid auto-shape: %v", err)
+	}
+}
+
+func TestAutoCheck_NegativeIncreaseIsDetected(t *testing.T) {
+	auto := Auto{Increase: new(float32)}
+	if err := auto.Check(); err == nil {
+		t.Errorf("zero increase rate should be detected")
+	}
+	*auto.Increase = -10
+	if err := auto.Check(); err == nil {
+		t.Errorf("negative increase rate should be detected")
+	}
+}
+
+func TestAutoCheck_InvalidDecreaseRateIsDetected(t *testing.T) {
+	auto := Auto{Decrease: new(float32)}
+	*auto.Decrease = 0
+	if err := auto.Check(); err != nil {
+		t.Errorf("zero decrease ratio should be fine")
+	}
+	*auto.Decrease = 1
+	if err := auto.Check(); err != nil {
+		t.Errorf("100%% decrease ratio should be fine")
+	}
+	*auto.Decrease = -0.1
+	if err := auto.Check(); err == nil {
+		t.Errorf("negative decrease rate should be detected")
+	}
+	*auto.Decrease = 1.1
+	if err := auto.Check(); err == nil {
+		t.Errorf(">100%% decrease rate should be detected")
+	}
+}
+
 func TestWaveCheck_CorrectWaveDefinitionIsExcepted(t *testing.T) {
 	wave := Wave{}
 	wave.Max = 20
@@ -195,9 +233,21 @@ func TestApplication_InvalidNameIsDetected(t *testing.T) {
 	}
 }
 
+func TestApplication_InvalidApplicationTypeIsDetected(t *testing.T) {
+	scenario := Scenario{}
+	app := Application{}
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "application type must be specified") {
+		t.Errorf("missing type was not detected")
+	}
+	app.Type = "something_that_will_hopefully_never_exist"
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "unknown application type") {
+		t.Errorf("invalid type was not detected")
+	}
+}
+
 func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
-	app := Application{Name: "test", Instances: new(int), Rate: Rate{Constant: new(float32)}}
+	app := Application{Name: "test", Type: "counter", Instances: new(int), Rate: Rate{Constant: new(float32)}}
 	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
@@ -207,16 +257,16 @@ func TestApplication_NegativeInstanceCounterIsNotAllowed(t *testing.T) {
 	}
 }
 
-func TestApplication_NegativeAccountCounterIsNotAllowed(t *testing.T) {
+func TestApplication_NegativeUserCounterIsNotAllowed(t *testing.T) {
 	scenario := Scenario{}
-	accounts := 5
-	app := Application{Name: "test", Accounts: &accounts, Rate: Rate{Constant: new(float32)}}
+	users := 5
+	app := Application{Name: "test", Type: "counter", Users: &users, Rate: Rate{Constant: new(float32)}}
 	if err := app.Check(&scenario); err != nil {
 		t.Errorf("default instance value should be valid, but got error: %v", err)
 	}
-	*app.Accounts = -1
-	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of accounts") {
-		t.Errorf("negative account counter was not detected")
+	*app.Users = -1
+	if err := app.Check(&scenario); err == nil || !strings.Contains(err.Error(), "number of users") {
+		t.Errorf("negative user counter was not detected")
 	}
 }
 
@@ -224,6 +274,7 @@ func TestApplication_DetectsTimingIssue(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{
 		Name:  "test",
+		Type:  "counter",
 		Rate:  Rate{Constant: new(float32)},
 		Start: new(float32),
 	}
@@ -240,6 +291,7 @@ func TestApplication_DetectsShapeIssue(t *testing.T) {
 	scenario := Scenario{}
 	app := Application{
 		Name: "test",
+		Type: "counter",
 		Rate: Rate{Constant: new(float32)},
 	}
 	if err := app.Check(&scenario); err != nil {

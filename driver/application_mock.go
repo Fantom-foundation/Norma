@@ -47,18 +47,18 @@ func (mr *MockApplicationMockRecorder) Config() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockApplication)(nil).Config))
 }
 
-// GetNumberOfAccounts mocks base method.
-func (m *MockApplication) GetNumberOfAccounts() int {
+// GetNumberOfUsers mocks base method.
+func (m *MockApplication) GetNumberOfUsers() int {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNumberOfAccounts")
+	ret := m.ctrl.Call(m, "GetNumberOfUsers")
 	ret0, _ := ret[0].(int)
 	return ret0
 }
 
-// GetNumberOfAccounts indicates an expected call of GetNumberOfAccounts.
-func (mr *MockApplicationMockRecorder) GetNumberOfAccounts() *gomock.Call {
+// GetNumberOfUsers indicates an expected call of GetNumberOfUsers.
+func (mr *MockApplicationMockRecorder) GetNumberOfUsers() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumberOfAccounts", reflect.TypeOf((*MockApplication)(nil).GetNumberOfAccounts))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNumberOfUsers", reflect.TypeOf((*MockApplication)(nil).GetNumberOfUsers))
 }
 
 // GetReceivedTransactions mocks base method.
@@ -77,18 +77,18 @@ func (mr *MockApplicationMockRecorder) GetReceivedTransactions() *gomock.Call {
 }
 
 // GetSentTransactions mocks base method.
-func (m *MockApplication) GetSentTransactions(account int) (uint64, error) {
+func (m *MockApplication) GetSentTransactions(user int) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSentTransactions", account)
+	ret := m.ctrl.Call(m, "GetSentTransactions", user)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSentTransactions indicates an expected call of GetSentTransactions.
-func (mr *MockApplicationMockRecorder) GetSentTransactions(account interface{}) *gomock.Call {
+func (mr *MockApplicationMockRecorder) GetSentTransactions(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockApplication)(nil).GetSentTransactions), account)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockApplication)(nil).GetSentTransactions), user)
 }
 
 // Start mocks base method.

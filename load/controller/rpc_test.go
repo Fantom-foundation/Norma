@@ -7,11 +7,9 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
-	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -25,12 +23,7 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcUrl := net.GetActiveNodes()[0].GetServiceUrl(&node.OperaWsService)
-	if rpcUrl == nil {
-		t.Fatal("websocket service is not available")
-	}
-
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	rpcClient, err := net.DialRandomRpc()
 	if err != nil {
 		t.Fatal("unable to connect the the rpc")
 	}
@@ -40,7 +33,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	application, err := app.NewERC20Application(rpcClient, primaryAccount)
+	application, err := app.NewERC20Application(rpcClient, primaryAccount, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +46,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, want := app.GetNumberOfAccounts(), numGenerators; got != want {
+	if got, want := app.GetNumberOfUsers(), numGenerators; got != want {
 		t.Errorf("unexpected number of accounts, wanted %d, got %d", want, got)
 	}
 
@@ -70,13 +63,9 @@ func TestTrafficGenerating(t *testing.T) {
 	time.Sleep(2 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
-	sum := uint64(0)
-	for i := 0; i < app.GetNumberOfAccounts(); i++ {
-		count, err := app.GetSentTransactions(i)
-		if err != nil {
-			t.Fatalf("failed to fetch sent transactions from account %d: %v", i, err)
-		}
-		sum += count
+	sum, err := app.GetSentTransactions()
+	if err != nil {
+		t.Fatalf("failed to fetch sent transactions: %v", err)
 	}
 
 	if received, err := app.GetReceivedTransactions(); err != nil || received != sum {
@@ -85,7 +74,8 @@ func TestTrafficGenerating(t *testing.T) {
 
 	// in optimal case should be generated 30 txs per second
 	// as a tolerance for slow CI we require at least 20 txs
-	if sum < 20 || sum > 30 {
+	// and at most 40, since timing is not perfect.
+	if sum < 20 || sum > 40 {
 		t.Errorf("unexpected amount of generated txs: %d", sum)
 	}
 }

@@ -35,8 +35,9 @@ type Node struct {
 // shape (see Rate below), and a number of instances.
 type Application struct {
 	Name      string
+	Type      string   `yaml:",omitempty"` // empty is interpreted as the default app type
 	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
-	Accounts  *int     `yaml:",omitempty"` // nil is interpreted as 1
+	Users     *int     `yaml:",omitempty"` // nil is interpreted as 1
 	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
 	Rate      Rate
@@ -54,6 +55,7 @@ type Rate struct {
 	Constant *float32 `yaml:",omitempty"`
 	Slope    *Slope   `yaml:",omitempty"`
 	Wave     *Wave    `yaml:",omitempty"`
+	Auto     *Auto    `yaml:",omitempty"`
 }
 
 // Slope defines the parameters of a linearly increasing traffic pattern.
@@ -68,6 +70,12 @@ type Wave struct {
 	Min    *float32 `yaml:",omitempty"` // Tx/s, nil = 0
 	Max    float32  // Tx/s
 	Period float32  // seconds
+}
+
+// A load pattern automatically maxing out throughput.
+type Auto struct {
+	Increase *float32 `yaml:",omitempty"` // increase in non-overload case per second in Tx/s, nil = 1
+	Decrease *float32 `yaml:",omitempty"` // decrease in overload case in percent, nil = 0.2 (=20%)
 }
 
 // Parse parses a YAML based scenario description from the given reader.

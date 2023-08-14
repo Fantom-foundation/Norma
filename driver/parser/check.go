@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/Fantom-foundation/Norma/load/app"
 )
 
 const namePatternStr = "^[A-Za-z0-9-]+$"
@@ -73,12 +75,18 @@ func (a *Application) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("application name must match %v, got %v", namePatternStr, a.Name))
 	}
 
+	if a.Type == "" {
+		errs = append(errs, fmt.Errorf("application type must be specified"))
+	} else if !app.IsSupportedApplicationType(a.Type) {
+		errs = append(errs, fmt.Errorf("unknown application type: %v", a.Type))
+	}
+
 	if a.Instances != nil && *a.Instances < 0 {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *a.Instances))
 	}
 
-	if a.Accounts != nil && *a.Accounts < 1 {
-		errs = append(errs, fmt.Errorf("number of accounts must be >= 1, is %d", *a.Accounts))
+	if a.Users != nil && *a.Users < 1 {
+		errs = append(errs, fmt.Errorf("number of users must be >= 1, is %d", *a.Users))
 	}
 
 	if err := checkTimeInterval(a.Start, a.End, scenario.Duration); err != nil {
@@ -104,8 +112,11 @@ func (r *Rate) Check(scenario *Scenario) error {
 	if r.Wave != nil {
 		count++
 	}
+	if r.Auto != nil {
+		count++
+	}
 	if count != 1 {
-		return fmt.Errorf("source must specify exactly one load shape, got %d", count)
+		return fmt.Errorf("application must specify exactly one load shape, got %d", count)
 	}
 
 	if r.Constant != nil && *r.Constant < 0 {
@@ -116,6 +127,9 @@ func (r *Rate) Check(scenario *Scenario) error {
 	}
 	if r.Wave != nil {
 		return r.Wave.Check()
+	}
+	if r.Auto != nil {
+		return r.Auto.Check()
 	}
 	return nil
 }
@@ -153,6 +167,24 @@ func (w *Wave) Check() error {
 
 	if w.Period <= 0 {
 		errs = append(errs, fmt.Errorf("wave priode must be > 0, got %f", w.Period))
+	}
+
+	return errors.Join(errs...)
+}
+
+// Check tests semantic constraints on the configuration of a auto-shaped traffic pattern.
+func (a *Auto) Check() error {
+	errs := []error{}
+
+	if a.Increase != nil {
+		if *a.Increase <= 0 {
+			errs = append(errs, fmt.Errorf("traffic rate increase per second must be positive, got %f", *a.Increase))
+		}
+	}
+	if a.Decrease != nil {
+		if *a.Decrease < 0 || *a.Decrease > 1 {
+			errs = append(errs, fmt.Errorf("traffic decrease rate must be between 0 and 1, got %f", *a.Decrease))
+		}
 	}
 
 	return errors.Join(errs...)

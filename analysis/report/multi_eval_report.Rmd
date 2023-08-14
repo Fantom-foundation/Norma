@@ -8,6 +8,7 @@ params:
 
 ```{r setup, echo=FALSE, include=FALSE}
 library(tidyverse)
+library(slider)
 
 figure_dimensions <- c(10, 4)
 
@@ -59,11 +60,26 @@ sent <- sent_rate %>%
 received <- all_data_with_start_time %>%
     dplyr::filter(metric == "ReceivedTransactions") %>%  # filter metric
     mutate(value = as.numeric(value)) %>%           # convert value to int
-    mutate(simtime = as.numeric(time) - as.numeric(start))      # compute relative time
+    mutate(simtime = as.numeric(time) - as.numeric(start)) %>%     # compute relative time
+    # convert to increments per app
+    group_by(run, app) %>%
+    reframe(
+        run = run,
+        simtime = simtime,
+        increment = value - lag(value, default = 0)
+    ) %>%
+    # sum up increments over time
+    group_by(run) %>%
+    arrange(simtime) %>%
+    reframe(
+        simtime = simtime,
+        total = cumsum(increment),
+    )
+
 
 ggplot() +
     geom_line(data=sent, aes(x=simtime/1e9, y=total, group=run, colour = factor(paste(run, " sent")))) +
-    geom_line(data=received, aes(x=simtime/1e9, y=value, group=run, colour = factor(paste(run, " received")))) +
+    geom_line(data=received, aes(x=simtime/1e9, y=total, group=run, colour = factor(paste(run, " received")))) +
     ggtitle("Sent and Received Transactions") +        # chart title
     xlab("Simulation Time [s]") +                      # x-axis title
     ylab("Total Number of Transactions") +             # y-axis title
@@ -74,23 +90,42 @@ ggplot() +
 The following chart compares the througput of the runs over time.
 
 ```{r throughput_over_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
-# compute the number of received transactions
-received <- all_data_with_start_time %>%
-    dplyr::filter(metric == "ReceivedTransactions") %>%  # filter metric
-    mutate(value = as.numeric(value)) %>%           # convert value to int
-    mutate(time = as.numeric(time)) %>%             # convert time to int
-    mutate(start = as.numeric(start)) %>%           # convert start to int
-    mutate(simtime = time - start)                  # compute relative time
-
-# compute the receive rate over time
-received_rate <- received %>%
-    group_by(run) %>%
+received_rate <- all_data_with_start_time %>%
+    # filter rows and columns
+    dplyr::filter(metric == "ReceivedTransactions") %>%
+    select(run, start, time, app, value) %>%
+    # convert value and time to numerical values
+    mutate(value = as.numeric(value)) %>%
+    mutate(time = as.numeric(time)) %>%
+    # compute the individual increments
+    group_by(run, app) %>%
     arrange(time) %>%
     reframe(
-        simtime = simtime,
-        rate = (value - lag(value, default = 0)) / ((time - lag(time)) / 1e9)
+        start = start,
+        time = time,
+        increment = value - lag(value, default = 0),
     ) %>%
-    drop_na(rate)
+    # compute average rate over dynamic sized windows (each 5 seconds)
+    group_by(run) %>%
+    arrange(time) %>%
+    slide_period_dfr(
+        as.POSIXct(.$time/1e9,origin="1970-01-01"),
+        "second",
+        .every = 5,
+        function(data) {
+            summarize(
+                data,
+                # compute the rate over time window
+                rate = sum(increment) / 5,
+                # associate rate to mid-point time
+                time = (max(time)+min(time))/2,
+                # start time is for all the same
+                start = min(start),
+            )
+        }
+    ) %>%
+    # replace time with simtime
+    mutate(simtime = as.numeric(time) - as.numeric(start))
 
 ggplot() +
     geom_line(data=received_rate, aes(x=simtime/1e9, y=rate, group=run, colour = factor(run))) +
@@ -109,4 +144,37 @@ ggplot() +
     ylab("Tx/s") +                                     # y-axis title
     labs(colour = "Runs") +                            # legend title
     theme(plot.title = element_text(hjust = 0.5))      # center title
+```
+
+## Node Metrics
+
+### Block Processing Time
+
+The following chart shows the time required by each node for processing each individual block.
+
+```{r block_processing_time, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockEventAndTxsProcessingTime") %>%
+    mutate(value = as.numeric(value)) %>%
+    mutate(label = paste(run, node))
+
+ggplot(data = data) +
+    geom_point(aes(x=block, y=value/1e6, group=label, colour = factor(label))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour = "Nodes") +                      # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
+```
+
+While the individual sample points may provide the highest level of detail, the smoothed out trend lines of the following plot may provide a cleaner comparison between the processing times of individual nodes.
+
+```{r block_processing_time_smooth, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+ggplot(data = data) +
+    geom_smooth(aes(x=block, y=value/1.e6, group=label, colour = factor(label))) +
+    ggtitle("Block Processing Time") +            # chart title
+    xlab("Block Height") +                        # x-axis title
+    ylab("Block Processing Time [ms]") +          # y-axis title
+    labs(colour = "Nodes") +                      # legend title
+    theme(plot.title = element_text(hjust = 0.5)) # center title
 ```

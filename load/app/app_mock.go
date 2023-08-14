@@ -5,12 +5,9 @@
 package app
 
 import (
-	context "context"
-	big "math/big"
 	reflect "reflect"
 
-	go_ethereum "github.com/ethereum/go-ethereum"
-	common "github.com/ethereum/go-ethereum/common"
+	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -38,38 +35,38 @@ func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
 }
 
-// CreateGenerator mocks base method.
-func (m *MockApplication) CreateGenerator(rpcClient RpcClient) (TransactionGenerator, error) {
+// CreateUser mocks base method.
+func (m *MockApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateGenerator", rpcClient)
-	ret0, _ := ret[0].(TransactionGenerator)
+	ret := m.ctrl.Call(m, "CreateUser", rpcClient)
+	ret0, _ := ret[0].(User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateGenerator indicates an expected call of CreateGenerator.
-func (mr *MockApplicationMockRecorder) CreateGenerator(rpcClient interface{}) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockApplicationMockRecorder) CreateUser(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateGenerator", reflect.TypeOf((*MockApplication)(nil).CreateGenerator), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockApplication)(nil).CreateUser), rpcClient)
 }
 
-// GetReceivedTransations mocks base method.
-func (m *MockApplication) GetReceivedTransations(rpcClient RpcClient) (uint64, error) {
+// GetReceivedTransactions mocks base method.
+func (m *MockApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetReceivedTransations", rpcClient)
+	ret := m.ctrl.Call(m, "GetReceivedTransactions", rpcClient)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetReceivedTransations indicates an expected call of GetReceivedTransations.
-func (mr *MockApplicationMockRecorder) GetReceivedTransations(rpcClient interface{}) *gomock.Call {
+// GetReceivedTransactions indicates an expected call of GetReceivedTransactions.
+func (mr *MockApplicationMockRecorder) GetReceivedTransactions(rpcClient interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransations", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransations), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransactions", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransactions), rpcClient)
 }
 
 // WaitUntilApplicationIsDeployed mocks base method.
-func (m *MockApplication) WaitUntilApplicationIsDeployed(rpcClient RpcClient) error {
+func (m *MockApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitUntilApplicationIsDeployed", rpcClient)
 	ret0, _ := ret[0].(error)
@@ -82,245 +79,31 @@ func (mr *MockApplicationMockRecorder) WaitUntilApplicationIsDeployed(rpcClient 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilApplicationIsDeployed", reflect.TypeOf((*MockApplication)(nil).WaitUntilApplicationIsDeployed), rpcClient)
 }
 
-// MockRpcClient is a mock of RpcClient interface.
-type MockRpcClient struct {
+// MockUser is a mock of User interface.
+type MockUser struct {
 	ctrl     *gomock.Controller
-	recorder *MockRpcClientMockRecorder
+	recorder *MockUserMockRecorder
 }
 
-// MockRpcClientMockRecorder is the mock recorder for MockRpcClient.
-type MockRpcClientMockRecorder struct {
-	mock *MockRpcClient
+// MockUserMockRecorder is the mock recorder for MockUser.
+type MockUserMockRecorder struct {
+	mock *MockUser
 }
 
-// NewMockRpcClient creates a new mock instance.
-func NewMockRpcClient(ctrl *gomock.Controller) *MockRpcClient {
-	mock := &MockRpcClient{ctrl: ctrl}
-	mock.recorder = &MockRpcClientMockRecorder{mock}
+// NewMockUser creates a new mock instance.
+func NewMockUser(ctrl *gomock.Controller) *MockUser {
+	mock := &MockUser{ctrl: ctrl}
+	mock.recorder = &MockUserMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRpcClient) EXPECT() *MockRpcClientMockRecorder {
-	return m.recorder
-}
-
-// CallContract mocks base method.
-func (m *MockRpcClient) CallContract(ctx context.Context, call go_ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CallContract", ctx, call, blockNumber)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CallContract indicates an expected call of CallContract.
-func (mr *MockRpcClientMockRecorder) CallContract(ctx, call, blockNumber interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallContract", reflect.TypeOf((*MockRpcClient)(nil).CallContract), ctx, call, blockNumber)
-}
-
-// Close mocks base method.
-func (m *MockRpcClient) Close() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Close")
-}
-
-// Close indicates an expected call of Close.
-func (mr *MockRpcClientMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockRpcClient)(nil).Close))
-}
-
-// CodeAt mocks base method.
-func (m *MockRpcClient) CodeAt(ctx context.Context, contract common.Address, blockNumber *big.Int) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CodeAt", ctx, contract, blockNumber)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CodeAt indicates an expected call of CodeAt.
-func (mr *MockRpcClientMockRecorder) CodeAt(ctx, contract, blockNumber interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CodeAt", reflect.TypeOf((*MockRpcClient)(nil).CodeAt), ctx, contract, blockNumber)
-}
-
-// EstimateGas mocks base method.
-func (m *MockRpcClient) EstimateGas(ctx context.Context, call go_ethereum.CallMsg) (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EstimateGas", ctx, call)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// EstimateGas indicates an expected call of EstimateGas.
-func (mr *MockRpcClientMockRecorder) EstimateGas(ctx, call interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateGas", reflect.TypeOf((*MockRpcClient)(nil).EstimateGas), ctx, call)
-}
-
-// FilterLogs mocks base method.
-func (m *MockRpcClient) FilterLogs(ctx context.Context, query go_ethereum.FilterQuery) ([]types.Log, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FilterLogs", ctx, query)
-	ret0, _ := ret[0].([]types.Log)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FilterLogs indicates an expected call of FilterLogs.
-func (mr *MockRpcClientMockRecorder) FilterLogs(ctx, query interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockRpcClient)(nil).FilterLogs), ctx, query)
-}
-
-// HeaderByNumber mocks base method.
-func (m *MockRpcClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HeaderByNumber", ctx, number)
-	ret0, _ := ret[0].(*types.Header)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HeaderByNumber indicates an expected call of HeaderByNumber.
-func (mr *MockRpcClientMockRecorder) HeaderByNumber(ctx, number interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockRpcClient)(nil).HeaderByNumber), ctx, number)
-}
-
-// NonceAt mocks base method.
-func (m *MockRpcClient) NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NonceAt", ctx, account, blockNumber)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NonceAt indicates an expected call of NonceAt.
-func (mr *MockRpcClientMockRecorder) NonceAt(ctx, account, blockNumber interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NonceAt", reflect.TypeOf((*MockRpcClient)(nil).NonceAt), ctx, account, blockNumber)
-}
-
-// PendingCodeAt mocks base method.
-func (m *MockRpcClient) PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PendingCodeAt", ctx, account)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PendingCodeAt indicates an expected call of PendingCodeAt.
-func (mr *MockRpcClientMockRecorder) PendingCodeAt(ctx, account interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PendingCodeAt", reflect.TypeOf((*MockRpcClient)(nil).PendingCodeAt), ctx, account)
-}
-
-// PendingNonceAt mocks base method.
-func (m *MockRpcClient) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PendingNonceAt", ctx, account)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PendingNonceAt indicates an expected call of PendingNonceAt.
-func (mr *MockRpcClientMockRecorder) PendingNonceAt(ctx, account interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PendingNonceAt", reflect.TypeOf((*MockRpcClient)(nil).PendingNonceAt), ctx, account)
-}
-
-// SendTransaction mocks base method.
-func (m *MockRpcClient) SendTransaction(ctx context.Context, tx *types.Transaction) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendTransaction", ctx, tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendTransaction indicates an expected call of SendTransaction.
-func (mr *MockRpcClientMockRecorder) SendTransaction(ctx, tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTransaction", reflect.TypeOf((*MockRpcClient)(nil).SendTransaction), ctx, tx)
-}
-
-// SubscribeFilterLogs mocks base method.
-func (m *MockRpcClient) SubscribeFilterLogs(ctx context.Context, query go_ethereum.FilterQuery, ch chan<- types.Log) (go_ethereum.Subscription, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeFilterLogs", ctx, query, ch)
-	ret0, _ := ret[0].(go_ethereum.Subscription)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SubscribeFilterLogs indicates an expected call of SubscribeFilterLogs.
-func (mr *MockRpcClientMockRecorder) SubscribeFilterLogs(ctx, query, ch interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeFilterLogs", reflect.TypeOf((*MockRpcClient)(nil).SubscribeFilterLogs), ctx, query, ch)
-}
-
-// SuggestGasPrice mocks base method.
-func (m *MockRpcClient) SuggestGasPrice(ctx context.Context) (*big.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SuggestGasPrice", ctx)
-	ret0, _ := ret[0].(*big.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SuggestGasPrice indicates an expected call of SuggestGasPrice.
-func (mr *MockRpcClientMockRecorder) SuggestGasPrice(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasPrice", reflect.TypeOf((*MockRpcClient)(nil).SuggestGasPrice), ctx)
-}
-
-// SuggestGasTipCap mocks base method.
-func (m *MockRpcClient) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SuggestGasTipCap", ctx)
-	ret0, _ := ret[0].(*big.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SuggestGasTipCap indicates an expected call of SuggestGasTipCap.
-func (mr *MockRpcClientMockRecorder) SuggestGasTipCap(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasTipCap", reflect.TypeOf((*MockRpcClient)(nil).SuggestGasTipCap), ctx)
-}
-
-// MockTransactionGenerator is a mock of TransactionGenerator interface.
-type MockTransactionGenerator struct {
-	ctrl     *gomock.Controller
-	recorder *MockTransactionGeneratorMockRecorder
-}
-
-// MockTransactionGeneratorMockRecorder is the mock recorder for MockTransactionGenerator.
-type MockTransactionGeneratorMockRecorder struct {
-	mock *MockTransactionGenerator
-}
-
-// NewMockTransactionGenerator creates a new mock instance.
-func NewMockTransactionGenerator(ctrl *gomock.Controller) *MockTransactionGenerator {
-	mock := &MockTransactionGenerator{ctrl: ctrl}
-	mock.recorder = &MockTransactionGeneratorMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTransactionGenerator) EXPECT() *MockTransactionGeneratorMockRecorder {
+func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
 }
 
 // GenerateTx mocks base method.
-func (m *MockTransactionGenerator) GenerateTx() (*types.Transaction, error) {
+func (m *MockUser) GenerateTx() (*types.Transaction, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateTx")
 	ret0, _ := ret[0].(*types.Transaction)
@@ -329,13 +112,13 @@ func (m *MockTransactionGenerator) GenerateTx() (*types.Transaction, error) {
 }
 
 // GenerateTx indicates an expected call of GenerateTx.
-func (mr *MockTransactionGeneratorMockRecorder) GenerateTx() *gomock.Call {
+func (mr *MockUserMockRecorder) GenerateTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockTransactionGenerator)(nil).GenerateTx))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockUser)(nil).GenerateTx))
 }
 
 // GetSentTransactions mocks base method.
-func (m *MockTransactionGenerator) GetSentTransactions() uint64 {
+func (m *MockUser) GetSentTransactions() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSentTransactions")
 	ret0, _ := ret[0].(uint64)
@@ -343,7 +126,7 @@ func (m *MockTransactionGenerator) GetSentTransactions() uint64 {
 }
 
 // GetSentTransactions indicates an expected call of GetSentTransactions.
-func (mr *MockTransactionGeneratorMockRecorder) GetSentTransactions() *gomock.Call {
+func (mr *MockUserMockRecorder) GetSentTransactions() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockTransactionGenerator)(nil).GetSentTransactions))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockUser)(nil).GetSentTransactions))
 }

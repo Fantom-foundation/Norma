@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	network "github.com/Fantom-foundation/Norma/driver/network"
+	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -47,6 +48,21 @@ func (m *MockNode) Cleanup() error {
 func (mr *MockNodeMockRecorder) Cleanup() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockNode)(nil).Cleanup))
+}
+
+// DialRpc mocks base method.
+func (m *MockNode) DialRpc() (rpc.RpcClient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DialRpc")
+	ret0, _ := ret[0].(rpc.RpcClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DialRpc indicates an expected call of DialRpc.
+func (mr *MockNodeMockRecorder) DialRpc() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialRpc", reflect.TypeOf((*MockNode)(nil).DialRpc))
 }
 
 // GetLabel mocks base method.

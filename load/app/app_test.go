@@ -2,14 +2,15 @@ package app_test
 
 import (
 	"context"
+	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/network"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"testing"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
-	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/load/app"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -23,12 +24,7 @@ func TestGenerators(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcUrl := net.GetActiveNodes()[0].GetServiceUrl(&node.OperaWsService)
-	if rpcUrl == nil {
-		t.Fatal("websocket service is not available")
-	}
-
-	rpcClient, err := ethclient.Dial(string(*rpcUrl))
+	rpcClient, err := net.DialRandomRpc()
 	if err != nil {
 		t.Fatal("unable to connect the the rpc")
 	}
@@ -39,23 +35,37 @@ func TestGenerators(t *testing.T) {
 	}
 
 	t.Run("Counter", func(t *testing.T) {
-		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount)
+		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testGenerator(t, counterApp, rpcClient)
 	})
 	t.Run("ERC20", func(t *testing.T) {
-		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount)
+		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testGenerator(t, erc20app, rpcClient)
 	})
+	t.Run("Store", func(t *testing.T) {
+		storeApp, err := app.NewStoreApplication(rpcClient, primaryAccount, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testGenerator(t, storeApp, rpcClient)
+	})
+	t.Run("Uniswap", func(t *testing.T) {
+		uniswapApp, err := app.NewUniswapApplication(rpcClient, primaryAccount, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testGenerator(t, uniswapApp, rpcClient)
+	})
 }
 
-func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Client) {
-	gen, err := app.CreateGenerator(rpcClient)
+func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
+	gen, err := app.CreateUser(rpcClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,5 +89,19 @@ func testGenerator(t *testing.T, app app.Application, rpcClient *ethclient.Clien
 
 	if got, want := gen.GetSentTransactions(), numTransactions; got != uint64(want) {
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
+	}
+
+	err = network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
+		received, err := app.GetReceivedTransactions(rpcClient)
+		if err != nil {
+			return fmt.Errorf("unable to get amount of received txs; %v", err)
+		}
+		if received != 10 {
+			return fmt.Errorf("unexpected amount of txs in chain (%d)", received)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
 	}
 }

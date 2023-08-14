@@ -1,4 +1,4 @@
-package accountmon
+package user
 
 import (
 	"math"
@@ -17,7 +17,7 @@ import (
 // So we need to write our own fake sensors for this test.
 
 var (
-	testAccountMetric = mon.Metric[mon.Account, mon.Series[mon.Time, int]]{
+	testAccountMetric = mon.Metric[mon.User, mon.Series[mon.Time, int]]{
 		Name:        "TestAccountMetric",
 		Description: "A test metric for this unit test.",
 	}
@@ -42,9 +42,9 @@ func TestAppSourceRetrievesSensorData(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)
 
-	config1 := driver.ApplicationConfig{Name: "A", Accounts: 2}
-	config2 := driver.ApplicationConfig{Name: "B", Accounts: 1}
-	config3 := driver.ApplicationConfig{Name: "C", Accounts: 3}
+	config1 := driver.ApplicationConfig{Name: "A", Users: 2}
+	config2 := driver.ApplicationConfig{Name: "B", Users: 1}
+	config3 := driver.ApplicationConfig{Name: "C", Users: 3}
 
 	app1 := driver.NewMockApplication(ctrl)
 	app2 := driver.NewMockApplication(ctrl)
@@ -63,12 +63,12 @@ func TestAppSourceRetrievesSensorData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start monitor instance: %v", err)
 	}
-	source := newPeriodicAccountDataSource[int](testAccountMetric, monitor, 50*time.Millisecond, &testSensorFactory{})
+	source := newPeriodicUserDataSource[int](testAccountMetric, monitor, 50*time.Millisecond, &testSensorFactory{})
 
 	// Check that existing apps are tracked.
 	subjects := source.GetSubjects()
 	sort.Slice(subjects, func(i, j int) bool { return subjects[i].Less(&subjects[j]) })
-	want := []mon.Account{
+	want := []mon.User{
 		{App: mon.App("A"), Id: 0},
 		{App: mon.App("A"), Id: 1},
 		{App: mon.App("B"), Id: 0},
@@ -83,7 +83,7 @@ func TestAppSourceRetrievesSensorData(t *testing.T) {
 	// Check that subject list has updated.
 	subjects = source.GetSubjects()
 	sort.Slice(subjects, func(i, j int) bool { return subjects[i].Less(&subjects[j]) })
-	want = append(want, []mon.Account{
+	want = append(want, []mon.User{
 		{App: mon.App("C"), Id: 0},
 		{App: mon.App("C"), Id: 1},
 		{App: mon.App("C"), Id: 2},

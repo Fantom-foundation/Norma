@@ -43,7 +43,8 @@ nodes:
 
 # In the network there is a single application producing constant load.
 applications:
-  - name: counter
-    accounts: 20       # accounts generating txs
+  - name: load
+    type: counter
+    users: 200           # number of users using the app
     rate:
       constant: 2000     # Tx/s

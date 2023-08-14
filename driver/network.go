@@ -2,7 +2,7 @@ package driver
 
 import (
 	"github.com/Fantom-foundation/Norma/driver/parser"
-	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -45,7 +45,7 @@ type Network interface {
 
 	SendTransaction(tx *types.Transaction)
 
-	DialRandomRpc() (app.RpcClient, error)
+	DialRandomRpc() (rpc.RpcClient, error)
 }
 
 // NetworkConfig is a collection of network parameters to be used by factories
@@ -55,6 +55,8 @@ type NetworkConfig struct {
 	NumberOfValidators int
 	// The name of the StateDB implementation to be used by network nodes.
 	StateDbImplementation string
+	// The name of the EVM implementation to be used by network nodes.
+	VmImplementation string
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there
@@ -77,11 +79,14 @@ type NodeConfig struct {
 type ApplicationConfig struct {
 	Name string
 
+	// Type defines the on-chain app which should generate the traffic.
+	Type string
+
 	// Rate defines the Tx/s config the source should produce while active.
 	Rate *parser.Rate
 
-	// Accounts defines the amount of accounts sending transactions to the app.
-	Accounts int
+	// Users defines the number of users sending transactions to the app.
+	Users int
 
 	// TODO: add other parameters as needed
 	//  - application type
