@@ -22,36 +22,30 @@ func NewWaveShaper(minFrequency, maxFrequency, wavePeriod float32) *WaveShaper {
 	}
 }
 
-// GetNextWaitTime returns the next wait time based on the current time stamp
-func (s *WaveShaper) GetNextWaitTime() (time.Duration, bool) {
-	now := time.Now()
-	// if this is the first call, set the start time stamp
-	if s.startTimeStamp.IsZero() {
-		s.startTimeStamp = now
-	}
-	return s.GetWaitTimeForTimeStamp(now)
+// Start sets the start time stamp
+func (w *WaveShaper) Start(start time.Time, _ LoadInfoSource) {
+	w.startTimeStamp = start
 }
 
-// GetWaitTimeForTimeStamp returns the wait time for the given timestamp
-func (s *WaveShaper) GetWaitTimeForTimeStamp(current time.Time) (time.Duration, bool) {
-	timeSinceStart := current.Sub(s.startTimeStamp).Seconds()
+// GetNumMessagesInInterval provides the number of messages to be produced
+// in the given time interval.
+func (w *WaveShaper) GetNumMessagesInInterval(start time.Time, duration time.Duration) float64 {
+	a := float64(w.minFrequency)
+	b := float64(w.maxFrequency)
+	p := float64(w.wavePeriod)
 
-	// calculate the current frequency as function t(n) = A * sin((2 * pi) / p * n) + B,
-	// where:
-	// 	- `A` is the amplitude, which is half of the difference between the min and max frequency
-	// 	- `p` is the wave period
-	// 	- `B` is the vertical shift or the mean value of the wave
-	// 	- `n` is the time since start
-	currentFrequency := (s.maxFrequency-s.minFrequency)/2*float32(math.Sin((2*math.Pi)/
-		float64(s.wavePeriod)*timeSinceStart)) + (s.maxFrequency+s.minFrequency)/2
+	// Calculate the relative begin and end time of the interval [x,y].
+	x := start.Sub(w.startTimeStamp).Seconds()
+	y := x + duration.Seconds()
 
-	// if the current frequency is 0, it means, that min frequency is set to 0, and we reached
-	// the bottom of the wave. signal to the consumer that he should ask later again
-	// and wait for one second divided by the max frequency (no special reason for that)
-	if currentFrequency <= 0 {
-		return time.Duration(float32(time.Second) / s.maxFrequency), false
-	}
+	// Our function is defined as follows:
+	// f(x) = a + (1-cos((2*pi)/p*x))/2 * (b-a)
+	// where a is the minimum frequency, b is the maximum frequency and p is the wave period.
+	// Integral of our function is: (x*(a+b))/2 + (p*(a-b)*sin((2*pi*x)/p))/(4*pi)
+	// We can calculate the integral at the beginning and end of the interval and return the difference.
+	integralAtY := (y*(a+b))/2 + (p*(a-b)*math.Sin((2*math.Pi*y)/p))/(4*math.Pi)
+	integralAtX := (x*(a+b))/2 + (p*(a-b)*math.Sin((2*math.Pi*x)/p))/(4*math.Pi)
 
-	// return the wait time for the current frequency
-	return time.Duration(float32(time.Second) / currentFrequency), true
+	// Return the difference between the two integrals to get the number of messages in the interval.
+	return integralAtY - integralAtX
 }
