@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1@sha256:39b85bbfa7536a5feceb7372a0817649ecb2724562a38360f4d6a7782a409b14
 
 # This is a multi stages Dockerfile, which builds go-opera
 # from the client/ directory first, and runs the binary then.
