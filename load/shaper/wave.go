@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-// WaveShaper is a shaper that sends transactions in waves.
+// WaveShaper is used to send txs with a wave shaped frequency.
+// It is defined as follows:
 type WaveShaper struct {
 	minFrequency float32
 	maxFrequency float32
