@@ -37,13 +37,13 @@ jobs:
 #      with:
 #        working-directory: ./analysis/report
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
     - name: Set up Docker
       run: |
         brew install docker
         colima start --memory 8
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
 
 #    - name: Login to Docker Hub
 #      uses: docker/login-action@v2
