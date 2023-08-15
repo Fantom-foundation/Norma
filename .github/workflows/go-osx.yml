@@ -39,10 +39,10 @@ jobs:
       with:
         working-directory: ./analysis/report
 
-#    - name: Set up Docker
-#      run: |
-#        brew install docker
-#        colima start --memory 8
+    - name: Set up Docker
+      run: |
+        brew install docker
+        colima start --memory 8
 
       # Required for enabling the BuildKit
     - name: Set up Docker Buildx
