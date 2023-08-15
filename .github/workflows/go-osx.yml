@@ -58,7 +58,6 @@ jobs:
       # Required for enabling the BuildKit
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2.0.0
-      platforms: linux/amd64,linux/arm64
 
       # Use cache for Docker images
       # Only cache prometheus image, because other images are
