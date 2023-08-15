@@ -11,6 +11,8 @@ on:
     paths:
       - '.github/workflows/go-osx.yml'
 
+# dummy
+
 jobs:
 
   build:
