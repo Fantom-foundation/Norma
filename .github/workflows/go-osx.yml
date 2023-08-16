@@ -99,17 +99,17 @@ jobs:
 #        restore-keys: |
 #          ${{ runner.os }}-buildx-
 #
-#    - name: Build Docker Image (direct)
-#      run: |
-#        docker build -t opera .
+    - name: Build Docker Image (direct)
+      run: |
+        docker buildx build --load --tag opera .
 
-    - name: Build Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: ./
-        tags: opera
-        load: true
-        push: false
+#    - name: Build Docker Image
+#      uses: docker/build-push-action@v4
+#      with:
+#        context: ./
+#        tags: opera
+#        load: true
+#        push: false
 #        cache-from: type=local,src=/tmp/.buildx-cache
 #        cache-to: type=local,dest=/tmp/.buildx-cache-new
 
