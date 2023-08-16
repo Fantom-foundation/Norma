@@ -101,7 +101,7 @@ jobs:
 
     - name: Build Docker Image (direct)
       run: |
-        docker buildx build --tag opera .
+        docker build -t opera .
 
 #    - name: Build Docker Image
 #      uses: docker/build-push-action@v4
