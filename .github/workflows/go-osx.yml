@@ -101,6 +101,7 @@ jobs:
 #
     - name: Build Docker Image (direct)
       run: |
+        docker pull docker/dockerfile:1
         docker buildx build --load --tag opera .
 
 #    - name: Build Docker Image
