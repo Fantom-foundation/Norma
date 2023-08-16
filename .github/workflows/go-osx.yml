@@ -101,7 +101,7 @@ jobs:
 
     - name: Build Docker Image (direct)
       run: |
-        docker buildx build --cache-from type=local,src=/tmp/.buildx-cache --cache-to type=local,dest=/tmp/.buildx-cache-new --tag opera --load  ./
+        docker buildx build --tag opera .
 
 #    - name: Build Docker Image
 #      uses: docker/build-push-action@v4
