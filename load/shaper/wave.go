@@ -11,7 +11,8 @@ type WaveShaper struct {
 	minFrequency float32
 	maxFrequency float32
 	wavePeriod   float32
-	// startTimeStamp is the time when the wait time was first obtained.
+	// startTimeStamp is the wall-time when the wave generator got started. At that time, the frequency
+	// is the minFrequency and the first period starts.
 	startTimeStamp time.Time
 }
 
@@ -23,7 +24,6 @@ func NewWaveShaper(minFrequency, maxFrequency, wavePeriod float32) *WaveShaper {
 	}
 }
 
-// Start sets the start time stamp
 func (w *WaveShaper) Start(start time.Time, _ LoadInfoSource) {
 	w.startTimeStamp = start
 }
