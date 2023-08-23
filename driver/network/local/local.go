@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 
 	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
 
@@ -46,6 +47,9 @@ type LocalNetwork struct {
 
 	// appsMutex synchronizes access to the list of applications.
 	appsMutex sync.Mutex
+
+	// nextAppId is the id to use for next created applications.
+	nextAppId uint32
 
 	// listeners is the set of registered NetworkListeners.
 	listeners map[driver.NetworkListener]bool
@@ -262,7 +266,8 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 	defer rpcClient.Close()
 
-	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users)
+	appId := atomic.AddUint32(&n.nextAppId, 1)
+	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users, 0, appId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)
 	}

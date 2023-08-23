@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
@@ -10,6 +11,45 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+type AccountFactory struct {
+	keyGenerator *KeyGenerator
+	chainID      *big.Int
+	numAccounts  int64
+}
+
+func NewAccountFactory(chainID *big.Int, feederId, appId uint32) (*AccountFactory, error) {
+	keyGenerator, err := NewKeyGenerator(Mnemonic, feederId, appId)
+	if err != nil {
+		return nil, err
+	}
+	return &AccountFactory{
+		keyGenerator: keyGenerator,
+		chainID:      chainID,
+		numAccounts:  0,
+	}, nil
+}
+
+func (f *AccountFactory) CreateAccount(rpcClient rpc.RpcClient) (*Account, error) {
+	id := atomic.AddInt64(&f.numAccounts, 1)
+	privateKey, err := f.keyGenerator.GeneratePrivateKey(uint32(id))
+	if err != nil {
+		return nil, err
+	}
+	address := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	nonce, err := rpcClient.NonceAt(context.Background(), address, nil) // nonce at latest block
+	if err != nil {
+		return nil, fmt.Errorf("failed to get address nonce; %v", err)
+	}
+
+	return &Account{
+		privateKey: privateKey,
+		address:    address,
+		chainID:    f.chainID,
+		nonce:      nonce,
+	}, nil
+}
 
 // Account represents an account from which we can send transactions.
 // It sustains the nonce value - it allows multiple generators which use one Account
@@ -54,19 +94,24 @@ func GenerateAccount(id int, chainID int64) (*Account, error) {
 	}, nil
 }
 
-// GenerateAndFundAccount creates a new Account with a random private key and transfer finances to cover txs fees
-func GenerateAndFundAccount(sourceAccount *Account, rpcClient rpc.RpcClient, regularGasPrice *big.Int, accountId int, endowment int64) (*Account, error) {
-	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
-	account, err := GenerateAccount(accountId, sourceAccount.chainID.Int64())
+// Fund transfers finances to given account for covering txs fees if its balance is lower than required endowment
+func (a *Account) Fund(fundingAccount *Account, rpcClient rpc.RpcClient, regularGasPrice *big.Int, endowment int64) error {
+	balance, err := rpcClient.BalanceAt(context.Background(), a.address, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate account; %v", err)
+		return fmt.Errorf("failed to get balance before funding; %v", err)
 	}
-	// transfers (tokens) FTM to the new account
+
 	value := big.NewInt(0).Mul(big.NewInt(endowment), big.NewInt(1_000_000_000_000_000_000)) // FTM to wei
-	if err := transferValue(rpcClient, sourceAccount, account.address, value, priorityGasPrice); err != nil {
-		return nil, fmt.Errorf("failed to transfer (value: %s, gasPrice: %s): %v", value, priorityGasPrice, err)
+	value.Sub(value, balance)
+	if value.Sign() <= 0 {
+		return nil // already funded
 	}
-	return account, nil
+
+	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
+	if err := transferValue(rpcClient, fundingAccount, a.address, value, priorityGasPrice); err != nil {
+		return fmt.Errorf("failed to transfer (value: %s, gasPrice: %s): %v", value, priorityGasPrice, err)
+	}
+	return nil
 }
 
 // getNextNonce provides a nonce to be used for next transactions sent using this account

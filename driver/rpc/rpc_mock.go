@@ -38,6 +38,21 @@ func (m *MockRpcClient) EXPECT() *MockRpcClientMockRecorder {
 	return m.recorder
 }
 
+// BalanceAt mocks base method.
+func (m *MockRpcClient) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BalanceAt", ctx, account, blockNumber)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BalanceAt indicates an expected call of BalanceAt.
+func (mr *MockRpcClientMockRecorder) BalanceAt(ctx, account, blockNumber interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceAt", reflect.TypeOf((*MockRpcClient)(nil).BalanceAt), ctx, account, blockNumber)
+}
+
 // Call mocks base method.
 func (m *MockRpcClient) Call(result interface{}, method string, args ...interface{}) error {
 	m.ctrl.T.Helper()

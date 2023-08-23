@@ -33,7 +33,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	application, err := app.NewERC20Application(rpcClient, primaryAccount, 1)
+	application, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,9 +6,11 @@ import (
 	"strings"
 )
 
-func NewApplication(appType string, rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+type FactoryFunc func(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error)
+
+func NewApplication(appType string, rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	if factory := getFactory(appType); factory != nil {
-		return factory(rpcClient, primaryAccount, numUsers)
+		return factory(rpcClient, primaryAccount, numUsers, feederId, appId)
 	}
 	return nil, fmt.Errorf("unknown application type '%s'", appType)
 }
@@ -17,7 +19,7 @@ func IsSupportedApplicationType(appType string) bool {
 	return getFactory(appType) != nil
 }
 
-func getFactory(appType string) func(rpc.RpcClient, *Account, int) (Application, error) {
+func getFactory(appType string) FactoryFunc {
 	switch strings.ToLower(appType) {
 	case "erc20":
 		return NewERC20Application
