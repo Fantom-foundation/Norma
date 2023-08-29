@@ -49,7 +49,7 @@ type LocalNetwork struct {
 	appsMutex sync.Mutex
 
 	// nextAppId is the id to use for next created applications.
-	nextAppId uint32
+	nextAppId atomic.Uint32
 
 	// listeners is the set of registered NetworkListeners.
 	listeners map[driver.NetworkListener]bool
@@ -266,7 +266,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	}
 	defer rpcClient.Close()
 
-	appId := atomic.AddUint32(&n.nextAppId, 1)
+	appId := n.nextAppId.Add(1)
 	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users, 0, appId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)

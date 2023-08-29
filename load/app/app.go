@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-//go:Generate mockgen -source app.go -destination app_mock.go -package app
+//go:generate mockgen -source app.go -destination app_mock.go -package app
 
 type Application interface {
 	// CreateUser creates a new user generating transactions for this application.

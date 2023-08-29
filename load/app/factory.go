@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type FactoryFunc func(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error)
+type appFactoryFunc func(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error)
 
 func NewApplication(appType string, rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	if factory := getFactory(appType); factory != nil {
@@ -19,7 +19,7 @@ func IsSupportedApplicationType(appType string) bool {
 	return getFactory(appType) != nil
 }
 
-func getFactory(appType string) FactoryFunc {
+func getFactory(appType string) appFactoryFunc {
 	switch strings.ToLower(appType) {
 	case "erc20":
 		return NewERC20Application
