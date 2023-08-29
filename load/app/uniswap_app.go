@@ -25,7 +25,7 @@ var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.New
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
 // Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
 // This app swaps first token for the last one, using all intermediate tokens.
-func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -111,9 +111,14 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 		}
 	}
 
+	accountFactory, err := NewAccountFactory(primaryAccount.chainID, feederId, appId)
+	if err != nil {
+		return nil, err
+	}
+
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numUsers, regularGasPrice)
+	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accountFactory, numUsers, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +141,7 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 		routerAddress:    routerAddress,
 		tokensAddresses:  tokenAddresses,
 		pairsAddresses:   pairsAddresses,
+		accountFactory:   accountFactory,
 	}, nil
 }
 
@@ -147,8 +153,7 @@ type UniswapApplication struct {
 	routerAddress    common.Address
 	tokensAddresses  []common.Address
 	pairsAddresses   []common.Address
-	recipients       []common.Address
-	numAccounts      int64
+	accountFactory   *AccountFactory
 }
 
 // CreateUser creates a new user for the app.
@@ -159,12 +164,15 @@ func (f *UniswapApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 		return nil, err
 	}
 
-	// generate a new account for each worker - avoid account nonces related bottlenecks
-	id := atomic.AddInt64(&f.numAccounts, 1)
-	startingAccount := f.startingAccounts[id%int64(len(f.startingAccounts))]
-	workerAccount, err := GenerateAndFundAccount(startingAccount, rpcClient, regularGasPrice, int(id), 1000)
+	// Generate a new account for each worker - avoid account nonces related bottlenecks
+	workerAccount, err := f.accountFactory.CreateAccount(rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fund worker account %d; %v", id, err)
+		return nil, err
+	}
+	startingAccount := f.startingAccounts[workerAccount.id%len(f.startingAccounts)]
+	err = workerAccount.Fund(startingAccount, rpcClient, regularGasPrice, 1000)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fund worker account %d; %v", workerAccount.id, err)
 	}
 
 	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions

@@ -15,6 +15,7 @@ type RpcClient interface {
 	bind.ContractBackend
 	Call(result interface{}, method string, args ...interface{}) error
 	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
+	BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error)
 	Close()
 }
 

@@ -16,7 +16,7 @@ import (
 // NewStoreApplication deploys a Store contract to the chain.
 // The Store contract is a simple contract managing a user-private key/value store.
 // It is intended to produce state-heavy transactions.
-func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int) (Application, error) {
+func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
 	regularGasPrice, err := getGasPrice(rpcClient)
 	if err != nil {
@@ -35,9 +35,14 @@ func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 		return nil, fmt.Errorf("failed to deploy Store contract; %v", err)
 	}
 
+	accountFactory, err := NewAccountFactory(primaryAccount.chainID, feederId, appId)
+	if err != nil {
+		return nil, err
+	}
+
 	// deploying too many generators from one account leads to excessive gasPrice growth - we
 	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, numUsers, regularGasPrice)
+	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accountFactory, numUsers, regularGasPrice)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +63,7 @@ func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 		abi:              parsedAbi,
 		startingAccounts: startingAccounts,
 		contractAddress:  contractAddress,
+		accountFactory:   accountFactory,
 	}, nil
 }
 
@@ -67,7 +73,7 @@ type StoreApplication struct {
 	abi              *abi.ABI
 	startingAccounts []*Account
 	contractAddress  common.Address
-	numAccounts      int64
+	accountFactory   *AccountFactory
 }
 
 // CreateUser creates a new user for the app.
@@ -79,12 +85,15 @@ func (f *StoreApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 		return nil, err
 	}
 
-	// generate a new account for each worker - avoid account nonces related bottlenecks
-	id := atomic.AddInt64(&f.numAccounts, 1)
-	startingAccount := f.startingAccounts[id%int64(len(f.startingAccounts))]
-	workerAccount, err := GenerateAndFundAccount(startingAccount, rpcClient, regularGasPrice, int(id), 1000)
+	// Generate a new account for each worker - avoid account nonces related bottlenecks
+	workerAccount, err := f.accountFactory.CreateAccount(rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fund worker account %d; %v", id, err)
+		return nil, err
+	}
+	startingAccount := f.startingAccounts[workerAccount.id%len(f.startingAccounts)]
+	err = workerAccount.Fund(startingAccount, rpcClient, regularGasPrice, 1000)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fund worker account %d; %v", workerAccount.id, err)
 	}
 
 	gen := &StoreUser{

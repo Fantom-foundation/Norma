@@ -16,7 +16,7 @@ type Application interface {
 	GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error)
 }
 
-// User produces a stream of transactions to generate traffic on the chain.
+// User produces a stream of transactions to Generate traffic on the chain.
 // Implementations are not required to be thread-safe.
 type User interface {
 	GenerateTx() (*types.Transaction, error)

@@ -35,28 +35,28 @@ func TestGenerators(t *testing.T) {
 	}
 
 	t.Run("Counter", func(t *testing.T) {
-		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount, 1)
+		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testGenerator(t, counterApp, rpcClient)
 	})
 	t.Run("ERC20", func(t *testing.T) {
-		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1)
+		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testGenerator(t, erc20app, rpcClient)
 	})
 	t.Run("Store", func(t *testing.T) {
-		storeApp, err := app.NewStoreApplication(rpcClient, primaryAccount, 1)
+		storeApp, err := app.NewStoreApplication(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testGenerator(t, storeApp, rpcClient)
 	})
 	t.Run("Uniswap", func(t *testing.T) {
-		uniswapApp, err := app.NewUniswapApplication(rpcClient, primaryAccount, 1)
+		uniswapApp, err := app.NewUniswapApplication(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
