@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -20,10 +19,36 @@ type Sensor[T any] interface {
 type PeriodicDataSource[S comparable, T any] struct {
 	*SyncedSeriesSource[S, monitoring.Time, T]
 	period   time.Duration
-	stop     chan bool // used to signal per-node collectors about the shutdown
-	done     *sync.WaitGroup
-	errors   []error
-	errorsMu *sync.Mutex
+	subjects map[S]process // used to signal removal of a subject
+}
+
+// process represents a structure that encapsulates a stop signal and potential done.
+// It is used to communicate the stop signal and any done that occur during the execution of a subject.
+// The stop signal is sent through the 'stop' channel of type 'chan bool'.
+// Any done that occur are stored in the 'done' field of type 'error'.
+// This structure is typically used in the context of controlling the execution of a subject.
+type process struct {
+	stop chan bool
+	done chan error
+}
+
+// Stop stops the instance by closing the stop channel and
+// returning the error received from the done channel.
+func (s process) Stop() error {
+	close(s.stop)
+	return <-s.done
+}
+
+// Done sends the provided error on the done channel and closes it.
+func (s process) Done(err error) {
+	s.done <- err
+	close(s.done)
+}
+
+// NotifyStop returns the stop channel of the process instance.
+// This channel notifies that the process should stop.
+func (s process) NotifyStop() chan bool {
+	return s.stop
 }
 
 // NewPeriodicDataSource creates a new data source managing per-node sensor
@@ -42,26 +67,22 @@ func NewPeriodicDataSourceWithPeriod[S comparable, T any](
 	monitor *monitoring.Monitor,
 	period time.Duration,
 ) *PeriodicDataSource[S, T] {
-	stop := make(chan bool)
-
 	res := &PeriodicDataSource[S, T]{
 		SyncedSeriesSource: NewSyncedSeriesSource(metric),
 		period:             period,
-		stop:               stop,
-		done:               &sync.WaitGroup{},
-		errorsMu:           &sync.Mutex{},
-		errors:             make([]error, 0, 10),
+		subjects:           make(map[S]process),
 	}
 
 	return res
 }
 
 func (s *PeriodicDataSource[S, T]) Shutdown() error {
-	close(s.stop)
-	s.done.Wait()
-	s.errorsMu.Lock()
-	err := errors.Join(s.errors...)
-	s.errorsMu.Unlock()
+	// stop all subjects and drain potential done
+	var err error
+	for _, stop := range s.subjects {
+		err = errors.Join(err, stop.Stop())
+	}
+
 	return errors.Join(err, s.SyncedSeriesSource.Shutdown())
 }
 
@@ -71,11 +92,11 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 		return err
 	}
 
-	// Start background routine collecting sensor data.
-	s.done.Add(1)
-	go func() {
-		defer s.done.Done()
+	subjectStop := process{make(chan bool), make(chan error, 1)}
+	s.subjects[subject] = subjectStop
 
+	// Start background routine collecting sensor data.
+	go func() {
 		// Introduce random sampling offsets to avoid load peaks and to
 		// eliminate steps in aggregated metrics.
 		time.Sleep(time.Duration(float32(s.period) * rand.Float32()))
@@ -94,14 +115,22 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 						errs = append(errs, err)
 					}
 				}
-			case <-s.stop:
-				s.errorsMu.Lock()
-				s.errors = append(s.errors, errs...)
-				s.errorsMu.Unlock()
+			case <-subjectStop.NotifyStop():
+				subjectStop.Done(errors.Join(errs...))
 				return
 			}
 		}
 	}()
+
+	return nil
+}
+
+func (s *PeriodicDataSource[S, T]) RemoveSubject(subject S) error {
+	subjectStop, exists := s.subjects[subject]
+	if exists {
+		delete(s.subjects, subject)
+		return subjectStop.Stop()
+	}
 
 	return nil
 }
