@@ -77,6 +77,59 @@ func TestPeriodicSourceShutdownSourcesAdded(t *testing.T) {
 	_ = source.Shutdown()
 }
 
+func TestPeriodicSourceSourceRemoved(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	producer := monitoring.NewMockNodeLogProvider(ctrl)
+	producer.EXPECT().RegisterLogListener(gomock.Any()).AnyTimes()
+
+	net := driver.NewMockNetwork(ctrl)
+	net.EXPECT().RegisterListener(gomock.Any()).AnyTimes()
+	net.EXPECT().GetActiveNodes().AnyTimes().Return([]driver.Node{})
+
+	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{OutputDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("failed to initiate monitor: %v", err)
+	}
+
+	testMetric := monitoring.Metric[monitoring.Node, monitoring.Series[monitoring.Time, int]]{
+		Name:        "TestMetric",
+		Description: "Test Metric",
+	}
+
+	source := NewPeriodicDataSource[monitoring.Node, int](testMetric, monitor)
+
+	sensor1 := &testSensor{}
+	node1 := monitoring.Node("A")
+	if err := source.AddSubject(node1, sensor1); err != nil {
+		t.Errorf("error to add subject: %s", err)
+	}
+
+	sensor2 := &testSensor{}
+	node2 := monitoring.Node("B")
+	if err := source.AddSubject(node2, sensor2); err != nil {
+		t.Errorf("error to add subject: %s", err)
+	}
+
+	// wait for sensor called a few times
+	for sensor1.count() < 5 {
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if err := source.RemoveSubject(node1); err != nil {
+		t.Errorf("error to remove subject: %s", err)
+	}
+
+	// sensor2 should keep increasing while the other one not
+	start1 := sensor1.count()
+	start2 := sensor2.count()
+	for sensor2.count() < 5+start2 {
+		time.Sleep(100 * time.Millisecond)
+		if sensor1.count() != start1 {
+			t.Errorf("subject which was removes keeps being updated: %d != %d", sensor1.count(), start1)
+		}
+	}
+}
+
 func TestPeriodicSourceErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	producer := monitoring.NewMockNodeLogProvider(ctrl)
