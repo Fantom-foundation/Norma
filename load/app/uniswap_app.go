@@ -3,10 +3,11 @@ package app
 import (
 	"bytes"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"math/rand"
 	"sync/atomic"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -271,4 +272,11 @@ func (g *UniswapUser) GenerateTx() (*types.Transaction, error) {
 
 func (g *UniswapUser) GetSentTransactions() uint64 {
 	return atomic.LoadUint64(&g.sentTxs)
+}
+
+func (g *UniswapUser) SenderAddress() common.Address {
+	if g.sender == nil {
+		return common.Address{}
+	}
+	return g.sender.address
 }

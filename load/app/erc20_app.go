@@ -3,10 +3,11 @@ package app
 import (
 	crand "crypto/rand"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"math/rand"
 	"sync/atomic"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -191,4 +192,11 @@ func (g *ERC20User) GenerateTx() (*types.Transaction, error) {
 
 func (g *ERC20User) GetSentTransactions() uint64 {
 	return atomic.LoadUint64(&g.sentTxs)
+}
+
+func (g *ERC20User) SenderAddress() common.Address {
+	if g.sender == nil {
+		return common.Address{}
+	}
+	return g.sender.address
 }

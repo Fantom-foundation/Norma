@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"math/big"
 	"sync/atomic"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -151,4 +152,11 @@ func (g *CounterUser) GenerateTx() (*types.Transaction, error) {
 
 func (g *CounterUser) GetSentTransactions() uint64 {
 	return atomic.LoadUint64(&g.sentTxs)
+}
+
+func (g *CounterUser) SenderAddress() common.Address {
+	if g.sender == nil {
+		return common.Address{}
+	}
+	return g.sender.address
 }

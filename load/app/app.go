@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/Fantom-foundation/Norma/driver/rpc"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -21,4 +22,5 @@ type Application interface {
 type User interface {
 	GenerateTx() (*types.Transaction, error)
 	GetSentTransactions() uint64
+	SenderAddress() common.Address
 }
