@@ -48,7 +48,7 @@ func init() {
 	}
 }
 
-const operaDockerImageName = "opera"
+const operaDockerImageName = "sonic"
 
 // OperaNode implements the driver's Node interface by running a go-opera
 // client on a generic host.
@@ -64,8 +64,6 @@ type OperaNodeConfig struct {
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
-	// The EVM implementation to be used on this node.
-	VmImplementation string
 }
 
 // labelPattern restricts labels for nodes to non-empty alpha-numerical strings
@@ -101,8 +99,6 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			Environment: map[string]string{
 				"VALIDATOR_NUMBER": validatorId,
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
-				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
-				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
 		})

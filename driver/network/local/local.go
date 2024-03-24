@@ -103,10 +103,9 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 			defer wg.Done()
 			validatorId := i + 1
 			nodeConfig := node.OperaNodeConfig{
-				ValidatorId:      &validatorId,
-				NetworkConfig:    config,
-				Label:            fmt.Sprintf("_validator-%d", validatorId),
-				VmImplementation: config.VmImplementation,
+				ValidatorId:   &validatorId,
+				NetworkConfig: config,
+				Label:         fmt.Sprintf("_validator-%d", validatorId),
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
 		}()
@@ -159,9 +158,8 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 // CreateNode creates non-validator nodes in the network.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
 	return n.createNode(&node.OperaNodeConfig{
-		Label:            config.Name,
-		NetworkConfig:    &n.config,
-		VmImplementation: n.config.VmImplementation,
+		Label:         config.Name,
+		NetworkConfig: &n.config,
 	})
 }
 

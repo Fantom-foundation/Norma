@@ -32,22 +32,15 @@ var runCommand = cli.Command{
 	Name:   "run",
 	Usage:  "runs a scenario",
 	Flags: []cli.Flag{
-		&dbImpl,
 		&evalLabel,
 		&keepPrometheusRunning,
 		&numValidators,
 		&skipChecks,
 		&skipReportRendering,
-		&vmImpl,
 	},
 }
 
 var (
-	dbImpl = cli.StringFlag{
-		Name:  "db-impl",
-		Usage: "select the DB implementation to use (geth or carmen)",
-		Value: "carmen",
-	}
 	evalLabel = cli.StringFlag{
 		Name:  "label",
 		Usage: "define a label for to be added to the monitoring data for this run. I empty, a random label is used.",
@@ -70,29 +63,9 @@ var (
 		Name:  "skip-report-rendering",
 		Usage: "disables the rendering of the final summary report",
 	}
-	vmImpl = cli.StringFlag{
-		Name:  "vm-impl",
-		Usage: "select the VM implementation to use (geth, tosca, lfvm, ...)",
-		Value: "tosca",
-	}
 )
 
 func run(ctx *cli.Context) (err error) {
-	db := strings.ToLower(ctx.String(dbImpl.Name))
-	if db == "carmen" || db == "go-file" {
-		db = "go-file"
-	} else if db != "geth" {
-		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
-	}
-
-	vm := strings.ToLower(ctx.String(vmImpl.Name))
-	if vm == "tosca" {
-		vm = "lfvm"
-	}
-	if !isValidVmImpl(vm) {
-		return fmt.Errorf("unknown value fore --%v flag: %v", vmImpl.Name, vm)
-	}
-
 	label := ctx.String(evalLabel.Name)
 	if label == "" {
 		label = fmt.Sprintf("eval_%d", time.Now().Unix())
@@ -129,15 +102,13 @@ func run(ctx *cli.Context) (err error) {
 
 	// Startup network.
 	netConfig := driver.NetworkConfig{
-		NumberOfValidators:    1,
-		StateDbImplementation: db,
-		VmImplementation:      vm,
+		NumberOfValidators: 1,
 	}
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
-	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
-		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
+	fmt.Printf("Creating network with %d validator(s) ...\n",
+		netConfig.NumberOfValidators,
 	)
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {

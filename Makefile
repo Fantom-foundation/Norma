@@ -2,7 +2,7 @@ BUILD_DIR := $(CURDIR)/build
 
 .PHONY: all test clean
 
-all: build-opera-docker-image norma
+all: build-sonic-docker-image norma
 
 pull-hello-world-image:
 	DOCKER_BUILDKIT=1 docker image pull hello-world
@@ -13,8 +13,9 @@ pull-alpine-image:
 pull-prometheus-image:
 	DOCKER_BUILDKIT=1 docker image pull prom/prometheus:v2.44.0
 
-build-opera-docker-image:
-	DOCKER_BUILDKIT=1 docker build . -t opera
+build-sonic-docker-image:
+	cd client; go mod vendor # downloads all Go dependencies using the host system to avoid the need for private keys in the image
+	DOCKER_BUILDKIT=1 docker build . -t sonic
 
 generate-abi: load/contracts/abi/Counter.abi load/contracts/abi/ERC20.abi load/contracts/abi/Store.abi load/contracts/abi/UniswapV2Pair.abi load/contracts/abi/UniswapRouter.abi # requires installed solc and Ethereum abigen - check README.md
 
@@ -41,10 +42,10 @@ load/contracts/abi/UniswapRouter.abi: load/contracts/UniswapRouter.sol
 generate-mocks: # requires installed mockgen
 	go generate ./...
 
-norma: pull-prometheus-image build-opera-docker-image
+norma: pull-prometheus-image build-sonic-docker-image
 	go build -o $(BUILD_DIR)/norma ./driver/norma
 
-test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-opera-docker-image
+test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-sonic-docker-image
 	go test ./... -v
 
 clean:
