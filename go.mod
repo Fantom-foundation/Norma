@@ -2,6 +2,8 @@ module github.com/Fantom-foundation/Norma
 
 go 1.20
 
+require github.com/Fantom-foundation/Carmen/go v0.0.0-20240304081312-ad4c7efe9986
+
 require (
 	github.com/docker/go-connections v0.4.0
 	github.com/ethereum/go-ethereum v1.11.6
