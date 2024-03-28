@@ -32,6 +32,15 @@ jobs:
         submodules: recursive
         token: ${{ secrets.ACCESS_TOKEN }}
 
+    - name: Redirect HTTPS to SSH
+      run: git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+
+    - name: Fetch dependencies
+      working-directory: ./client
+      env:
+        GOPRIVATE: "github.com/Fantom-foundation"
+      run: go mod vendor
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -39,14 +48,6 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.20.7'
-
-    - name: Set up R
-      uses: r-lib/actions/setup-r@v2
-
-    - name: Install R dependencies
-      uses: r-lib/actions/setup-r-dependencies@v2
-      with:
-        working-directory: ./analysis/report
 
       # Use cache for Docker images
       # Only cache prometheus image, because other images are
@@ -107,6 +108,14 @@ jobs:
       run: |
         rm -rf /tmp/.buildx-cache
         mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+
+    - name: Install R dependencies
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        working-directory: ./analysis/report
 
     - name: Build
       working-directory: ./
