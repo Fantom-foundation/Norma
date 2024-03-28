@@ -40,10 +40,12 @@ jobs:
       with:
         go-version: '1.20.7'
 
+    - name: Config Git to use access token
+      run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
     - name: Run go mod vendor
       working-directory: ./client
       run: GOPRIVATE=github.com/Fantom-foundation go mod vendor
-
 
     - name: Set up R
       uses: r-lib/actions/setup-r@v2
