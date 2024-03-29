@@ -103,6 +103,10 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 		valueStr = tokens[1]
 	}
 
+	if valueStr == "{}" {
+		return nil
+	}
+
 	value, err := strconv.ParseFloat(valueStr, 64)
 	if err != nil {
 		return fmt.Errorf("cannot parse value from: %s", valueStr)
