@@ -99,11 +99,14 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         context: ./
-        tags: opera
+        tags: sonic
         load: true
         push: false
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+    - name: docker ps
+      run: 
 
       # This ugly bit is necessary if you don't want your cache to grow forever
       # until it hits GitHub's limit.
