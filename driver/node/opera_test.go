@@ -125,7 +125,7 @@ func TestOperaNode_StreamLog(t *testing.T) {
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
 			line := scanner.Text()
-			if strings.Contains(line, "Start/Switch to fullsync mode...") {
+			if strings.Contains(line, "WebSocket enabled") {
 				done <- true
 			}
 		}
