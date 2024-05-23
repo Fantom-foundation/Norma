@@ -7,7 +7,7 @@ echo "Sonic is going to export its services on ${external_ip}"
 
 # Initialize datadir
 mkdir /datadir
-./sonictool --datadir=/datadir genesis fake ${VALIDATOR_NUMBER}
+./sonictool --datadir=/datadir genesis fake ${VALIDATORS_COUNT}
 
 # Start sonic as part of a fake net with RPC service.
 ./sonicd --fakenet ${VALIDATOR_NUMBER}/${VALIDATORS_COUNT} \
