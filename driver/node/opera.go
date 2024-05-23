@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-const operaDockerImageName = "opera"
+const operaDockerImageName = "sonic"
 
 // OperaNode implements the driver's Node interface by running a go-opera
 // client on a generic host.
