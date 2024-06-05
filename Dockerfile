@@ -11,56 +11,30 @@
 # The build is done in independent stages, to allow for
 # caching of the intermediate results.
 
-# Stage 1: build the Carmen C++ library
-FROM golang:1.20.3 AS carmen-build
-# Install Carmen prerequisities
-RUN apt-get update && apt-get install -y clang
-RUN go install github.com/bazelbuild/bazelisk@v1.15.0 && ln -s /go/bin/bazelisk /bin/bazel
-
-COPY client/carmen/ /client/carmen
-
-# Build Carmen C++ library
-WORKDIR /client/carmen/go/lib
-RUN /bin/bash ./build_libcarmen.sh
-
-# Stage 2: build the client
-FROM golang:1.20.3 AS client-build
+# Stage 1: build the client
+FROM golang:1.21.3 AS client-build
 WORKDIR /client
 
-# Copy go.mod and go.sum files to cache dependencies
-COPY client/go.* ./
-
-# We also need to copy carmen and tosca directories, as they are
-# replaced in the go.mod file with local paths
-COPY client/carmen/ ./carmen
-COPY client/tosca/ ./tosca
-
-# Download dependencies
-RUN go mod download
-
-# Copy the source code
+# Copy the client code into the image.
 COPY client/ ./
 
-# The built carmen library is needed to build the client
-COPY --from=carmen-build /client/carmen/go/lib/libcarmen.so ./carmen/go/lib/libcarmen.so
+# Build sonic with caching
+RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
 
-# Build Opera with caching
-RUN --mount=type=cache,target=/root/.cache/go-build make opera
-
-# This results in an image that contains the Opera binary
+# This results in an image that contains the sonic binary
 #
 # The container can be run by typing:
-# > docker run -i -t opera
+# > docker run -i -t sonic
 # or inspected opening terminal in it by
-# > docker run -i -t opera /bin/sh
+# > docker run -i -t sonic /bin/sh
 #
-# Opera run can be customised by passing the environment variables, .e.g.:
+# sonic run can be customised by passing the environment variables, .e.g.:
 #
-# > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t opera
+# > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t sonic
 #
 FROM debian:bookworm
-COPY --from=client-build /client/build/opera .
-COPY --from=carmen-build /client/carmen/go/lib/libcarmen.so .
+COPY --from=client-build /client/build/sonicd .
+COPY --from=client-build /client/build/sonictool .
 
 ENV VALIDATOR_NUMBER=1
 ENV VALIDATORS_COUNT=1
@@ -72,5 +46,5 @@ EXPOSE 6060
 EXPOSE 18545
 EXPOSE 18546
 
-COPY scripts/run_opera.sh .
-CMD /bin/bash run_opera.sh
+COPY scripts/run_sonic.sh .
+CMD /bin/bash run_sonic.sh
