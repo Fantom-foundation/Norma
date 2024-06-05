@@ -12,7 +12,8 @@
 # caching of the intermediate results.
 
 # Stage 1: build the client
-FROM golang:1.21.3 AS client-build
+FROM golang:1.22 AS client-build
+
 WORKDIR /client
 
 # Copy the client code into the image.
