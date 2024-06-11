@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"os"
+	"path/filepath"
 
 	"github.com/Fantom-foundation/Norma/load/app"
 )
@@ -88,8 +90,40 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
 
+	if n.Genesis.Import != nil {
+		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
+			errs = append(errs, err)
+		}
+		if err := checkTimeInterval(n.Genesis.Import.Start, nil, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if n.Genesis.Export != nil {
+		if err := checkTimeInterval(n.Genesis.Export.Start, nil, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
+}
+
+// isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
+func isGenesisFile(path string) error {
+	if path == "" {
+		return fmt.Errorf("provided path to genesis file is nil.")
+	}
+
+	errs := []error{}
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
+	}
+	if ext := filepath.Ext(path); ext != ".g" {
+		errs = append(errs, fmt.Errorf("provided path is not a genesis file: %s", path))
 	}
 
 	return errors.Join(errs...)
