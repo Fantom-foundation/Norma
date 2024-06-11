@@ -44,6 +44,12 @@ type Node struct {
 	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
 	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
+	Client    ClientType
+}
+
+type ClientType struct {
+	ImageName string   `yaml:",omitempty"` // nil is interpreted as main
+	Type      string   `yaml:",omitempty"` // nil is interpreted as observer
 }
 
 // Application is a load generator in the simulated network. Each application defines
