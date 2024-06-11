@@ -18,6 +18,7 @@ package parser
 
 import (
 	"strings"
+	"fmt"
 	"testing"
 )
 
@@ -441,3 +442,21 @@ func TestScenario_ApplicationIssuesAreDetected(t *testing.T) {
 		t.Errorf("application issue was not detected")
 	}
 }
+
+func TestScenario_CheatIssuesAreDetected(t *testing.T) {
+	start := new(float32)
+	*start = 70
+	
+	scenario := Scenario{
+		Name:         "Test",
+		Duration:     60,
+		Cheats: []Cheat {
+			{Name: "Test", Start: start},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "start time must be <= scenario duration") {
+		fmt.Println(err)
+		t.Errorf("cheat issue was not detected")
+	}
+}
+
