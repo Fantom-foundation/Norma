@@ -1,0 +1,44 @@
+# Scenario C2: Send requests to tracing nodes
+# - Set up: start 4 sonic validators, 2 Tracing nodes
+# - Test: process transactions for 5 minutes then send tracing requests to the network
+# - Validation: Tracing requests are correct
+
+### PENDING TRACING LOAD GENERATOR
+### PENDING CONFIRMATION IF WE NEED TRACING NODE TEST
+
+name: C2
+duration: 300 # 5 minutes
+
+# backward compatibility, to be removed.
+num_validators: 4
+
+nodes:
+  # this is how we want to launch validator
+  # - name: validator
+  #   instances: 4
+  #   timer:
+  #     start: 0
+  #     end: 300
+  #   client:
+  #     imagename: main
+  #     type: validator
+  - name: Tracing
+    instances: 2
+    timer:
+      start: 0
+      end: 300
+    client: 
+      imagename: main
+      type: Tracing
+    
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 299            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
+
+validate: true

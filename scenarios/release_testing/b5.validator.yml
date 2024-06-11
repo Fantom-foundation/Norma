@@ -1,0 +1,62 @@
+# Scenario B5: over 2/3 of validators stop then restart after 5 minutes
+# - Set up: start 4 validators, 2 RPC nodes and 2 observers
+# - Test: process transactions for 5 minutes, then stop 3 validators. Restart the validators again after another 5 minutes passed.
+# - Validation: what would happen?
+
+name: B5
+duration: 610 # 10 minute sim: 5 minutes > stop 3 validators > 5 minutes further > start the stopped 3 validators > 10 seconds grace period
+
+# backward compatibility, to be removed.
+num_validators: 4
+
+nodes:
+  # this is how we want to launch validator
+  # - name: full-validator
+  #   instances: 2
+  #   timer:
+  #     start: 0
+  #     end: 610
+  #   client:
+  #     imagename: main
+  #     type: validator
+  
+  # - name: crashing-validator
+  #   instances: 3
+  #   timer:
+  #     start: 0
+  #     end: 300
+  #     start: 600
+  #     end: 610
+  #   client:
+  #     imagename: main
+  #     type: validator
+  
+  - name: RPC
+    instances: 2
+    timer:
+      start: 0
+      end: 610
+    client: 
+      imagename: main
+      type: RPC
+    
+  - name: observer
+    instances: 2
+    timer: 
+      start: 0
+      end: 610
+    client:
+      imagename: main
+      type: observer
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 609            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
+
+validate: true # what happen?

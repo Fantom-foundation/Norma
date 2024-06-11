@@ -1,0 +1,43 @@
+# Scenario C1: Send requests to RPC nodes
+# - Set up: start 4 sonic validators, 2 RPC nodes
+# - Test: process transactions for 5 minutes then send RPC requests to the network
+# - Validation: RPC requests are correct
+
+### PENDING RPC LOAD GENERATOR
+
+name: C1
+duration: 300 # 5 minutes
+
+# backward compatibility, to be removed.
+num_validators: 4
+
+nodes:
+  # this is how we want to launch validator
+  # - name: validator
+  #   instances: 4
+  #   timer:
+  #     start: 0
+  #     end: 300
+  #   client:
+  #     imagename: main
+  #     type: validator
+  - name: RPC
+    instances: 2
+    timer:
+      start: 0
+      end: 300
+    client: 
+      imagename: main
+      type: RPC
+    
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 299            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
+
+validate: true
