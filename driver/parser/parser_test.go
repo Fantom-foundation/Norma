@@ -105,6 +105,49 @@ cheats:
 
 func TestParseExampleWithCheats(t *testing.T) {
 	_, err := ParseBytes([]byte(withCheats))
+}
+
+// withGenesis extends the small scenario with genesis option.
+var withGenesis = `
+name: Small Test With Genesis
+num_validators: 5
+nodes:
+  - name: A
+    instances: 10
+    features:
+      - validator
+      - archive
+    start: 5
+    end: 7.5
+    genesis:
+      import:
+        start: 3
+        path: /path/to/genesis
+
+applications:
+  - name: lottery
+    instances: 10
+    start: 7
+    end: 10
+    rate:
+      constant: 8
+
+  - name: my_coin
+    rate:
+      slope:
+        start: 5
+        increment: 1
+
+  - name: game
+    rate:
+      wave:
+        min: 10
+        max: 20
+        period: 120
+`
+
+func TestParseWithGenesisWorks(t *testing.T) {
+	_, err := ParseBytes([]byte(withGenesis))
 	if err != nil {
 		t.Fatalf("parsing of input failed: %v", err)
 	}
