@@ -43,6 +43,13 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 		return nil
 	}))
 
+	// Schedule validation at the end of the simulation
+	if scenario.Validate {
+		queue.add(toSingleEvent(endTime, "[NOT IMPLEMENTED] validate", func() error {
+			return nil
+		}))
+	}
+
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
 		scheduleNodeEvents(&node, queue, network, endTime)
