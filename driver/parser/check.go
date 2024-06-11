@@ -105,6 +105,18 @@ func (n *Node) Check(scenario *Scenario) error {
 		}
 	}
 
+	if n.Event.Import != nil {
+		if err := checkTimeNodeAlive(n.Event.Import.Start, n, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if n.Event.Export != nil {
+		if err := checkTimeNodeAlive(n.Event.Export.Start, n, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
 	}

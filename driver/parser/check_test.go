@@ -520,4 +520,24 @@ func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "event start must be <= node end") {
 		t.Errorf("genesis import/export outside duration but issue was not detected")
 	}
+	
+}
+
+func TestScenario_NodeEventIssuesAreDetected(t *testing.T) {
+	start := new(float32)
+
+	*start = 70
+	scenario := Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes:    []Node{
+			{Event: Event{Import: &EventTarget{
+				Start: start, 
+				Path: "/path/to/event",
+			}}},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "event start must be <= node end") {
+		t.Errorf("event timing is wrong but issue was not detected")
+	}
 }
