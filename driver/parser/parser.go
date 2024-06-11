@@ -47,6 +47,9 @@ type Node struct {
 	Client    ClientType
 }
 
+// ClientType is an optional configuration for Node.
+// ImageName can be used to specify the exact client version for the defined Node.
+// Type can be used to configure the launching command of the client
 type ClientType struct {
 	ImageName string   `yaml:",omitempty"` // nil is interpreted as main
 	Type      string   `yaml:",omitempty"` // nil is interpreted as observer
