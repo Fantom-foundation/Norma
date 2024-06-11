@@ -315,7 +315,7 @@ func checkTimeNodeAlive(start *float32, node *Node, duration float32) error {
 		errs = append(errs, fmt.Errorf("event start must be >= node start (=%fs), is %f", nodeStart, eventStart))
 	}
 	if eventStart > nodeEnd {
-		errs = append(errs, fmt.Errorf("event end must be <= node end (=%fs), is %f", nodeEnd, eventStart))
+		errs = append(errs, fmt.Errorf("event start must be <= node end (=%fs), is %f", nodeEnd, eventStart))
 	}
 	
 	return errors.Join(errs...)
