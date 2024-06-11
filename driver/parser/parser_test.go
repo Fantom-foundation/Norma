@@ -95,3 +95,16 @@ func TestParseSmallExampleWorks(t *testing.T) {
 		t.Fatalf("parsing of input failed: %v", err)
 	}
 }
+
+// withValidate extends small example with validate config
+var withValidate = smallExample + `
+
+validate: true
+`
+
+func TestParseWithValidate(t *testing.T) {
+	_, err := ParseBytes([]byte(withValidate))
+	if err != nil {
+		t.Fatalf("parsing of input failed: %v", err)
+	}
+}

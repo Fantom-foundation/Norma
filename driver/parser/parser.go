@@ -32,6 +32,7 @@ type Scenario struct {
 	NumValidators *int          `yaml:"num_validators,omitempty"` // nil == 1
 	Nodes         []Node        `yaml:",omitempty"`
 	Applications  []Application `yaml:",omitempty"`
+	Validate      bool          `yaml:",omitempty"` // nil == false
 }
 
 // Node is a configuration for a group of nodes with similar properties.
