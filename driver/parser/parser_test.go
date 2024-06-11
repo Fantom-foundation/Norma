@@ -150,6 +150,51 @@ cheats:
 
 func TestParseExampleWithCheats(t *testing.T) {
 	_, err := ParseBytes([]byte(withCheats))
+}
+
+var withEvents = `
+name: Small Test
+num_validators: 5
+nodes:
+  - name: A
+    instances: 10
+    features:
+      - validator
+      - archive
+    start: 5
+    end: 7.5
+    event:
+      import: 
+        start: 5
+        path: /path/to/events
+      export:
+        start: 7.5
+        path: /path/to/events
+
+applications:
+  - name: lottery
+    instances: 10
+    start: 7
+    end: 10
+    rate:
+      constant: 8
+
+  - name: my_coin
+    rate:
+      slope:
+        start: 5
+        increment: 1
+
+  - name: game
+    rate:
+      wave:
+        min: 10
+        max: 20
+        period: 120
+`
+
+func TestParseWithEventsWorks(t *testing.T) {
+	_, err := ParseBytes([]byte(withEvents))
 	if err != nil {
 		t.Fatalf("parsing of input failed: %v", err)
 	}
