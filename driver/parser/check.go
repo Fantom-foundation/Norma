@@ -94,13 +94,13 @@ func (n *Node) Check(scenario *Scenario) error {
 		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
 			errs = append(errs, err)
 		}
-		if err := checkTimeInterval(n.Genesis.Import.Start, nil, scenario.Duration); err != nil {
+		if err := checkTimeNodeAlive(n.Genesis.Import.Start, n, scenario.Duration); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
 	if n.Genesis.Export != nil {
-		if err := checkTimeInterval(n.Genesis.Export.Start, nil, scenario.Duration); err != nil {
+		if err := checkTimeNodeAlive(n.Genesis.Export.Start, n, scenario.Duration); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -293,3 +293,31 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 	}
 	return errors.Join(errs...)
 }
+
+//checkTimeNodeAlive is a utility function checking if an event happens during the start/end of a node.
+func checkTimeNodeAlive(start *float32, node *Node, duration float32) error {
+	nodeStart := float32(0.0)
+	if node.Start != nil {
+		nodeStart = *node.Start
+	}
+	nodeEnd := duration
+	if node.End != nil {
+		nodeEnd = *node.End
+	}
+
+	eventStart := nodeStart
+	if start != nil {
+		eventStart = *start
+	}
+
+	errs := []error{}
+	if eventStart < nodeStart {
+		errs = append(errs, fmt.Errorf("event start must be >= node start (=%fs), is %f", nodeStart, eventStart))
+	}
+	if eventStart > nodeEnd {
+		errs = append(errs, fmt.Errorf("event end must be <= node end (=%fs), is %f", nodeEnd, eventStart))
+	}
+	
+	return errors.Join(errs...)
+}
+
