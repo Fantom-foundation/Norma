@@ -109,9 +109,8 @@ nodes:
     start: 5
     end: 7.5
     client:
-      imagename: main
+      version: latest
       type: validator
-
 applications:
   - name: lottery
     instances: 10
@@ -119,13 +118,11 @@ applications:
     end: 10
     rate:
       constant: 8
-
   - name: my_coin
     rate:
       slope:
         start: 5
         increment: 1
-
   - name: game
     rate:
       wave:
