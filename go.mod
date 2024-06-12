@@ -4,9 +4,11 @@ go 1.20
 
 require (
 	github.com/docker/go-connections v0.4.0
+	github.com/docker/go-units v0.5.0
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/golang/mock v1.6.0
 	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.25.1
@@ -39,8 +41,8 @@ require (
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect

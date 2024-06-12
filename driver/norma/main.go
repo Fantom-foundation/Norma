@@ -38,6 +38,7 @@ func main() {
 			&purgeCommand,
 			&renderCommand,
 			&diffCommand,
+			&imageCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {

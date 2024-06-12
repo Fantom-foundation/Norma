@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-const operaDockerImageName = "sonic"
+const OperaDockerImageName = "sonic"
 
 // OperaNode implements the driver's Node interface by running a go-opera
 // client on a generic host.
@@ -111,7 +111,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			return nil, err
 		}
 		return client.Start(&docker.ContainerConfig{
-			ImageName:       operaDockerImageName,
+			ImageName:       OperaDockerImageName,
 			ShutdownTimeout: &shutdownTimeout,
 			PortForwarding:  portForwarding,
 			Environment: map[string]string{
