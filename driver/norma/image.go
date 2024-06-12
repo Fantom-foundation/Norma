@@ -21,12 +21,18 @@ import (
 	"os"
 	"strings"
 	"time"
+	"io"
+	"fmt"
+	"errors"
+	"path/filepath"
 
 	"github.com/Fantom-foundation/Norma/driver/node"
+	"github.com/Fantom-foundation/Norma/driver/parser"
 
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/urfave/cli/v2"
 	"github.com/docker/go-units"
 	"github.com/olekukonko/tablewriter"
@@ -46,7 +52,25 @@ var imageCommand = cli.Command{
 		{
 			Name: "build",
 			Usage: "build a client image",
-			Action: notImplemented,
+			Action: imageBuild,
+			Flags: []cli.Flag{
+				&cli.PathFlag{
+					Name: "dockerfile",
+					Usage: "Dockerfile used to build client image",
+					Aliases: []string{"d"},
+					EnvVars: []string{"NORMA_DOCKERFILE"},
+				},
+				&cli.PathFlag{
+					Name: "scenario-file",
+					Usage: "target scenario file to extract client versions from",
+					Aliases: []string{"s"},
+				},
+				&cli.StringFlag{
+					Name: "client-version",
+					Usage: "target client versions",
+					Aliases: []string{"c"},
+				},
+			},
 		},
 		{
 			Name: "rm",
@@ -124,6 +148,82 @@ func imageLs(ctx *cli.Context) (err error) {
 
 	return nil
 }
+
+// imageBuild builds an image using 1. dockerfile 2. client version or scenarios
+// Example1: norma image build -d /path/to/norma/Dockerfile -c latest
+// Example2: norma image build -d /path/to/norma/Dockerfile -s scenarios/small.yml
+//    in Example2, all referenced client versions are extracted and built
+// Note: make should also scan norma's directory for Dockerfile and set this as an env
+//    so we can reduce Example1 to: norma image build -c latest
+func imageBuild(ctx *cli.Context) (err error) {
+	dockerfile := ctx.String("dockerfile")
+	if dockerfile == "" {
+		return fmt.Errorf("norma image build cannot proceed without dockerfile")
+	}
+
+	cv := ctx.String("client-version")
+	sf := ctx.String("scenario-file")
+	if cv == "" && sf == "" {
+		return fmt.Errorf("Please provide target client version or scenario fil")
+	}
+	if cv != "" && sf != "" {
+		return fmt.Errorf("Conflict: both target client version and scenario file are provided. Please provide one target.")
+	}
+
+	if cv != "" {
+		return imageBuildFromClientVersion(dockerfile, cv)
+	}
+
+	scenario, err := parser.ParseFile(sf)
+	if err != nil {
+		return err
+	}
+
+	if err := scenario.Check(); err != nil {
+		return err
+	}
+
+	cvs, err := scenario.ExtractClientVersion()
+	if err != nil {
+		return err
+	}
+
+	errs := []error{}
+	for _, cv := range cvs {
+		err := imageBuildFromClientVersion(dockerfile, cv)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// imageBuildFromClientVersion creates an image provided 1. dockerfile 2. client version
+func imageBuildFromClientVersion(dockerfile string, version string) (err error) {
+	fmt.Println(dockerfile, version)
+	d, err := newDockerClient()
+	if err != nil {
+		return err
+	}
+
+	buildCtx, _ := archive.TarWithOptions(
+		filepath.Dir(dockerfile),
+		&archive.TarOptions{},
+	)
+	buildOpts := types.ImageBuildOptions {
+		Dockerfile: filepath.Base(dockerfile),
+		Tags:       []string{fmt.Sprintf("%s:%s", node.OperaDockerImageName, version)},
+	}
+
+	buildResp, err := d.ImageBuild(context.Background(), buildCtx, buildOpts)
+	if err != nil {
+		return err
+	}
+
+	io.Copy(os.Stdout, buildResp.Body)
+	return nil
+}
+
 
 // purge removes all images, --force to also include currently running container
 func imagePurge(ctx *cli.Context) (err error) {
