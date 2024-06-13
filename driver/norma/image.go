@@ -154,7 +154,7 @@ func imageLs(ctx *cli.Context) (err error) {
 // Example1: norma image build -d /path/to/norma/Dockerfile -c latest
 // Example2: norma image build -d /path/to/norma/Dockerfile -s scenarios/small.yml
 //    in Example2, all referenced client versions are extracted and built
-// Note: we also can set norma's directory for Dockerfile as an env NORMA_DOCKERFILE
+// Note: we also can set norma's directory for Dockerfile as an env CLIENT_DOCKERFILE
 //    so we can reduce Example1 to: norma image build -c latest
 func imageBuild(ctx *cli.Context) (err error) {
 	dockerfile := ctx.String("dockerfile")
