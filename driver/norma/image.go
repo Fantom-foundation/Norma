@@ -58,7 +58,8 @@ var imageCommand = cli.Command{
 					Name: "dockerfile",
 					Usage: "Dockerfile used to build client image",
 					Aliases: []string{"d"},
-					EnvVars: []string{"NORMA_DOCKERFILE"},
+					EnvVars: []string{"CLIENT_DOCKERFILE"},
+					Value:   "./Dockerfile",
 				},
 				&cli.PathFlag{
 					Name: "scenario-file",
@@ -153,12 +154,15 @@ func imageLs(ctx *cli.Context) (err error) {
 // Example1: norma image build -d /path/to/norma/Dockerfile -c latest
 // Example2: norma image build -d /path/to/norma/Dockerfile -s scenarios/small.yml
 //    in Example2, all referenced client versions are extracted and built
-// Note: make should also scan norma's directory for Dockerfile and set this as an env
+// Note: we also can set norma's directory for Dockerfile as an env NORMA_DOCKERFILE
 //    so we can reduce Example1 to: norma image build -c latest
 func imageBuild(ctx *cli.Context) (err error) {
 	dockerfile := ctx.String("dockerfile")
 	if dockerfile == "" {
 		return fmt.Errorf("norma image build cannot proceed without dockerfile")
+	}
+	if _, err := os.Stat(dockerfile); errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("targeted dockefile does not exist; %s", err)
 	}
 
 	cv := ctx.String("client-version")
