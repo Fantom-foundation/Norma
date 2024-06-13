@@ -154,7 +154,7 @@ func imageLs(ctx *cli.Context) (err error) {
 // Example1: norma image build -d /path/to/norma/Dockerfile -c latest
 // Example2: norma image build -d /path/to/norma/Dockerfile -s scenarios/small.yml
 //    in Example2, all referenced client versions are extracted and built
-// Note: we also can set norma's directory for Dockerfile as an env CLIENT_DOCKERFILE
+// Note: we also can set norma's directory for Dockerfile as an env NORMA_DOCKERFILE
 //    so we can reduce Example1 to: norma image build -c latest
 func imageBuild(ctx *cli.Context) (err error) {
 	dockerfile := ctx.String("dockerfile")
@@ -210,6 +210,7 @@ func imageBuildFromClientVersion(dockerfile string, version string) (err error) 
 		return err
 	}
 
+	defaultGoVersion := "1.22"
 	buildCtx, _ := archive.TarWithOptions(
 		filepath.Dir(dockerfile),
 		&archive.TarOptions{},
@@ -217,6 +218,10 @@ func imageBuildFromClientVersion(dockerfile string, version string) (err error) 
 	buildOpts := types.ImageBuildOptions {
 		Dockerfile: filepath.Base(dockerfile),
 		Tags:       []string{fmt.Sprintf("%s:%s", node.OperaDockerImageName, version)},
+		BuildArgs:  map[string]*string{
+			"GO_VERSION": &defaultGoVersion,
+			"SONIC_BRANCH": &version,
+		},
 	}
 
 	buildResp, err := d.ImageBuild(context.Background(), buildCtx, buildOpts)
