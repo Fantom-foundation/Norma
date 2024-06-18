@@ -1,0 +1,31 @@
+// Norma CI test norma using "make test"
+
+pipeline {
+	agent { norma-test }
+	
+	options {
+		timestamps ()
+		timeout(time: 3, unit: 'HOURS')
+	}
+
+	stages {
+		stage('Clone Norma') {
+			script {
+				currentBuild.description = 'Building on ${env.NODE_NAME}'
+                	}
+			checkout scmGit(
+				branches: [[name: 'develop']],
+				userRemoteConfigs: [[url: 'https://github.com/Fantom-foundation/Norma.git']]
+			)
+		}
+
+		stage('Make Norma') {
+			sh 'make clean'
+			sh 'make all'
+		}
+
+		stage('Test Norma') {
+			sh 'make test'
+		}
+	}
+}
