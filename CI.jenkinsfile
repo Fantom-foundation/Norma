@@ -31,7 +31,6 @@ pipeline {
 					sh 'unformatted=$(gofmt -l .)'
 					sh '[ -z "$unformatted" ] && exit 0'
 					sh 'exit 1'
-					
 				}
 			}
 		}
