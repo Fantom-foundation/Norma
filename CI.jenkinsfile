@@ -11,7 +11,7 @@ pipeline {
 	parameters {
 		string(defaultValue: "main", description: 'Can be either branch name or commit hash.', name: 'NormaVersion')
 	}
-
+	
 	stages {
 		stage('Clone Norma') {
 			steps {
@@ -22,6 +22,18 @@ pipeline {
 					branches: [[name: '${NormaVersion}']],
 					userRemoteConfigs: [[url: 'https://github.com/Fantom-foundation/Norma.git']]
 				)
+			}
+		}
+
+		stage('Check Norma Format') {
+			steps {
+				catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+					sh 'gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep "\.go$")'
+					sh 'unformatted=$(gofmt -l $gofiles)'
+					sh '[ -z "$unformatted" ] && exit 0'
+					sh 'exit 1'
+					
+				}
 			}
 		}
 
