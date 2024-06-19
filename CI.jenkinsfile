@@ -8,6 +8,10 @@ pipeline {
 		timeout(time: 3, unit: 'HOURS')
 	}
 
+	parameters {
+		string(defaultValue: "main", description: 'Can be either branch name or commit hash.', name: 'NormaVersion')
+	}
+
 	stages {
 		stage('Clone Norma') {
 			steps {
@@ -15,7 +19,7 @@ pipeline {
 					currentBuild.description = 'Building on ${env.NODE_NAME}'
                 		}
 				checkout scmGit(
-					branches: [[name: 'rapol/update/latest-sonic-18Jun']],
+					branches: [[name: '${NormaVersion}']],
 					userRemoteConfigs: [[url: 'https://github.com/Fantom-foundation/Norma.git']]
 				)
 			}
