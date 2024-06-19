@@ -1,3 +1,3 @@
 [submodule "go-opera-norma"]
 	path = client
-	url = git@github.com:Fantom-foundation/go-opera-norma.git
+	url =  https://github.com/Fantom-foundation/Sonic.git
