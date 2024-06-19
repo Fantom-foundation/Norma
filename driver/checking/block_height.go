@@ -18,9 +18,10 @@ package checking
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
 	"strconv"
 	"strings"
+
+	"github.com/Fantom-foundation/Norma/driver"
 )
 
 // BlockHeightChecker is a Checker checking if all Opera nodes achieved the same block height.

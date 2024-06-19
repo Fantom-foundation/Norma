@@ -18,9 +18,10 @@ package nodemon
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
-	"log"
 )
 
 var (

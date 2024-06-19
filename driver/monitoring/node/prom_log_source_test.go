@@ -18,15 +18,16 @@ package nodemon
 
 import (
 	"fmt"
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/golang/mock/gomock"
 	"golang.org/x/exp/slices"
-	"sort"
-	"testing"
-	"time"
 )
 
 func TestLogsAddedToSeries(t *testing.T) {

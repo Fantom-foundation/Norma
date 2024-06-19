@@ -18,8 +18,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"strings"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 )
 
 type appFactoryFunc func(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error)

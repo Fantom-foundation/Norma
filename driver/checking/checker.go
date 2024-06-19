@@ -18,6 +18,7 @@ package checking
 
 import (
 	"errors"
+
 	"github.com/Fantom-foundation/Norma/driver"
 )
 

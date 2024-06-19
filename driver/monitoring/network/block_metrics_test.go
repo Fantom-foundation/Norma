@@ -17,12 +17,13 @@
 package netmon
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/golang/mock/gomock"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/golang/mock/gomock"
 )
 
 func TestCaptureSeriesFromNodeBlocks(t *testing.T) {

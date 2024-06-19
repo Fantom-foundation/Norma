@@ -17,11 +17,12 @@
 package checking
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/golang/mock/gomock"
-	"strings"
-	"testing"
 )
 
 func TestBlockHeightCheckerValid(t *testing.T) {

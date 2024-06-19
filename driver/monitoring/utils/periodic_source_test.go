@@ -18,12 +18,13 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/golang/mock/gomock"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	"github.com/golang/mock/gomock"
 )
 
 func TestPeriodicSourceShutdownBeforeAnyAction(t *testing.T) {

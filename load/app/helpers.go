@@ -19,11 +19,12 @@ package app
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"math/big"
-	"time"
 )
 
 // transferValue transfer a financial value from account identified by given privateKey, to given toAddress.

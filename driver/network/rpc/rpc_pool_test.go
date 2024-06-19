@@ -17,11 +17,12 @@
 package rpc
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 func TestRetryRpcReturnGracefully(t *testing.T) {

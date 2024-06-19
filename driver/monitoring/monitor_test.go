@@ -18,14 +18,15 @@ package monitoring
 
 import (
 	"bytes"
+	"os"
+	"sync"
+	"testing"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/golang/mock/gomock"
 	"golang.org/x/exp/slices"
-	"os"
-	"sync"
-	"testing"
 )
 
 func TestMonitor_CreateAndShutdown(t *testing.T) {

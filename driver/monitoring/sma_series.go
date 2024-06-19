@@ -17,8 +17,9 @@
 package monitoring
 
 import (
-	"golang.org/x/exp/constraints"
 	"log"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Number is a constraint type for float and integer types.

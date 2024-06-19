@@ -19,11 +19,12 @@ package prometheusmon
 import (
 	"bytes"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"io"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network/local"

@@ -18,11 +18,12 @@ package monitoring
 
 import (
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver"
 	"io"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/Fantom-foundation/Norma/driver"
 )
 
 //go:generate mockgen -source node_log_provider.go -destination node_log_provider_mock.go -package monitoring

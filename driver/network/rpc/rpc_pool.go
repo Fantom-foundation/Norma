@@ -18,10 +18,11 @@ package rpc
 
 import (
 	"context"
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/network"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/node"

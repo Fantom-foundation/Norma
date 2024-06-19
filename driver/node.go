@@ -17,8 +17,9 @@
 package driver
 
 import (
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"io"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	"github.com/Fantom-foundation/Norma/driver/network"
 )

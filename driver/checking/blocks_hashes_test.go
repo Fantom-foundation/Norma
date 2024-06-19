@@ -17,11 +17,12 @@
 package checking
 
 import (
+	"testing"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
-	"testing"
 )
 
 func TestBlockHashesCheckerValid(t *testing.T) {

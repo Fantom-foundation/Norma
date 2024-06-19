@@ -19,10 +19,11 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
