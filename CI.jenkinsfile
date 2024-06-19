@@ -27,9 +27,8 @@ pipeline {
 
 		stage('Check Norma Format') {
 			steps {
-				catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-					sh 'unformatted=$(gofmt -l .)'
-					sh '[ -z "$unformatted" ] && exit 0'
+				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+					sh '[ -z "$(gofmt -l .)" ] && exit 0'
 					sh 'exit 1'
 				}
 			}
