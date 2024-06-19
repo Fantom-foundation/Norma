@@ -9,18 +9,6 @@ pipeline {
 	}
 
 	stages {
-		stage('Clone Norma') {
-			steps {
-				script {
-					currentBuild.description = 'Building on ${env.NODE_NAME}'
-                		}
-				checkout scmGit(
-					branches: [[name: 'rapol/update/latest-sonic-18Jun']],
-					userRemoteConfigs: [[url: 'https://github.com/Fantom-foundation/Norma.git']]
-				)
-			}
-		}
-
 		stage('Make Norma') {
 			steps {
 				sh 'make clean'
