@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 )
 

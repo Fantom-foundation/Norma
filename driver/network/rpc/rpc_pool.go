@@ -22,8 +22,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
