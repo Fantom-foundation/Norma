@@ -28,9 +28,14 @@ pipeline {
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-					sh 'which gofmt'
-					sh '[ -z "$(gofmt -l .)" ] && exit 0'
-					sh 'exit 1'
+					sh """
+						if [[ -z "$(gofmt -l .)" ]]
+						then
+							exit 0
+						else
+							exit 1
+						fi
+					"""
 				}
 			}
 		}
