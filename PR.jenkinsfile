@@ -8,13 +8,15 @@ pipeline {
 		timeout(time: 3, unit: 'HOURS')
 	}
 
+	environment {
+		GOROOT = '/usr/local/go'
+	}
+
 	stages {
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-					sh 'unformatted=$(gofmt -l .)'
-					sh '[ -z "$unformatted" ] && exit 0'
-					sh 'exit 1'
+					sh 'diff=`${GOROOT}/bin/gofmt -l .`; echo "$diff"; test -z "$diff"'
 				}
 			}
 		}
