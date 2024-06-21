@@ -11,6 +11,10 @@ pipeline {
 	parameters {
 		string(defaultValue: "main", description: 'Can be either branch name or commit hash.', name: 'NormaVersion')
 	}
+
+	environment {
+		GOROOT = '/usr/local/go/'
+	}
 	
 	stages {
 		stage('Clone Norma') {
@@ -28,14 +32,7 @@ pipeline {
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-					sh """
-						if [[ -z "$(gofmt -l .)" ]]
-						then
-							exit 0
-						else
-							exit 1
-						fi
-					"""
+					sh '[ -z $(gofmt -l .) ] && exit 0'
 				}
 			}
 		}
