@@ -24,7 +24,6 @@ import (
 	"sync/atomic"
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )

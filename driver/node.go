@@ -20,7 +20,6 @@ import (
 	"io"
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
-
 	"github.com/Fantom-foundation/Norma/driver/network"
 )
 
