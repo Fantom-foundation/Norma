@@ -13,7 +13,7 @@ pipeline {
 	}
 
 	environment {
-		GOROOT = '/usr/local/go/'
+		GOROOT = '/usr/local/go'
 	}
 	
 	stages {
@@ -32,7 +32,7 @@ pipeline {
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-					sh '[ -z $(gofmt -l .) ] && exit 0'
+					sh 'diff=`${GOROOT}/bin/gofmt -s -d .`; echo "$diff"; test -z "$diff"'
 				}
 			}
 		}
