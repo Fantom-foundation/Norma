@@ -88,7 +88,6 @@ type EventTarget struct {
 	Path  string
 }
 
-
 // Application is a load generator in the simulated network. Each application defines
 // a type application load is generated for, a start and end time, a traffic
 // shape (see Rate below), and a number of instances.

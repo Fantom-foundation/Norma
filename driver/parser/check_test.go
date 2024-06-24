@@ -530,10 +530,10 @@ func TestScenario_NodeEventIssuesAreDetected(t *testing.T) {
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
-		Nodes:    []Node{
+		Nodes: []Node{
 			{Event: Event{Import: &EventTarget{
-				Start: start, 
-				Path: "/path/to/event",
+				Start: start,
+				Path:  "/path/to/event",
 			}}},
 		},
 	}

@@ -217,8 +217,8 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		if &node.Event != nil {
 			if node.Event.Import != nil {
 				queue.add(toSingleEvent(
-					Seconds(*node.Event.Import.Start), 
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing event from %s.", name, node.Event.Import.Path), 
+					Seconds(*node.Event.Import.Start),
+					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing event from %s.", name, node.Event.Import.Path),
 					func() error {
 						return nil
 					},
@@ -226,8 +226,8 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			}
 			if node.Event.Export != nil {
 				queue.add(toSingleEvent(
-					Seconds(*node.Event.Export.Start), 
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting event to %s.", name, node.Event.Export.Path), 
+					Seconds(*node.Event.Export.Start),
+					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting event to %s.", name, node.Event.Export.Path),
 					func() error {
 						return nil
 					},
