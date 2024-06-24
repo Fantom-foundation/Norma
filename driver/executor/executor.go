@@ -53,7 +53,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 		}
 	}
 	for _, cheat := range scenario.Cheats {
-		scheduleCheatEvents(*cheat, queue, network, endTime)
+		scheduleCheatEvents(&cheat, queue, network, endTime)
 	}
 
 	// Register a handler for Ctrl+C events.
