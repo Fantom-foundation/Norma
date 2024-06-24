@@ -17,8 +17,8 @@
 package parser
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -446,11 +446,11 @@ func TestScenario_ApplicationIssuesAreDetected(t *testing.T) {
 func TestScenario_CheatIssuesAreDetected(t *testing.T) {
 	start := new(float32)
 	*start = 70
-	
+
 	scenario := Scenario{
-		Name:         "Test",
-		Duration:     60,
-		Cheats: []Cheat {
+		Name:     "Test",
+		Duration: 60,
+		Cheats: []Cheat{
 			{Name: "Test", Start: start},
 		},
 	}
@@ -459,4 +459,3 @@ func TestScenario_CheatIssuesAreDetected(t *testing.T) {
 		t.Errorf("cheat issue was not detected")
 	}
 }
-

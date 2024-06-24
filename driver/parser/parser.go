@@ -99,8 +99,8 @@ type Auto struct {
 // For example, 2 validators with the same keys started at the same time can be considered
 // an attempt to cheat.
 type Cheat struct {
-	Name      string
-	Start     *float32
+	Name  string
+	Start *float32
 }
 
 // Parse parses a YAML based scenario description from the given reader.

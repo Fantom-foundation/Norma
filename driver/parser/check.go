@@ -143,7 +143,6 @@ func (c *Cheat) Check(scenario *Scenario) error {
 	return errors.Join(errs...)
 }
 
-
 // Check tests semantic constraints on the traffic shape configuration of a source.
 func (r *Rate) Check(scenario *Scenario) error {
 	count := 0

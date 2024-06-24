@@ -250,16 +250,15 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 }
 
 // scheduleCheatEvents schedules a number of events covering the life-cycle of a class of
-// cheats during the scenario execution. Currently, a cheat is defined a simultaneous start 
-// of multiple validator nodes with the same key. 
+// cheats during the scenario execution. Currently, a cheat is defined a simultaneous start
+// of multiple validator nodes with the same key.
 func scheduleCheatEvents(cheat *parser.Cheat, queue *eventQueue, net driver.Network, end Time) {
 	startTime := Time(0)
 	if cheat.Start != nil {
 		startTime = Seconds(*cheat.Start)
 	}
-	
+
 	queue.add(toSingleEvent(startTime, fmt.Sprintf("Attempting Cheat %s - currently unsupported cheat, nothing happens", cheat.Name), func() error {
 		return nil
 	}))
 }
-
