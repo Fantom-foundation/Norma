@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"sync/atomic"
 
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
