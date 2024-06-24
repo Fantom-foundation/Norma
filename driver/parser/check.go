@@ -19,10 +19,10 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"regexp"
-	"strings"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/Fantom-foundation/Norma/load/app"
 )
@@ -294,7 +294,7 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 	return errors.Join(errs...)
 }
 
-//checkTimeNodeAlive is a utility function checking if an event happens during the start/end of a node.
+// checkTimeNodeAlive is a utility function checking if an event happens during the start/end of a node.
 func checkTimeNodeAlive(start *float32, node *Node, duration float32) error {
 	nodeStart := float32(0.0)
 	if node.Start != nil {
@@ -317,7 +317,6 @@ func checkTimeNodeAlive(start *float32, node *Node, duration float32) error {
 	if eventStart > nodeEnd {
 		errs = append(errs, fmt.Errorf("event start must be <= node end (=%fs), is %f", nodeEnd, eventStart))
 	}
-	
+
 	return errors.Join(errs...)
 }
-

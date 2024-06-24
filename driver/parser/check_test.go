@@ -467,10 +467,10 @@ func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
-		Nodes:    []Node{
+		Nodes: []Node{
 			{Genesis: Genesis{Import: &GenesisTarget{
-				Start: start, 
-				Path: "/does/not/exist.g",
+				Start: start,
+				Path:  "/does/not/exist.g",
 			}}},
 		},
 	}
@@ -481,10 +481,10 @@ func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
 	scenario = Scenario{
 		Name:     "Test",
 		Duration: 60,
-		Nodes:    []Node{
+		Nodes: []Node{
 			{Genesis: Genesis{Import: &GenesisTarget{
-				Start: start, 
-				Path: "",
+				Start: start,
+				Path:  "",
 			}}},
 		},
 	}
@@ -495,10 +495,10 @@ func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
 	scenario = Scenario{
 		Name:     "Test",
 		Duration: 60,
-		Nodes:    []Node{
+		Nodes: []Node{
 			{Genesis: Genesis{Import: &GenesisTarget{
-				Start: start, 
-				Path: "/does/exist.notg",
+				Start: start,
+				Path:  "/does/exist.notg",
 			}}},
 		},
 	}
@@ -510,10 +510,10 @@ func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
 	scenario = Scenario{
 		Name:     "Test",
 		Duration: 60,
-		Nodes:    []Node{
+		Nodes: []Node{
 			{Genesis: Genesis{Import: &GenesisTarget{
-				Start: start, 
-				Path: "/does/exist.g",
+				Start: start,
+				Path:  "/does/exist.g",
 			}}},
 		},
 	}

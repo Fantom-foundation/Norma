@@ -48,21 +48,20 @@ type Node struct {
 	Genesis   Genesis  `yaml:",omitempty"`
 }
 
-
 // Genesis is an optional configuration for a node.
-// GenesisImport will stop the client and restart the client with the target 
+// GenesisImport will stop the client and restart the client with the target
 // genesis file at the provided time.
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
 	// Only one of the next fields may be set.
-	Import    *GenesisTarget
-	Export    *GenesisTarget 
+	Import *GenesisTarget
+	Export *GenesisTarget
 }
 
 // GenesisTarget is the configuration to specify the target genesis file and the timing.
 type GenesisTarget struct {
-	Start     *float32
-	Path      string
+	Start *float32
+	Path  string
 }
 
 // Application is a load generator in the simulated network. Each application defines
