@@ -17,9 +17,10 @@
 package controller
 
 import (
+	"log"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/load/app"
-	"log"
 )
 
 func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Network) {

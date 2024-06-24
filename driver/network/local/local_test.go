@@ -18,9 +18,10 @@ package local
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/golang/mock/gomock"
-	"testing"
 )
 
 func TestLocalNetworkIsNetwork(t *testing.T) {

@@ -19,6 +19,7 @@ package app
 import (
 	"crypto/ecdsa"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/tyler-smith/go-bip32"
 	"github.com/tyler-smith/go-bip39"

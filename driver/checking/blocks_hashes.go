@@ -18,6 +18,7 @@ package checking
 
 import (
 	"fmt"
+
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/common"

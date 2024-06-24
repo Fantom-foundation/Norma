@@ -17,13 +17,14 @@
 package monitoring
 
 import (
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
 	"io"
 	"os"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/golang/mock/gomock"
 )
 
 func TestLogsParsersImplements(t *testing.T) {

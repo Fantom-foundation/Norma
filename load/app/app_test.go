@@ -19,13 +19,13 @@ package app_test
 import (
 	"context"
 	"fmt"
-	"github.com/Fantom-foundation/Norma/driver/network"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"testing"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
+	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
 )
 

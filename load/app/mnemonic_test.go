@@ -17,8 +17,9 @@
 package app
 
 import (
-	"github.com/ethereum/go-ethereum/crypto"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestMnemonic(t *testing.T) {

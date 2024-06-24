@@ -1,0 +1,39 @@
+// Norma CI test norma using "make test"
+
+pipeline {
+	agent { label 'norma' }
+	
+	options {
+		timestamps ()
+		timeout(time: 3, unit: 'HOURS')
+		disableConcurrentBuilds(abortPrevious: true)
+	}
+
+	environment {
+		GOROOT = '/usr/local/go'
+	}
+
+	stages {
+		stage('Check Norma Format') {
+			steps {
+				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+					sh 'diff=`${GOROOT}/bin/gofmt -l .`; echo "$diff"; test -z "$diff"'
+				}
+			}
+		}
+
+		stage('Make Norma') {
+			steps {
+				sh 'make clean'
+				sh 'git submodule update --init --recursive'
+				sh 'make all'
+			}
+		}
+
+		stage('Test Norma') {
+			steps {
+				sh 'make test'
+			}
+		}
+	}
+}
