@@ -136,6 +136,17 @@ applications:
 
 func TestParseWithClientTypeWorks(t *testing.T) {
 	_, err := ParseBytes([]byte(withClientType))
+}
+
+var withCheats = smallExample + `
+
+cheats:
+  - name: hello
+    start: 8
+`
+
+func TestParseExampleWithCheats(t *testing.T) {
+	_, err := ParseBytes([]byte(withCheats))
 	if err != nil {
 		t.Fatalf("parsing of input failed: %v", err)
 	}
