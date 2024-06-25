@@ -96,6 +96,51 @@ func TestParseSmallExampleWorks(t *testing.T) {
 	}
 }
 
+// withClientType defines an example with client specification
+var withClientType = `
+name: Small Test
+num_validators: 5
+nodes:
+  - name: A
+    instances: 10
+    features:
+      - validator
+      - archive
+    start: 5
+    end: 7.5
+    client:
+      imagename: main
+      type: validator
+
+applications:
+  - name: lottery
+    instances: 10
+    start: 7
+    end: 10
+    rate:
+      constant: 8
+
+  - name: my_coin
+    rate:
+      slope:
+        start: 5
+        increment: 1
+
+  - name: game
+    rate:
+      wave:
+        min: 10
+        max: 20
+        period: 120
+`
+
+func TestParseWithClientTypeWorks(t *testing.T) {
+	_, err := ParseBytes([]byte(withClientType))
+	if err != nil {
+		t.Fatalf("parsing of input failed: %v", err)
+	}
+}
+
 var withCheats = smallExample + `
 
 cheats:
