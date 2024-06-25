@@ -140,4 +140,3 @@ func TestParseWithClientTypeWorks(t *testing.T) {
 		t.Fatalf("parsing of input failed: %v", err)
 	}
 }
-
