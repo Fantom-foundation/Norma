@@ -48,4 +48,4 @@ EXPOSE 18545
 EXPOSE 18546
 
 COPY scripts/run_sonic.sh .
-CMD /bin/bash run_sonic.sh
+CMD ["/bin/bash", "run_sonic.sh"]
