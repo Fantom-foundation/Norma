@@ -63,6 +63,18 @@ func (s *Scenario) Check() error {
 			names[application.Name] = true
 		}
 	}
+	names = map[string]bool{}
+	for _, cheat := range s.Cheats {
+		if err := cheat.Check(s); err != nil {
+			errs = append(errs, err)
+		}
+		if _, exists := names[cheat.Name]; exists {
+			errs = append(errs, fmt.Errorf("cheat names must be unique, %s encountered multiple times", cheat.Name))
+		} else {
+			names[cheat.Name] = true
+		}
+	}
+
 	return errors.Join(errs...)
 }
 
@@ -110,6 +122,21 @@ func (a *Application) Check(scenario *Scenario) error {
 	}
 
 	if err := a.Rate.Check(scenario); err != nil {
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
+}
+
+// Check tests semantic constraints on the cheat configuration of a scenario.
+func (c *Cheat) Check(scenario *Scenario) error {
+	errs := []error{}
+
+	if !namePattern.Match([]byte(c.Name)) {
+		errs = append(errs, fmt.Errorf("cheat name must match %v, got %v", namePatternStr, c.Name))
+	}
+
+	if err := checkTimeInterval(c.Start, nil, scenario.Duration); err != nil {
 		errs = append(errs, err)
 	}
 

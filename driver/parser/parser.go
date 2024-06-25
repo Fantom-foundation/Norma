@@ -32,6 +32,7 @@ type Scenario struct {
 	NumValidators *int          `yaml:"num_validators,omitempty"` // nil == 1
 	Nodes         []Node        `yaml:",omitempty"`
 	Applications  []Application `yaml:",omitempty"`
+	Cheats        []Cheat       `yaml:",omitempty"`
 }
 
 // Node is a configuration for a group of nodes with similar properties.
@@ -92,6 +93,14 @@ type Wave struct {
 type Auto struct {
 	Increase *float32 `yaml:",omitempty"` // increase in non-overload case per second in Tx/s, nil = 1
 	Decrease *float32 `yaml:",omitempty"` // decrease in overload case in percent, nil = 0.2 (=20%)
+}
+
+// Cheat is a configuration to simulate cheating at a particular timing.
+// For example, 2 validators with the same keys started at the same time can be considered
+// an attempt to cheat.
+type Cheat struct {
+	Name  string
+	Start *float32
 }
 
 // Parse parses a YAML based scenario description from the given reader.
