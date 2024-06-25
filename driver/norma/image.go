@@ -215,9 +215,21 @@ func imageBuildFromClientVersion(dockerfile string, version string) (err error) 
 		filepath.Dir(dockerfile),
 		&archive.TarOptions{},
 	)
+
+	tags := []string{
+		fmt.Sprintf("%s:%s", node.OperaDockerImageName, version),
+	}
+
+	// also alias the main branch as latest, for backward compatibility
+	if version == "main" {
+		tags = append(tags, 
+			fmt.Sprintf("%s:latest", node.OperaDockerImageName),
+		)
+	}
+
 	buildOpts := types.ImageBuildOptions {
 		Dockerfile: filepath.Base(dockerfile),
-		Tags:       []string{fmt.Sprintf("%s:%s", node.OperaDockerImageName, version)},
+		Tags:       tags,
 		BuildArgs:  map[string]*string{
 			"GO_VERSION": &defaultGoVersion,
 			"SONIC_BRANCH": &version,
