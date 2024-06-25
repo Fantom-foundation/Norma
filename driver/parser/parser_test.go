@@ -136,6 +136,9 @@ applications:
 
 func TestParseWithClientTypeWorks(t *testing.T) {
 	_, err := ParseBytes([]byte(withClientType))
+	if err != nil {
+		t.Fatalf("parsing of input failed: %v", err)
+	}
 }
 
 var withCheats = smallExample + `
