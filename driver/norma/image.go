@@ -18,75 +18,75 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"io"
-	"fmt"
-	"errors"
-	"path/filepath"
 
 	"github.com/Fantom-foundation/Norma/driver/node"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/urfave/cli/v2"
 	"github.com/docker/go-units"
 	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli/v2"
 )
 
 // Run with `go run ./driver/norma image`
 
 var imageCommand = cli.Command{
-	Name:   "image",
-	Usage:  "manages client docker images created by Norma.",
+	Name:  "image",
+	Usage: "manages client docker images created by Norma.",
 	Subcommands: []*cli.Command{
 		{
-			Name: "ls",
-			Usage: "list client images",
+			Name:   "ls",
+			Usage:  "list client images",
 			Action: imageLs,
 		},
 		{
-			Name: "build",
-			Usage: "build a client image",
+			Name:   "build",
+			Usage:  "build a client image",
 			Action: imageBuild,
 			Flags: []cli.Flag{
 				&cli.PathFlag{
-					Name: "dockerfile",
-					Usage: "Dockerfile used to build client image",
+					Name:    "dockerfile",
+					Usage:   "Dockerfile used to build client image",
 					Aliases: []string{"d"},
 					EnvVars: []string{"CLIENT_DOCKERFILE"},
 					Value:   "./Dockerfile",
 				},
 				&cli.PathFlag{
-					Name: "scenario-file",
-					Usage: "target scenario file to extract client versions from",
+					Name:    "scenario-file",
+					Usage:   "target scenario file to extract client versions from",
 					Aliases: []string{"s"},
 				},
 				&cli.StringFlag{
-					Name: "client-version",
-					Usage: "target client versions",
+					Name:    "client-version",
+					Usage:   "target client versions",
 					Aliases: []string{"c"},
 				},
 			},
 		},
 		{
-			Name: "rm",
-			Usage: "remove one or more client images",
+			Name:   "rm",
+			Usage:  "remove one or more client images",
 			Action: notImplemented,
 		},
 		{
-			Name: "purge",
-			Usage: "remove all client images",
+			Name:   "purge",
+			Usage:  "remove all client images",
 			Action: imagePurge,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
-					Name: "force", 
+					Name:    "force",
 					Aliases: []string{"f"},
-					Usage: "force stop container before purging",
+					Usage:   "force stop container before purging",
 				},
 			},
 		},
@@ -105,14 +105,14 @@ func imageLs(ctx *cli.Context) (err error) {
 	filters.Add("reference", node.OperaDockerImageName)
 
 	images, err := d.ImageList(context.Background(), types.ImageListOptions{
-		All: true,
+		All:     true,
 		Filters: filters,
 	})
 	if err != nil {
 		return err
 	}
 
- 	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{
 		"REPOSITORY", "TAG", "IMAGE ID", "CREATED", "SIZE",
 	})
@@ -122,11 +122,11 @@ func imageLs(ctx *cli.Context) (err error) {
 	table.SetBorder(false)
 	table.SetTablePadding("   ")
 	table.SetColumnSeparator(" ")
-	
+
 	for _, image := range images {
 		repository := "<none>"
 		tag := "<none>"
-		
+
 		if len(image.RepoTags) > 0 {
 			splitted := strings.Split(image.RepoTags[0], ":")
 			repository = splitted[0]
@@ -139,12 +139,12 @@ func imageLs(ctx *cli.Context) (err error) {
 			time.Now().UTC().Sub(time.Unix(image.Created, 0)),
 		) + " ago"
 		size := units.HumanSizeWithPrecision(float64(image.Size), 3)
-		
+
 		table.Append([]string{
 			repository, tag, image.ID[7:19], duration, size,
 		})
-    	}
-	
+	}
+
 	table.Render()
 
 	return nil
@@ -153,9 +153,12 @@ func imageLs(ctx *cli.Context) (err error) {
 // imageBuild builds an image using 1. dockerfile 2. client version or scenarios
 // Example1: norma image build -d /path/to/norma/Dockerfile -c latest
 // Example2: norma image build -d /path/to/norma/Dockerfile -s scenarios/small.yml
-//    in Example2, all referenced client versions are extracted and built
+//
+//	in Example2, all referenced client versions are extracted and built
+//
 // Note: we also can set norma's directory for Dockerfile as an env NORMA_DOCKERFILE
-//    so we can reduce Example1 to: norma image build -c latest
+//
+//	so we can reduce Example1 to: norma image build -c latest
 func imageBuild(ctx *cli.Context) (err error) {
 	dockerfile := ctx.String("dockerfile")
 	if dockerfile == "" {
@@ -222,16 +225,16 @@ func imageBuildFromClientVersion(dockerfile string, version string) (err error) 
 
 	// also alias the main branch as latest, for backward compatibility
 	if version == "main" {
-		tags = append(tags, 
+		tags = append(tags,
 			fmt.Sprintf("%s:latest", node.OperaDockerImageName),
 		)
 	}
 
-	buildOpts := types.ImageBuildOptions {
+	buildOpts := types.ImageBuildOptions{
 		Dockerfile: filepath.Base(dockerfile),
 		Tags:       tags,
-		BuildArgs:  map[string]*string{
-			"GO_VERSION": &defaultGoVersion,
+		BuildArgs: map[string]*string{
+			"GO_VERSION":   &defaultGoVersion,
 			"SONIC_BRANCH": &version,
 		},
 	}
@@ -245,7 +248,6 @@ func imageBuildFromClientVersion(dockerfile string, version string) (err error) 
 	return nil
 }
 
-
 // purge removes all images, --force to also include currently running container
 func imagePurge(ctx *cli.Context) (err error) {
 	var force = ctx.Bool("force")
@@ -254,7 +256,7 @@ func imagePurge(ctx *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	
+
 	filters := filters.NewArgs()
 	filters.Add("reference", node.OperaDockerImageName)
 
@@ -263,8 +265,8 @@ func imagePurge(ctx *cli.Context) (err error) {
 	})
 	for _, image := range images {
 		d.ImageRemove(
-			context.Background(), 
-			image.ID[7:19], 
+			context.Background(),
+			image.ID[7:19],
 			types.ImageRemoveOptions{Force: force},
 		)
 	}
@@ -275,13 +277,12 @@ func imagePurge(ctx *cli.Context) (err error) {
 // newDockerClient creates a docker cli client
 func newDockerClient() (*client.Client, error) {
 	return client.NewClientWithOpts(
-		client.FromEnv, 
+		client.FromEnv,
 		client.WithAPIVersionNegotiation(),
 	)
 }
 
-//notImplemented() is a placeholder func
+// notImplemented() is a placeholder func
 func notImplemented(ctx *cli.Context) (err error) {
 	return nil
 }
-

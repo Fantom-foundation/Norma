@@ -25,7 +25,7 @@ const DefaultClientVersion = "latest"
 // ExtractClientVersion returns the list of all referenced client versions in a scenario.
 func (s *Scenario) ExtractClientVersion() ([]string, error) {
 	cvs := make(map[string]struct{}) //set of seen client versions
-	
+
 	for _, node := range s.Nodes {
 		cv, err := node.ExtractClientVersion()
 		if err != nil {
@@ -45,7 +45,6 @@ func (n *Node) ExtractClientVersion() (string, error) {
 	if n.Client.Version == nil {
 		return DefaultClientVersion, nil
 	}
-	
+
 	return *n.Client.Version, nil
 }
-
