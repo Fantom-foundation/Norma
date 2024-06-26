@@ -1,0 +1,53 @@
+# Scenario B4: When one validator is a cheater, epoch must be sealed immediately. A simulation of a cheater can be done by having two validators using the same validator key.
+# - Set up: start 4 validators, 2 RPC nodes and 2 observers
+# - Test: process transactions for 1 minutes, then simulate cheat > check for epoch sealing
+# - Validation: check list of validator and validate final state of nodes
+
+name: B4
+duration: 90 # 1 minute sim > cheat > 30 seconds further
+
+# backward compatibility, to be removed.
+num_validators: 4
+
+nodes:
+  - name: validator
+    instances: 4
+    timer:
+      start: 0
+      end: 90
+    client:
+      imagename: main
+      type: validator
+  
+  - name: RPC
+    instances: 2
+    timer:
+      start: 0
+      end: 90
+    client: 
+      imagename: main
+      type: RPC
+    
+  - name: observer
+    instances: 2
+    timer: 
+      start: 0
+      end: 90
+    client:
+      imagename: main
+      type: observer
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 89            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
+
+cheat:
+  - name: simulate-cheat-at-60s
+    start: 60
+validate: true # check if epoch sealing occurs at 60
