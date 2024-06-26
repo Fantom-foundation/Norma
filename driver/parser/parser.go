@@ -46,7 +46,7 @@ type Node struct {
 	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
 	Genesis   Genesis  `yaml:",omitempty"`
-  Client    ClientType
+	Client    ClientType
 }
 
 // Genesis is an optional configuration for a node.
