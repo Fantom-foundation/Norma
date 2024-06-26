@@ -19,6 +19,8 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -88,8 +90,40 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
 
+	if n.Genesis.Import != nil {
+		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
+			errs = append(errs, err)
+		}
+		if err := checkTimeNodeAlive(n.Genesis.Import.Start, n, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if n.Genesis.Export != nil {
+		if err := checkTimeNodeAlive(n.Genesis.Export.Start, n, scenario.Duration); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
+}
+
+// isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
+func isGenesisFile(path string) error {
+	if path == "" {
+		return fmt.Errorf("provided path to genesis file is nil.")
+	}
+
+	errs := []error{}
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
+	}
+	if ext := filepath.Ext(path); ext != ".g" {
+		errs = append(errs, fmt.Errorf("provided path is not a genesis file: %s", path))
 	}
 
 	return errors.Join(errs...)
@@ -257,5 +291,32 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 			errs = append(errs, fmt.Errorf("end time must be <= scenario duration, end=%fs, duration=%fs", realEnd, duration))
 		}
 	}
+	return errors.Join(errs...)
+}
+
+// checkTimeNodeAlive is a utility function checking if an event happens during the start/end of a node.
+func checkTimeNodeAlive(start *float32, node *Node, duration float32) error {
+	nodeStart := float32(0.0)
+	if node.Start != nil {
+		nodeStart = *node.Start
+	}
+	nodeEnd := duration
+	if node.End != nil {
+		nodeEnd = *node.End
+	}
+
+	eventStart := nodeStart
+	if start != nil {
+		eventStart = *start
+	}
+
+	errs := []error{}
+	if eventStart < nodeStart {
+		errs = append(errs, fmt.Errorf("event start must be >= node start (=%fs), is %f", nodeStart, eventStart))
+	}
+	if eventStart > nodeEnd {
+		errs = append(errs, fmt.Errorf("event start must be <= node end (=%fs), is %f", nodeEnd, eventStart))
+	}
+
 	return errors.Join(errs...)
 }

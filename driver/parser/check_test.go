@@ -459,3 +459,65 @@ func TestScenario_CheatIssuesAreDetected(t *testing.T) {
 		t.Errorf("cheat issue was not detected")
 	}
 }
+
+func TestScenario_NodeGenesisIssuesAreDetected(t *testing.T) {
+	start := new(float32)
+
+	*start = 30
+	scenario := Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes: []Node{
+			{Genesis: Genesis{Import: &GenesisTarget{
+				Start: start,
+				Path:  "/does/not/exist.g",
+			}}},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file does not exist") {
+		t.Errorf("genesis does not exist but issue was not detected")
+	}
+
+	scenario = Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes: []Node{
+			{Genesis: Genesis{Import: &GenesisTarget{
+				Start: start,
+				Path:  "",
+			}}},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path to genesis file is nil") {
+		t.Errorf("targeted path was nil but issue was not detected")
+	}
+
+	scenario = Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes: []Node{
+			{Genesis: Genesis{Import: &GenesisTarget{
+				Start: start,
+				Path:  "/does/exist.notg",
+			}}},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path is not a genesis file") {
+		t.Errorf("targeted file is not a genesis but issue was not detected")
+	}
+
+	*start = 70
+	scenario = Scenario{
+		Name:     "Test",
+		Duration: 60,
+		Nodes: []Node{
+			{Genesis: Genesis{Import: &GenesisTarget{
+				Start: start,
+				Path:  "/does/exist.g",
+			}}},
+		},
+	}
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "event start must be <= node end") {
+		t.Errorf("genesis import/export outside duration but issue was not detected")
+	}
+}
