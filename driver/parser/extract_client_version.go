@@ -14,35 +14,37 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Norma. If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package parser
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/urfave/cli/v2"
+	"golang.org/x/exp/maps"
 )
 
-// Run with `go run ./driver/norma`
+const DefaultClientVersion = "latest"
 
-func main() {
-	app := &cli.App{
-		Name:      "Norma Network Runner",
-		HelpName:  "norma",
-		Usage:     "A set of tools for running network scenarios",
-		Copyright: "(c) 2023 Fantom Foundation",
-		Flags:     []cli.Flag{},
-		Commands: []*cli.Command{
-			&checkCommand,
-			&runCommand,
-			&purgeCommand,
-			&renderCommand,
-			&diffCommand,
-			&imageCommand,
-		},
+// ExtractClientVersion returns the list of all referenced client versions in a scenario.
+func (s *Scenario) ExtractClientVersion() ([]string, error) {
+	cvs := make(map[string]struct{}) //set of seen client versions
+
+	for _, node := range s.Nodes {
+		cv, err := node.ExtractClientVersion()
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := cvs[cv]; !ok {
+			cvs[cv] = struct{}{}
+		}
 	}
-	if err := app.Run(os.Args); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+
+	return maps.Keys(cvs), nil
+}
+
+// ExtractClientVersion returns the node's client versions.
+func (n *Node) ExtractClientVersion() (string, error) {
+	if n.Client.Version == nil {
+		return DefaultClientVersion, nil
 	}
+
+	return *n.Client.Version, nil
 }
