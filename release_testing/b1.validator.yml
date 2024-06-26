@@ -10,19 +10,19 @@ duration: 310 # 5 minutes sim + 10s to add new validator
 num_validators: 4
 
 nodes:
-  # this is how we want to launch validator
-  # - name: validator
-  #   instances: 4
-  #   timer:
-  #     start: 0
-  #     end: 300
-  #   client:
-  #     imagename: main
-  #     type: validator
-  #   genesis:
-  #     export:
-  #       start: 300
-  #       path: /to/be/configured/b1.g
+  - name: validator
+    instances: 4
+    timer:
+      start: 0
+      end: 300
+    client:
+      imagename: main
+      type: validator
+    genesis:
+      export:
+        start: 300
+        path: /to/be/configured/b1.g
+
   - name: RPC
     instances: 2
     timer:
@@ -45,6 +45,9 @@ nodes:
     timer:
       start: 300
       end: 310
+    client:
+      imagename: main
+      type: validator
     genesis:
       import:
         start: 301

@@ -10,26 +10,25 @@ duration: 610 # 10 minute sim: 5 minutes > stop 3 validators > 5 minutes further
 num_validators: 4
 
 nodes:
-  # this is how we want to launch validator
-  # - name: full-validator
-  #   instances: 2
-  #   timer:
-  #     start: 0
-  #     end: 610
-  #   client:
-  #     imagename: main
-  #     type: validator
+  - name: full-validator
+    instances: 2
+    timer:
+      start: 0
+      end: 610
+    client:
+      imagename: main
+      type: validator
   
-  # - name: crashing-validator
-  #   instances: 3
-  #   timer:
-  #     start: 0
-  #     end: 300
-  #     start: 600
-  #     end: 610
-  #   client:
-  #     imagename: main
-  #     type: validator
+  - name: crashing-validator
+    instances: 3
+    timer:
+      start: 0
+      end: 300
+      start: 600
+      end: 610
+    client:
+      imagename: main
+      type: validator
   
   - name: RPC
     instances: 2

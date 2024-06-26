@@ -10,15 +10,14 @@ duration: 600 # 10 minutes sim: 5 minutes sim > crash > 5 minutes further
 num_validators: 4
 
 nodes:
-  # this is how we want to launch validator
-  # - name: validator
-  #   instances: 3
-  #   timer:
-  #     start: 0
-  #     end: 600
-  #   client:
-  #     imagename: main
-  #     type: validator
+  - name: validator
+    instances: 3
+    timer:
+      start: 0
+      end: 600
+    client:
+      imagename: main
+      type: validator
   
   - name: crashing-validator
     timer: 

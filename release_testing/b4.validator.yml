@@ -10,15 +10,14 @@ duration: 90 # 1 minute sim > cheat > 30 seconds further
 num_validators: 4
 
 nodes:
-  # this is how we want to launch validator
-  # - name: validator
-  #   instances: 4
-  #   timer:
-  #     start: 0
-  #     end: 90
-  #   client:
-  #     imagename: main
-  #     type: validator
+  - name: validator
+    instances: 4
+    timer:
+      start: 0
+      end: 90
+    client:
+      imagename: main
+      type: validator
   
   - name: RPC
     instances: 2
@@ -50,5 +49,5 @@ applications:
 
 cheat:
   - name: simulate-cheat-at-60s
-  - start: 60
+    start: 60
 validate: true # check if epoch sealing occurs at 60

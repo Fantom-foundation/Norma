@@ -10,16 +10,17 @@ duration: 310 # 5 minutes sim + 10s for the validators that are not leaving
 num_validators: 4
 
 nodes:
-  # this is how we want to launch validator
-  # - name: validator
-  #   instances: 4
-  #   timer:
-  #     start: 0
-  #     end: 310
-  #   client:
-  #     imagename: main
-  #     type: validator
+  - name: validator
+    instances: 4
+    timer:
+      start: 0
+      end: 310
+    client:
+      imagename: main
+      type: validator
+
   - name: leaving-validator
+    # instances: 1 is implicit
     timer: 
       start: 0
       end: 300
