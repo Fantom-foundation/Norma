@@ -192,7 +192,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			*instance = newNode
 			return err
 		}))
-		
+
 		if &node.Genesis != nil {
 			if node.Genesis.Import != nil {
 				queue.add(toSingleEvent(

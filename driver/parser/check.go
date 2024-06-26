@@ -92,7 +92,7 @@ func (n *Node) Check(scenario *Scenario) error {
 
 	// Event import/export, Genesis import/export are being refactored.
 	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
-	// TODO: Remove this comment once refactoring is completed and 
+	// TODO: Remove this comment once refactoring is completed and
 	// Event import/export Genesis import/export check is in place.
 	if n.Genesis.Import != nil {
 		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
