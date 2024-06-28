@@ -103,11 +103,6 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
 	}
 
-	validatorPubkey := ""
-	if config.ValidatorPubkey != nil {
-		validatorPubkey = fmt.Sprintf("%s", *config.ValidatorPubkey)
-	}
-
 	host, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*docker.Container, error) {
 		ports, err := network.GetFreePorts(len(operaServices.Services()))
 		portForwarding := make(map[network.Port]network.Port, len(ports))
@@ -122,11 +117,10 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			ShutdownTimeout: &shutdownTimeout,
 			PortForwarding:  portForwarding,
 			Environment: map[string]string{
-				"VALIDATOR_NUMBER": validatorId,
+				"VALIDATOR_ID": validatorId,
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 				"VM_IMPL":          config.VmImplementation,
-				"VALIDATOR_PUBKEY": validatorPubkey,
 			},
 			Network: dn,
 		})

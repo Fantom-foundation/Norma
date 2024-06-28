@@ -14,7 +14,7 @@ datadir="/datadir"
 # Initialize datadir
 
 genesis_flag=""
-if [[ -n $VALIDATOR_ID ]]
+if [[ $VALIDATOR_ID -eq 0]]
 then
 	genesis_flag="--mode validator"
 fi
@@ -24,7 +24,7 @@ mkdir /datadir
 
 # Create pubkey, secretfile
 
-if [[ -n $VALIDATOR_ID ]]
+if [[ $VALIDATOR_ID -eq 0]]
 then
 	cmd=`normatool --datadir ${datadir} validator from -id ${VALIDATOR_ID}`
 	res=($cmd)
@@ -34,7 +34,7 @@ fi
 
 # If validator, initialize here
 val_flag=""
-if [[ -n $VALIDATOR_ID ]] 
+if [[ $VALIDATOR_ID -eq 0]]
 then
 	echo "Sonic is now running as validator, pubkey=${VALIDATOR_PUBKEY}"
 	val_flag="--validator.id ${VALIDATOR_ID} --validator.pubkey ${VALIDATOR_PUBKEY} --validator.password ${VALIDATOR_SECRET} --mode validator"
