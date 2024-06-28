@@ -18,7 +18,7 @@ BUILD_DIR := $(CURDIR)/build
 
 .PHONY: all test clean
 
-all: build-sonic-docker-image norma normatool
+all: normatool build-sonic-docker-image norma
 
 pull-hello-world-image:
 	DOCKER_BUILDKIT=1 docker image pull hello-world
@@ -57,7 +57,7 @@ load/contracts/abi/UniswapRouter.abi: load/contracts/UniswapRouter.sol
 generate-mocks: # requires installed mockgen
 	go generate ./...
 
-norma: pull-prometheus-image build-sonic-docker-image
+norma: pull-prometheus-image normatool build-sonic-docker-image
 	go build -o $(BUILD_DIR)/norma ./driver/norma
 
 normatool: 
