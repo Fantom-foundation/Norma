@@ -6,6 +6,7 @@ external_ip=${array[0]}
 echo "Sonic is going to export its services on ${external_ip}"
 
 datadir="/datadir"
+echo "val id=${VALIDATOR_ID}"
 
 ##
 ## if $VALIDATOR_ID is set, it is a validator
@@ -14,7 +15,7 @@ datadir="/datadir"
 # Initialize datadir
 
 genesis_flag=""
-if [[ $VALIDATOR_ID -eq 0]]
+if [[ $VALIDATOR_ID -ne 0 ]]
 then
 	genesis_flag="--mode validator"
 fi
@@ -24,19 +25,22 @@ mkdir /datadir
 
 # Create pubkey, secretfile
 
-if [[ $VALIDATOR_ID -eq 0]]
+if [[ $VALIDATOR_ID -ne 0 ]]
 then
-	cmd=`normatool --datadir ${datadir} validator from -id ${VALIDATOR_ID}`
+	cmd=`./normatool validator from -id ${VALIDATOR_ID} -d ${datadir}`
 	res=($cmd)
-	VALIDATOR_PUBKEY=res[0]
-	VALIDATOR_SECRET=res[2]
+	VALIDATOR_PUBKEY=${res[0]}
+	VALIDATOR_SECRET=${res[2]}
 fi
 
 # If validator, initialize here
 val_flag=""
-if [[ $VALIDATOR_ID -eq 0]]
+if [[ $VALIDATOR_ID -ne 0 ]]
 then
-	echo "Sonic is now running as validator, pubkey=${VALIDATOR_PUBKEY}"
+	echo "Sonic is now running as validator"
+	echo "val.id=${VALIDATOR_ID}"
+	echo "pubkey=${VALIDATOR_PUBKEY}"
+	echo "secret=${VALIDATOR_SECRET}"
 	val_flag="--validator.id ${VALIDATOR_ID} --validator.pubkey ${VALIDATOR_PUBKEY} --validator.password ${VALIDATOR_SECRET} --mode validator"
 else
 	echo "Sonic is now running as an observer"
