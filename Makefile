@@ -18,7 +18,7 @@ BUILD_DIR := $(CURDIR)/build
 
 .PHONY: all test clean
 
-all: build-sonic-docker-image norma
+all: build-sonic-docker-image norma normatool
 
 pull-hello-world-image:
 	DOCKER_BUILDKIT=1 docker image pull hello-world
@@ -59,6 +59,9 @@ generate-mocks: # requires installed mockgen
 
 norma: pull-prometheus-image build-sonic-docker-image
 	go build -o $(BUILD_DIR)/norma ./driver/norma
+
+normatool: 
+	go build -o $(BUILD_DIR)/normatool ./driver/normatool
 
 test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-sonic-docker-image
 	go test ./... -v

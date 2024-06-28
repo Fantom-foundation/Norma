@@ -4,6 +4,8 @@ github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e h1:ahyvB3q25Yn
 github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:kGUqhHd//musdITWjFvNTHn90WG9bMLBEPQZ17Cmlpw=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69mGp/UtRPn422BH4/Y4Q3SLUrD9KHuDkm8iodFc=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
+github.com/Fantom-foundation/go-opera v1.1.3-rc.5 h1:6srYIDYHOFqSGU3lVvSHq4q1z/aD0cr9jpZXmj8hrFE=
+github.com/Fantom-foundation/go-opera v1.1.3-rc.5/go.mod h1:0FOob0cYxJE1xbJJ0OGDouuL6AZwcCFUkavDXAgMRQ0=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
 github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5+sAH+4kjUM=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 h1:fLjPD/aNc3UIOA6tDi6QXUemppXK3P9BI7mr2hd6gx8=
