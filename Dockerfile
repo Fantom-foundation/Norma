@@ -37,8 +37,6 @@ FROM debian:bookworm
 COPY --from=client-build /client/build/sonicd .
 COPY --from=client-build /client/build/sonictool .
 
-ENV VALIDATOR_NUMBER=1
-ENV VALIDATORS_COUNT=1
 ENV STATE_DB_IMPL="geth"
 ENV VM_IMPL="geth"
 ENV LD_LIBRARY_PATH=./

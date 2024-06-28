@@ -108,6 +108,8 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	// Let the RPC pool to start RPC workers when a node start.
 	net.RegisterListener(net.rpcWorkerPool)
 
+	pubkey := "0x048d505c351f4837cec72bce6f4254f5e4bc3f2c9a4816841db64319eee8b714ef9173fbf66d039b782624713791840846b2788d4b65a425adeba85a4b57efe0cd" 
+
 	// Start all validators.
 	net.validators = make([]*node.OperaNode, config.NumberOfValidators)
 	errs := make([]error, config.NumberOfValidators)
@@ -123,6 +125,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 				NetworkConfig:    config,
 				Label:            fmt.Sprintf("_validator-%d", validatorId),
 				VmImplementation: config.VmImplementation,
+				ValidatorPubkey:  &pubkey,
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
 		}()

@@ -2,7 +2,7 @@
   "_": "This is a sample JSON genesis file. Opera can run a network defined by it when enabled by --jsongenesis parameter.",
   "rules": {
     "networkName": "norma-privatenet",
-    "networkId": "0x55555",
+    "networkId": "0xfa3",
     "MaxBlockGas": 20500000000,
     "MaxEventGas": 10028000000,
     "MaxEpochGas": 1500000000000,
