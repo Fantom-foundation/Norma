@@ -225,7 +225,7 @@ func generateValidatorFrom(ctx *cli.Context) (err error) {
 	}
 
 	var pathSecretFile string = ""
-	if datadir == "" {
+	if datadir != "" {
 		valKeystore := valkeystore.NewDefaultFileRawKeystore(path.Join(datadir, "keystore", "validator"))
 		err = valKeystore.Add(publicKey, privateKey, "password")
 		if err != nil {
