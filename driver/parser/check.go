@@ -90,19 +90,12 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
 
-	if n.Genesis.Import != nil {
-		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
-			errs = append(errs, err)
-		}
-		if err := checkTimeNodeAlive(n.Genesis.Import.Start, n, scenario.Duration); err != nil {
-			errs = append(errs, err)
-		}
+	if err := isGenesisFile(n.Genesis.Import, true); err != nil {
+		errs = append(errs, err)
 	}
 
-	if n.Genesis.Export != nil {
-		if err := checkTimeNodeAlive(n.Genesis.Export.Start, n, scenario.Duration); err != nil {
-			errs = append(errs, err)
-		}
+	if err := isGenesisFile(n.Genesis.Export, false); err != nil {
+		errs = append(errs, err)
 	}
 
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
@@ -113,14 +106,17 @@ func (n *Node) Check(scenario *Scenario) error {
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
-func isGenesisFile(path string) error {
+func isGenesisFile(path string, isImport bool) error {
 	if path == "" {
 		return fmt.Errorf("provided path to genesis file is nil.")
 	}
 
 	errs := []error{}
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
+	}
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && !isImport {
+		errs = append(errs, fmt.Errorf("provided genesis file already exists: %s", path))
 	}
 	if ext := filepath.Ext(path); ext != ".g" {
 		errs = append(errs, fmt.Errorf("provided path is not a genesis file: %s", path))
