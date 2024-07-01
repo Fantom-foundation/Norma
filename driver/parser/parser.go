@@ -55,14 +55,8 @@ type Node struct {
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
 	// Only one of the next fields may be set.
-	Import *GenesisTarget
-	Export *GenesisTarget
-}
-
-// GenesisTarget is the configuration to specify the target genesis file and the timing.
-type GenesisTarget struct {
-	Start *float32
-	Path  string
+	Import string
+	Export string
 }
 
 // ClientType is an optional configuration for Node.
