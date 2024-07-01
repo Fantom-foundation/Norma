@@ -41,7 +41,7 @@ then
 	echo "val.id=${VALIDATOR_ID}"
 	echo "pubkey=${VALIDATOR_PUBKEY}"
 	echo "secret=${VALIDATOR_SECRET}"
-	val_flag="--validator.id ${VALIDATOR_ID} --validator.pubkey ${VALIDATOR_PUBKEY} --validator.password ${VALIDATOR_SECRET} --mode validator"
+	val_flag="--validator.id ${VALIDATOR_ID} --validator.pubkey ${VALIDATOR_PUBKEY} --validator.password ${VALIDATOR_SECRET} --mode rpc"
 else
 	echo "Sonic is now running as an observer"
 fi
