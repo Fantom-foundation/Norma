@@ -14,14 +14,8 @@ echo "val id=${VALIDATOR_ID}"
 
 # Initialize datadir
 
-genesis_flag=""
-if [[ $VALIDATOR_ID -ne 0 ]]
-then
-	genesis_flag="--mode validator"
-fi
-
 mkdir /datadir
-./sonictool --datadir ${datadir} genesis json --experimental ${genesis_flag} genesis.json
+./sonictool --datadir ${datadir} genesis json --experimental genesis.json
 
 # Create pubkey, secretfile
 
