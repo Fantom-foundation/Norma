@@ -90,12 +90,14 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
 
-	if err := isGenesisFile(n.Genesis.Import, true); err != nil {
-		errs = append(errs, err)
-	}
+	if &n.Genesis != nil {
+		if err := isGenesisFile(n.Genesis.Import, true); err != nil {
+			errs = append(errs, err)
+		}
 
-	if err := isGenesisFile(n.Genesis.Export, false); err != nil {
-		errs = append(errs, err)
+		if err := isGenesisFile(n.Genesis.Export, false); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
@@ -115,7 +117,7 @@ func isGenesisFile(path string, isImport bool) error {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
 	}
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && !isImport {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrExist) && !isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file already exists: %s", path))
 	}
 	if ext := filepath.Ext(path); ext != ".g" {

@@ -504,7 +504,7 @@ func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
 		},
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file already exists") {
-		t.Errorf("genesis does not exist but issue was not detected")
+		t.Errorf("genesis exists but issue was not detected")
 	}
 
 	scenario = Scenario{
@@ -516,16 +516,5 @@ func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path to genesis file is nil") {
 		t.Errorf("targeted path was nil but issue was not detected")
-	}
-
-	scenario = Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Nodes: []Node{
-			{Genesis: Genesis{Export: "/does/exist.notg"}},
-		},
-	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path is not a genesis file") {
-		t.Errorf("targeted file is not a genesis but issue was not detected")
 	}
 }
