@@ -46,6 +46,7 @@ type Node struct {
 	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
 	Genesis   Genesis  `yaml:",omitempty"`
+	Event     Event
 	Client    ClientType
 }
 
@@ -71,6 +72,20 @@ type GenesisTarget struct {
 type ClientType struct {
 	ImageName string `yaml:",omitempty"` // nil is interpreted as main
 	Type      string `yaml:",omitempty"` // nil is interpreted as observer
+}
+
+// Event is an optional configuration for a node.
+// EventImport will stop the client, import events and restart the client.
+// EventExport will stop the client, export events and restart the client.
+type Event struct {
+	Import *EventTarget
+	Export *EventTarget
+}
+
+// EventTarget is the configuration to specify the target event destination and the timing of the import/export.
+type EventTarget struct {
+	Start *float32
+	Path  string
 }
 
 // Application is a load generator in the simulated network. Each application defines
