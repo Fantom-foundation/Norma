@@ -90,11 +90,17 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
 
-	if &n.Genesis != nil {
+	if n.Genesis.Import != "" && n.Genesis.Export != "" {
+		errs = append(errs, fmt.Errorf("only one of the either import or export can be present"))
+	}
+
+	if n.Genesis.Import != "" {
 		if err := isGenesisFile(n.Genesis.Import, true); err != nil {
 			errs = append(errs, err)
 		}
+	}
 
+	if n.Genesis.Export != "" {
 		if err := isGenesisFile(n.Genesis.Export, false); err != nil {
 			errs = append(errs, err)
 		}
