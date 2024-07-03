@@ -89,8 +89,8 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.Instances != nil && *n.Instances < 0 {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
-  
-  // Event import/export, Genesis import/export are being refactored.
+
+	// Event import/export, Genesis import/export are being refactored.
 	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
 	// TODO: Remove this comment once refactoring is completed and
 	// Event import/export Genesis import/export check is in place.
