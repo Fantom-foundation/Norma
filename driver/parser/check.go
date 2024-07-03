@@ -119,10 +119,6 @@ func (n *Node) Check(scenario *Scenario) error {
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
 func isGenesisFile(path string, isImport bool) error {
-	if path == "" {
-		return fmt.Errorf("provided path to genesis file is nil.")
-	}
-
 	errs := []error{}
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
