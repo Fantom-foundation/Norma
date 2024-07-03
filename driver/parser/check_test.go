@@ -18,6 +18,7 @@ package parser
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
@@ -485,16 +486,22 @@ func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
 }
 
 func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
+	f, _ := os.Create("file_exists.g")
+
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Export: "/file/exists.g"}},
+			{Genesis: Genesis{Export: "file_exists.g"}},
 		},
 	}
+
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file already exists") {
 		t.Errorf("genesis exists but issue was not detected")
 	}
+
+	f.Close()
+	_ = os.Remove("file_exists.g")
 }
 
 func TestScenario_NodeGenesisImportExportIssuesAreDetected(t *testing.T) {

@@ -123,7 +123,7 @@ func isGenesisFile(path string, isImport bool) error {
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) && isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
 	}
-	if _, err := os.Stat(path); errors.Is(err, os.ErrExist) && !isImport {
+	if _, err := os.Stat(path); err == nil && !isImport {
 		errs = append(errs, fmt.Errorf("provided genesis file already exists: %s", path))
 	}
 	if ext := filepath.Ext(path); ext != ".g" {
