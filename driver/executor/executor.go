@@ -251,7 +251,7 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		// TODO add deployment time of contract to config
-		queue.add(toSingleEvent(Seconds(1), fmt.Sprintf("deploying contract app %s", name), func() error {
+		queue.add(toSingleEvent(Seconds(5), fmt.Sprintf("deploying contract app %s", name), func() error {
 			return startApp(net, source, name, users, startTime, endTime, queue)
 		}))
 	}

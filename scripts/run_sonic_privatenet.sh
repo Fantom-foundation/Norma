@@ -83,6 +83,18 @@ else
 	echo "Sonic is now running as an observer"
 fi
 
+# Create config.toml
+# when network starts with only one genesis validator, then he will not wait to start emitting
+# if there are two or more validators at genesis they have to wait 5 seconds after connecting to the network
+# if another validator connects to the network during run it will wait also 5 seconds to start emitting
+echo [Emitter.EmitIntervals] >> config.toml
+if [[ $VALIDATORS_COUNT == 1 && $VALIDATOR_ID == 1 ]]
+then
+  echo DoublesignProtection = 0 >> config.toml
+else
+  echo DoublesignProtection = 5000000000 >> config.toml
+fi
+
 # Start sonic as part of a fake net with RPC service.
 ./sonicd \
     --datadir=${datadir} \

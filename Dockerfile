@@ -46,7 +46,6 @@ EXPOSE 18545
 EXPOSE 18546
 
 COPY genesis/example-genesis.json ./genesis.json
-COPY genesis/config.toml ./config.toml
 COPY scripts/run_sonic_privatenet.sh ./run_sonic.sh
 COPY build/normatool ./normatool
 

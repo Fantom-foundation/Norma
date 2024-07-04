@@ -151,11 +151,6 @@ var validatorCommand = cli.Command{
 	Usage: "mimics sonictool validator",
 	Subcommands: []*cli.Command{
 		{
-			Name:   "new",
-			Usage:  "create new validator key from scratch",
-			Action: generateNewValidatorKey,
-		},
-		{
 			Name:   "from",
 			Usage:  "create new validator key from validator-id or private key",
 			Action: generateValidatorFrom,
@@ -178,12 +173,6 @@ var validatorCommand = cli.Command{
 			},
 		},
 	},
-}
-
-// generateNewValidatorKey is just a dummy call to redirect user to use the proper tooling in sonictool
-func generateNewValidatorKey(ctx *cli.Context) (err error) {
-	fmt.Println("Please generate fresh validator key using sonictool: sonictool --datadir <datadir> validator new")
-	return nil
 }
 
 // generateValidatorFrom takes a validator-id or validator-privkey and generates corresponding validator-pubkey and pubkeyfile
