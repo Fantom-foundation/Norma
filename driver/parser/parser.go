@@ -55,7 +55,6 @@ type Node struct {
 // genesis file at the provided time.
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
-	// Only one of the next fields may be set.
 	Import string
 	Export string
 }

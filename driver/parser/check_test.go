@@ -503,16 +503,3 @@ func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
 	f.Close()
 	_ = os.Remove("file_exists.g")
 }
-
-func TestScenario_NodeGenesisImportExportIssuesAreDetected(t *testing.T) {
-	scenario := Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Nodes: []Node{
-			{Genesis: Genesis{Export: "/file/not/exists.g", Import: "/file/exists.g"}},
-		},
-	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "only one of the either import or export can be present") {
-		t.Errorf("both genesis import and export are present but issue was not detected")
-	}
-}
