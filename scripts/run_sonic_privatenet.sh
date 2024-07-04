@@ -9,8 +9,8 @@ datadir="/datadir"
 echo "val id=${VALIDATOR_ID}"
 echo "genesis validator count=${VALIDATORS_COUNT}"
 
-# Set genesis validator balances
-balances=""
+# Set genesis validator accounts
+accounts=""
 for (( i=1; i<=${VALIDATORS_COUNT}; i++ )); do
   cmd=`./normatool validator from -id ${i}`
   res=($cmd)
@@ -22,10 +22,10 @@ for (( i=1; i<=${VALIDATORS_COUNT}; i++ )); do
 
   # Build the mask for this iteration
   mask=", { \"name\": \"validator${i}\", \"address\": \"${validator_address}\", \"balance\": 1000000000000000000000000000 }"
-  balances+="$mask"
+  accounts+="$mask"
 done
-echo "balances=${balances}"
-sed -i 's|GENESIS_VALIDATOR_BALANCES_PLACEHOLDER|'"$balances"'|g' "genesis.json"
+echo "accounts=${accounts}"
+sed -i 's|GENESIS_VALIDATOR_ACCOUNTS_PLACEHOLDER|'"$accounts"'|g' "genesis.json"
 
 # Set genesis validator delegations
 validators=""
@@ -67,6 +67,7 @@ then
 	VALIDATOR_ADDRESS=${res[1]}
 fi
 
+# Create password file - "password" is default normatool accounts password
 echo password >> password.txt
 VALIDATOR_PASSWORD="password.txt"
 
@@ -92,6 +93,7 @@ if [[ $VALIDATORS_COUNT == 1 && $VALIDATOR_ID == 1 ]]
 then
   echo DoublesignProtection = 0 >> config.toml
 else
+#  5 seconds in golang time 5*10^9 nanoseconds
   echo DoublesignProtection = 5000000000 >> config.toml
 fi
 
