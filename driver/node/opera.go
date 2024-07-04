@@ -117,7 +117,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			ShutdownTimeout: &shutdownTimeout,
 			PortForwarding:  portForwarding,
 			Environment: map[string]string{
-				"VALIDATOR_ID": validatorId,
+				"VALIDATOR_ID":     validatorId,
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 				"VM_IMPL":          config.VmImplementation,

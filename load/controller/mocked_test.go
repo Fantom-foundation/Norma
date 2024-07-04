@@ -56,7 +56,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec
 
-	appController, err := NewAppController(mockedApp, constantShaper, numUsers, mockedNetwork)
+	appController, err := NewAppController(mockedApp, constantShaper, numUsers, nil, mockedNetwork)
 	if err != nil {
 		t.Fatal(err)
 	}

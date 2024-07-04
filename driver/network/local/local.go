@@ -293,7 +293,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	appController, err := controller.NewAppController(application, sh, config.Users, n)
+	appController, err := controller.NewAppController(application, sh, config.Users, rpcClient, n)
 	if err != nil {
 		return nil, err
 	}
