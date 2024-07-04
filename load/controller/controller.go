@@ -49,7 +49,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 		var err error
 		rpcClient, err = network.DialRandomRpc()
 		if err != nil {
-			return nil, fmt.Errorf("failed to dial ranom RPC; %v", err)
+			return nil, fmt.Errorf("failed to dial random RPC; %v", err)
 		}
 	}
 
@@ -61,9 +61,9 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 			return nil, fmt.Errorf("failed to create load app; %s", err)
 		}
 		users = append(users, gen)
-		//if i%100 == 0 {
-		log.Printf("initialized %d of %d users ...\n", i+1, numUsers)
-		//}
+		if i%100 == 0 {
+			log.Printf("initialized %d of %d users ...\n", i+1, numUsers)
+		}
 	}
 
 	// wait until all changes are on the chain

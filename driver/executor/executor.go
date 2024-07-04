@@ -252,14 +252,14 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 		name := fmt.Sprintf("%s-%d", source.Name, i)
 		// TODO add deployment time of contract to config
 		queue.add(toSingleEvent(Seconds(5), fmt.Sprintf("deploying contract app %s", name), func() error {
-			return startApp(net, source, name, users, startTime, endTime, queue)
+			return startApplication(net, source, name, users, startTime, endTime, queue)
 		}))
 	}
 	return nil
 }
 
-// startApp creates and starts a new application on the network.
-func startApp(net driver.Network, source *parser.Application, name string, users int, startTime, endTime Time, queue *eventQueue) error {
+// startApplication creates and starts a new application on the network.
+func startApplication(net driver.Network, source *parser.Application, name string, users int, startTime, endTime Time, queue *eventQueue) error {
 	if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
 		Name:  name,
 		Type:  source.Type,
