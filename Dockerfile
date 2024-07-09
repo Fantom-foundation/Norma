@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
 # > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t sonic
 #
 FROM debian:bookworm
-COPY --from=client-build /client/build/sonic* .
+COPY --from=client-build /client/build/sonicd /client/build/sonictool .
 
 ENV STATE_DB_IMPL="geth"
 ENV VM_IMPL="geth"
