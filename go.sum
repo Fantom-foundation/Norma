@@ -43,6 +43,8 @@ github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69m
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
 github.com/Fantom-foundation/Sonic v1.2.1-a h1:tUQHld8q2gkvKdXBQJ9fv4n3xZAOm9jpG9MPRj03aIw=
 github.com/Fantom-foundation/Sonic v1.2.1-a/go.mod h1:6PlZIOBpEpN4TSutMGrP5Dkohgox4Dk5H5FZgDqG+bI=
+github.com/Fantom-foundation/Sonic v1.2.1-d h1:q4bG967j/P5VGzwgJ68awISHL760Xtfl2VI1OiT9/vY=
+github.com/Fantom-foundation/Sonic v1.2.1-d/go.mod h1:6PlZIOBpEpN4TSutMGrP5Dkohgox4Dk5H5FZgDqG+bI=
 github.com/Fantom-foundation/Substate v0.0.0-20230224090651-4c8c024214f4 h1:AA0BtERxmlf7jvDF4fwIB2k/Lsc7HTRE3QHTZnfcSVA=
 github.com/Fantom-foundation/Substate v0.0.0-20230224090651-4c8c024214f4/go.mod h1:/yIHWCDDJcdKMJYvOLdYOnHt5eUBF9XWnrvrNE+90ik=
 github.com/Fantom-foundation/go-ethereum-substate v1.1.1-0.20240523185630-b058188a043a h1:JSaTMHvYKZOizg2EcJeNEiIpdF939Xw80g/sHd2qeWQ=
