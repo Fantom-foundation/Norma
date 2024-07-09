@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/Fantom-foundation/go-opera/inter/validatorpk"
 	"github.com/Fantom-foundation/go-opera/evmcore"
+	"github.com/Fantom-foundation/go-opera/inter/validatorpk"
 	"github.com/Fantom-foundation/go-opera/valkeystore"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -39,7 +39,7 @@ func fakeKey(n uint32) (k *ecdsa.PrivateKey, retErr error) {
 	k = evmcore.FakeKey(n)
 	return k, nil
 }
-	
+
 // Run with `go run ./driver/normatool validator`
 var validatorCommand = cli.Command{
 	Name:  "validator",
