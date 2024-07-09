@@ -20,7 +20,8 @@ WORKDIR /client
 COPY client/ ./
 
 # Build sonic with caching
-RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
+RUN make sonicd sonictool
+#RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
 
 # This results in an image that contains the sonic binary
 #
