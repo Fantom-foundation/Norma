@@ -1,0 +1,50 @@
+# Scenario A2: Validators are a mix group between various sonic versions
+# - Set up: start N of each sonic versions and other observer clients.
+# - Test: process transactions for 5 minutes then stop all nodes.
+# - Validation: validate final state of nodes.
+
+name: A2
+duration: 300 # 5 minutes
+
+# backward compatibility, to be removed
+num_validators: 4 
+
+validate: true
+
+nodes:
+  - name: validator-main
+    instances: 2
+    timer:
+      start: 0
+      end: 300
+    client:
+      imagename: main
+      type: validator  
+
+  - name: validator-v1.2.0-a
+    instances: 2
+    timer:
+      start: 0
+      end: 300
+    client:
+      imagename: 836c2ed
+      type: validator  
+  
+
+  - name: RPC
+    instances: 2
+    timer:
+      start: 0
+      end: 300
+    client: 
+      imagename: main
+      type: RPC
+
+  - name: observer
+    instances: 2
+    timer: 
+      start: 0
+      end: 300
+    client:
+      imagename: main
+      type: observer

@@ -1,0 +1,59 @@
+# Scenario B3: a validator crash (via kill command) and restart. This tests recovery of a validator node.
+# - Set up: start 4 sonic validators, 2 RPC nodes and 2 observers.
+# - Test: process transactions for 5 minutes, then then stop a validator and remove it from the validator list.
+# - Validation: check list of validator and validate final state of nodes
+
+name: B3
+duration: 600 # 10 minutes sim: 5 minutes sim > crash > 5 minutes further
+
+# backward compatibility, to be removed.
+num_validators: 4
+
+nodes:
+  - name: validator
+    instances: 3
+    timer:
+      start: 0
+      end: 600
+    client:
+      imagename: main
+      type: validator
+  
+  - name: crashing-validator
+    timer: 
+      start: 0
+      killandrestart: 300
+      end: 600
+    client:
+      imagename: main
+      type: validator
+  
+  - name: RPC
+    instances: 2
+    timer:
+      start: 0
+      end: 600
+    client: 
+      imagename: main
+      type: RPC
+    
+  - name: observer
+    instances: 2
+    timer: 
+      start: 0
+      end: 600
+    client:
+      imagename: main
+      type: observer
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 599            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
+
+validate: true # check list of validator and validate final state of nodes?
