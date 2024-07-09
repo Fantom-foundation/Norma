@@ -82,6 +82,8 @@ type OperaNodeConfig struct {
 	NetworkConfig *driver.NetworkConfig
 	// The EVM implementation to be used on this node.
 	VmImplementation string
+	// ValidatorPubkey is nil if not a validator, else used as pubkey for the validator.
+	ValidatorPubkey *string
 }
 
 // labelPattern restricts labels for nodes to non-empty alpha-numerical strings
@@ -115,7 +117,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			ShutdownTimeout: &shutdownTimeout,
 			PortForwarding:  portForwarding,
 			Environment: map[string]string{
-				"VALIDATOR_NUMBER": validatorId,
+				"VALIDATOR_ID":     validatorId,
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 				"VM_IMPL":          config.VmImplementation,

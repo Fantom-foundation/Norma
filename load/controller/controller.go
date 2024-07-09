@@ -42,12 +42,15 @@ type AppController struct {
 	rpcClient   rpc.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, network driver.Network) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, rpcClient rpc.RpcClient, network driver.Network) (*AppController, error) {
 	trigger := make(chan struct{}, 100)
 
-	rpcClient, err := network.DialRandomRpc()
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial ranom RPC; %v", err)
+	if rpcClient == nil {
+		var err error
+		rpcClient, err = network.DialRandomRpc()
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial random RPC; %v", err)
+		}
 	}
 
 	// initialize workers for individual generators
