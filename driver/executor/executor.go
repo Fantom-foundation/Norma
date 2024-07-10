@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/parser"
@@ -80,7 +81,13 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 			return fmt.Errorf("aborted by user")
 		}
 
-		log.Printf("processing '%s' at time %v ...\n", event.name(), event.time())
+		delay := clock.Delay(event.time())
+		// display delay if it exceeds over 1 second
+		if delay > time.Second {
+			log.Printf("processing '%s' at time %v (delay: %v)...\n", event.name(), event.time(), delay.Round(time.Second/10).Seconds())
+		} else {
+			log.Printf("processing '%s' at time %v...\n", event.name(), event.time())
+		}
 
 		// Execute the event and schedule successors.
 		successors, err := event.run()
