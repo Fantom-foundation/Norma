@@ -94,8 +94,14 @@ func (n *Node) Check(scenario *Scenario) error {
 	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
 	// TODO: Remove this comment once refactoring is completed and
 	// Event import/export Genesis import/export check is in place.
-	if n.Genesis.Import != nil {
-		if err := isGenesisFile(n.Genesis.Import.Path); err != nil {
+	if n.Genesis.Import != "" {
+		if err := isGenesisFile(n.Genesis.Import, true); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	if n.Genesis.Export != "" {
+		if err := isGenesisFile(n.Genesis.Export, false); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -108,15 +114,16 @@ func (n *Node) Check(scenario *Scenario) error {
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
-func isGenesisFile(path string) error {
-	if path == "" {
-		return fmt.Errorf("provided path to genesis file is nil.")
+func isGenesisFile(path string, isImport bool) error {
+	errs := []error{}
+	_, err := os.Stat(path)
+
+	if errors.Is(err, os.ErrNotExist) && isImport {
+		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
+	} else if err == nil && !isImport {
+		errs = append(errs, fmt.Errorf("provided genesis file already exists: %s", path))
 	}
 
-	errs := []error{}
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
-	}
 	if ext := filepath.Ext(path); ext != ".g" {
 		errs = append(errs, fmt.Errorf("provided path is not a genesis file: %s", path))
 	}

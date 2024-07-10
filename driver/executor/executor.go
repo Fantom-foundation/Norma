@@ -194,19 +194,19 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		}))
 
 		if &node.Genesis != nil {
-			if node.Genesis.Import != nil {
+			if node.Genesis.Import != "" {
 				queue.add(toSingleEvent(
-					Seconds(*node.Genesis.Import.Start),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing genesis from %s.", name, node.Genesis.Import.Path),
+					Seconds(*node.Start),
+					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing genesis from %s.", name, node.Genesis.Import),
 					func() error {
 						return nil
 					},
 				))
 			}
-			if node.Genesis.Export != nil {
+			if node.Genesis.Export != "" {
 				queue.add(toSingleEvent(
-					Seconds(*node.Genesis.Export.Start),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting genesis to %s.", name, node.Genesis.Export.Path),
+					Seconds(*node.End),
+					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting genesis to %s.", name, node.Genesis.Export),
 					func() error {
 						return nil
 					},
