@@ -81,7 +81,7 @@ pipeline {
 			}
 		}
 
-		stage('Test A2 - MultipleSonicVersion') {
+		stage('Test A2 - MultSonicVer') {
 			when {
 				expression {
 					buildSuccess
@@ -90,7 +90,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/a2.network.yml'
 			}
 		}
 
@@ -103,7 +102,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/b1.validator.yml'
 			}
 		}
 
@@ -116,7 +114,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/b2.validator.yml'
 			}
 		}
 
@@ -129,7 +126,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/b3.validator.yml'
 			}
 		}
 
@@ -142,7 +138,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/b4.validator.yml'
 			}
 		}
 
@@ -155,7 +150,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/b5.validator.yml'
 			}
 		}
 
@@ -168,7 +162,6 @@ pipeline {
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/c1.network.todo.yml'
 			}
 		}
 	}
