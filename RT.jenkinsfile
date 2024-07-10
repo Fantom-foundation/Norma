@@ -1,0 +1,159 @@
+// Norma CI test norma using "make test"
+
+def buildSuccess = false
+
+pipeline {
+	agent { label 'norma' }
+	
+	options {
+		timestamps ()
+		timeout(time: 3, unit: 'HOURS')
+		disableConcurrentBuilds(abortPrevious: true)
+	}
+
+	parameters {
+		string(defaultValue: "main", description: 'Can be either branch name or commit hash.', name: 'NormaVersion')
+	}
+
+	environment {
+		GOROOT = '/usr/local/go'
+	}
+	
+	stages {
+		stage('Clone Norma') {
+			steps {
+				script {
+					currentBuild.description = 'Building on ${env.NODE_NAME}'
+                		}
+				checkout scmGit(
+					branches: [[name: '${NormaVersion}']],
+					userRemoteConfigs: [[url: 'https://github.com/Fantom-foundation/Norma.git']]
+				)
+			}
+		}
+
+		stage('Check Norma Format') {
+			steps {
+				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+					sh 'diff=`${GOROOT}/bin/gofmt -l .`; echo "$diff"; test -z "$diff"'
+				}
+			}
+		}
+
+		stage('Make Norma') {
+			steps {
+				sh 'make clean'
+				sh 'git submodule update --init --recursive'
+				sh 'make -j'
+			}
+		}
+
+		stage('Test Norma') {
+			steps {
+				sh 'make test'
+			}
+
+			post {
+				success {
+					buildSuccess = true
+				}
+			}
+		}
+		
+		stage('Test A1 - ValRpcObs') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/a1.network.yml'
+			}
+		}
+
+		stage('Test A2 - MultipleSonicVersion') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/a2.network.yml'
+			}
+		}
+
+		stage('Test B1 - NewValMidRun') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/b1.validator.yml'
+			}
+		}
+
+		stage('Test B2 - KillValMidRun') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/b2.validator.yml'
+			}
+		}
+
+		stage('Test B3 - RestartValMidRun') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/b3.validator.yml'
+			}
+		}
+
+		stage('Test B4 - ValCheatMustSealEpoch') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/b4.validator.yml'
+			}
+		}
+
+		stage('Test B5 - ValsBlackout') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/b5.validator.yml'
+			}
+		}
+
+		stage('Test C1 - RpcRequests') {
+			when {
+				expression {
+					buildSuccess
+				}
+			}
+
+			steps {
+				//sh 'build/norma run release_testing/c1.network.todo.yml'
+			}
+		}
+	}
+}
