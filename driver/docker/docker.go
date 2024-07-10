@@ -77,7 +77,7 @@ type ContainerConfig struct {
 	Environment     map[string]string
 	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
 	Network         *Network // Docker network to join, nil to join bridge network
-	Binds		[]string // Binding of local path to path in docker
+	Binds           []string // Binding of local path to path in docker
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -154,7 +154,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}
 
 	resp, err := c.cli.ContainerCreate(
-		context.Background(), 
+		context.Background(),
 		&container.Config{
 			Image:      config.ImageName,
 			Tty:        false,
@@ -163,11 +163,11 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 			Labels: map[string]string{
 				objectsLabel: "true",
 			},
-		}, 
+		},
 		&container.HostConfig{
 			PortBindings: portMapping,
-			Binds: config.Binds,
-		}, 
+			Binds:        config.Binds,
+		},
 		nil, nil, "",
 	)
 

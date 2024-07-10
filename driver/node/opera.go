@@ -107,7 +107,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 
 	bindings := []string{}
 	if config.IpcBindingEnabled {
-		bindings = append(bindings, 
+		bindings = append(bindings,
 			fmt.Sprintf("%s.ipc:/datadir/opera.ipc", config.Label),
 		)
 	}
@@ -132,7 +132,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
-			Binds: bindings,
+			Binds:   bindings,
 		})
 	})
 	if err != nil {
