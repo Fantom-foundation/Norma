@@ -1,6 +1,15 @@
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
+def enableA1 = false
+def enableA2 = false
+def enableB1 = false
+def enableB2 = false
+def enableB3 = false
+def enableB4 = false
+def enableB5 = false
+def enableC1 = false
+
 
 pipeline {
 	agent { label 'norma' }
@@ -64,11 +73,11 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableA1
 				}
 			}
 
 			steps {
-				//sh 'build/norma run release_testing/a1.network.yml'
 			}
 		}
 
@@ -76,6 +85,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableA2
 				}
 			}
 
@@ -88,6 +98,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableB1
 				}
 			}
 
@@ -100,6 +111,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableB2
 				}
 			}
 
@@ -112,6 +124,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableB3
 				}
 			}
 
@@ -124,6 +137,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableB4
 				}
 			}
 
@@ -136,6 +150,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableB5
 				}
 			}
 
@@ -148,6 +163,7 @@ pipeline {
 			when {
 				expression {
 					buildSuccess
+					enableC1
 				}
 			}
 
