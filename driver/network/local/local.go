@@ -77,7 +77,7 @@ type LocalNetwork struct {
 }
 
 var LocalVolumes = map[string]string{
-	"ipc":"/datadir/ipc",
+	"ipc": "/datadir/ipc",
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
@@ -91,7 +91,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 		return nil, fmt.Errorf("failed to create bridge network; %v", err)
 	}
 
-	for localName, _ := range LocalVolumes {
+	for localName := range LocalVolumes {
 		_, err := client.CreateVolume(localName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create volume %s; %v", localName, err)
@@ -130,11 +130,11 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 			defer wg.Done()
 			validatorId := i + 1
 			nodeConfig := node.OperaNodeConfig{
-				ValidatorId:       &validatorId,
-				NetworkConfig:     config,
-				Label:             fmt.Sprintf("_validator-%d", validatorId),
-				VmImplementation:  config.VmImplementation,
-				Mounts: LocalVolumes,
+				ValidatorId:      &validatorId,
+				NetworkConfig:    config,
+				Label:            fmt.Sprintf("_validator-%d", validatorId),
+				VmImplementation: config.VmImplementation,
+				Mounts:           LocalVolumes,
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
 		}()

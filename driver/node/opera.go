@@ -125,7 +125,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
-			Mounts: config.Mounts,
+			Mounts:  config.Mounts,
 		})
 	})
 	if err != nil {

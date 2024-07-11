@@ -77,9 +77,9 @@ type ContainerConfig struct {
 	ShutdownTimeout *time.Duration
 	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
 	Environment     map[string]string
-	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
-	Network         *Network // Docker network to join, nil to join bridge network
-	Mounts         map[string]string // localname:/path/in/docker
+	Entrypoint      []string          // Entrypoint to run when starting the container. Optional.
+	Network         *Network          // Docker network to join, nil to join bridge network
+	Mounts          map[string]string // localname:/path/in/docker
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -167,7 +167,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	mounts := []mount.Mount{}
 	for localName, pathInDocker := range config.Mounts {
 		mounts = append(mounts, mount.Mount{
-			Type: mount.TypeVolume,
+			Type:   mount.TypeVolume,
 			Source: localName,
 			Target: pathInDocker,
 		})
@@ -186,7 +186,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		},
 		&container.HostConfig{
 			PortBindings: portMapping,
-			Mounts: mounts,
+			Mounts:       mounts,
 		},
 		nil, nil, "",
 	)
@@ -252,7 +252,6 @@ func (c *Client) CreateVolume(name string) (*volume.Volume, error) {
 	}
 	return &vol, nil
 }
-
 
 // Hostname returns the hostname of the Container. In this case it is the ID of the
 // Docker Container.
@@ -452,7 +451,6 @@ func (c *Client) listVolumes() ([]*volume.Volume, error) {
 	}
 	return resp.Volumes, nil
 }
-
 
 // getObjectsLabelFilter returns a filter for the objects label.
 func getObjectsLabelFilter() filters.KeyValuePair {
