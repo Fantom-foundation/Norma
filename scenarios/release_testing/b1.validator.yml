@@ -4,64 +4,43 @@
 # - Validation: check list of validator and validate final state of nodes
 
 name: B1
-duration: 310 # 5 minutes sim + 10s to add new validator
+duration: 300 # 5 minutes sim (new val joins half way through)
 
 # backward compatibility, to be removed.
-num_validators: 4
+#num_validators: 4
 
 nodes:
-  - name: validator
+  - name: static-validator
     instances: 4
-    timer:
-      start: 0
-      end: 300
     client:
       imagename: main
       type: validator
-    genesis:
-      export:
-        start: 300
-        path: /to/be/configured/b1.g
 
   - name: RPC
     instances: 2
-    timer:
-      start: 0
-      end: 310
     client: 
       imagename: main
       type: RPC
     
   - name: observer
     instances: 2
-    timer: 
-      start: 0
-      end: 310
     client:
       imagename: main
       type: observer
 
   - name: new-validator
-    timer:
-      start: 300
-      end: 310
+    start: 150
     client:
       imagename: main
       type: validator
-    genesis:
-      import:
-        start: 301
-        path: /to/be/configured/b1.g
     
 
 # In the network there is a single application producing constant load.
 applications:
   - name: load
     type: counter
-    start: 1            # start time
-    end: 309            # termination time
+    start: 0            # start time
+    end: 300            # termination time
     users: 20           # number of users / accounts generating txs
     rate:
       constant: 100     # Tx/s
-
-validate: true # check list of validator and validate final state of nodes?

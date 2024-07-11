@@ -43,6 +43,10 @@ func (s *Scenario) Check() error {
 	if s.NumValidators != nil && *s.NumValidators <= 0 {
 		errs = append(errs, fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators))
 	}
+	if s.NumValidators != nil && *s.NumValidators != s.GetEternalValidatorCount() {
+		errs = append(errs, fmt.Errorf("configured validator count: %d, scenario reports %d", s.NumValidators, s.GetEternalValidatorCount()))
+	}
+
 	names := map[string]bool{}
 	for _, node := range s.Nodes {
 		if err := node.Check(s); err != nil {
@@ -80,13 +84,20 @@ func (s *Scenario) Check() error {
 	return errors.Join(errs...)
 }
 
-// GetValidatorCountAtTimeZero returns the number of validators that 
-// begins at time 0.
-func (s *Scenario) GetValidatorCountAtTimeZero() int {
+// GetEternalValidatorCount returns the number of validators that 
+// begins at time 0 and ends at time = duration.
+func (s *Scenario) GetEternalValidatorCount() int {
 	var count = 0
 	for _, node := range s.Nodes {
-		if node.Client.Type == "validator" && node.Start == 0 {
-			count += node.Instances
+		fmt.Println(node)
+		if node.Client.Type == "validator" && 
+		(node.Start == nil || *node.Start == 0) && 
+		(node.End == nil || *node.End == s.Duration) {
+			if node.Instances != nil {
+				count += *node.Instances
+			} else {
+				count += 1
+			}
 		}
 	}
 	return count
@@ -97,7 +108,11 @@ func (s *Scenario) GetValidatorCount() int {
 	var count = 0
 	for _, node := range s.Nodes {
 		if node.Client.Type == "validator" {
-			count += node.Instances
+			if node.Instances != nil {
+				count += *node.Instances
+			} else {
+				count += 1
+			}
 		}
 	}
 	return count

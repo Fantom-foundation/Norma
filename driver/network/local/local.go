@@ -108,7 +108,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	// Let the RPC pool to start RPC workers when a node start.
 	net.RegisterListener(net.rpcWorkerPool)
 
-	// Start all validators.
+	// Start the genesis validator.
 	net.validators = make([]*node.OperaNode, config.NumberOfValidators)
 	errs := make([]error, config.NumberOfValidators)
 	var wg sync.WaitGroup

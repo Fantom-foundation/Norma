@@ -141,20 +141,37 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+
 	clock := executor.NewWallTimeClock()
 
+	//
 	// Startup network.
+	//
+
 	netConfig := driver.NetworkConfig{
 		NumberOfValidators:    1,
 		StateDbImplementation: db,
 		VmImplementation:      vm,
 	}
-	if scenario.NumValidators != nil {
-		netConfig.NumberOfValidators = *scenario.NumValidators
+
+	// Check the amount of validators
+	eternalValidatorCount := scenario.GetEternalValidatorCount()
+
+	if eternalValidatorCount < 1 {
+		return fmt.Errorf("A scenario requires at least one validator that last throughout the entire duration. Currently: %d", eternalValidatorCount)
 	}
-	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
+
+	// NumValidators must be able to accept nil to allow backward compat.
+	if scenario.NumValidators != nil && *scenario.NumValidators != eternalValidatorCount {
+		return fmt.Errorf("Provided scenario has conflicting amount of validators. Scenario reports %d but is configured to %d.", eternalValidatorCount, scenario.NumValidators) 
+	}
+		
+	netConfig.NumberOfValidators = eternalValidatorCount
+
+	fmt.Printf("Creating network with %d starting validators, using the `%v` DB and `%v` VM implementation ...\n",
 		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
 	)
+
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
