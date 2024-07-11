@@ -80,6 +80,30 @@ func (s *Scenario) Check() error {
 	return errors.Join(errs...)
 }
 
+// GetValidatorCountAtTimeZero returns the number of validators that 
+// begins at time 0.
+func (s *Scenario) GetValidatorCountAtTimeZero() int {
+	var count = 0
+	for _, node := range s.Nodes {
+		if node.Client.Type == "validator" && node.Start == 0 {
+			count += node.Instances
+		}
+	}
+	return count
+}
+
+// GetValidatorCount returns the total number of validators throughout the run.
+func (s *Scenario) GetValidatorCount() int {
+	var count = 0
+	for _, node := range s.Nodes {
+		if node.Client.Type == "validator" {
+			count += node.Instances
+		}
+	}
+	return count
+}
+
+
 // Check tests semantic constraints on the node configuration of a scenario.
 func (n *Node) Check(scenario *Scenario) error {
 	errs := []error{}
