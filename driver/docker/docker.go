@@ -29,6 +29,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -77,7 +79,7 @@ type ContainerConfig struct {
 	Environment     map[string]string
 	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
 	Network         *Network // Docker network to join, nil to join bridge network
-	Binds           []string // Binding of local path to path in docker
+	Mounts         map[string]string // localname:/path/in/docker
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -112,6 +114,14 @@ func Purge() error {
 			return err
 		}
 	}
+
+	// get all volumes created by norma
+	_, err = cli.listVolumes()
+	if err != nil {
+		return err
+	}
+
+	// TODO: remove all volumes
 
 	// get all networks created by norma
 	networks, err := cli.listNetworks()
@@ -153,6 +163,16 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
+	//mount volume
+	mounts := []mount.Mount{}
+	for localName, pathInDocker := range config.Mounts {
+		mounts = append(mounts, mount.Mount{
+			Type: mount.TypeVolume,
+			Source: localName,
+			Target: pathInDocker,
+		})
+	}
+
 	resp, err := c.cli.ContainerCreate(
 		context.Background(),
 		&container.Config{
@@ -166,7 +186,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		},
 		&container.HostConfig{
 			PortBindings: portMapping,
-			Binds:        config.Binds,
+			Mounts: mounts,
 		},
 		nil, nil, "",
 	)
@@ -216,6 +236,23 @@ func (c *Client) CreateBridgeNetwork() (*Network, error) {
 		client: c,
 	}, nil
 }
+
+// CreateVolume creates a DockerVolume
+func (c *Client) CreateVolume(name string) (*volume.Volume, error) {
+
+	vol, err := c.cli.VolumeCreate(context.Background(), volume.CreateOptions{
+		Name: name,
+		Labels: map[string]string{
+			fmt.Sprintf("%s", objectsLabel): "true",
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &vol, nil
+}
+
 
 // Hostname returns the hostname of the Container. In this case it is the ID of the
 // Docker Container.
@@ -387,6 +424,7 @@ func (n *Network) Cleanup() error {
 			}
 		}
 	}
+
 	n.cleaned = true
 	// remove the network
 	return n.client.cli.NetworkRemove(context.Background(), n.id)
@@ -403,6 +441,18 @@ func (c *Client) listNetworks() ([]types.NetworkResource, error) {
 func (c *Client) listContainers() ([]types.Container, error) {
 	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
 }
+
+// listVolumes returns a list of all volumes
+func (c *Client) listVolumes() ([]*volume.Volume, error) {
+	resp, err := c.cli.VolumeList(context.Background(), volume.ListOptions{
+		Filters: filters.NewArgs(getObjectsLabelFilter()),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Volumes, nil
+}
+
 
 // getObjectsLabelFilter returns a filter for the objects label.
 func getObjectsLabelFilter() filters.KeyValuePair {

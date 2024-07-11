@@ -84,8 +84,8 @@ type OperaNodeConfig struct {
 	VmImplementation string
 	// ValidatorPubkey is nil if not a validator, else used as pubkey for the validator.
 	ValidatorPubkey *string
-	// IpcBindingEnabled is set to true if the opera.ipc is to be binded to host
-	IpcBindingEnabled bool
+	// Volumes is the list of volumes to bind to the node
+	Mounts map[string]string // localname:/path/in/docker
 }
 
 // labelPattern restricts labels for nodes to non-empty alpha-numerical strings
@@ -103,13 +103,6 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 	validatorId := "0"
 	if config.ValidatorId != nil {
 		validatorId = fmt.Sprintf("%d", *config.ValidatorId)
-	}
-
-	bindings := []string{}
-	if config.IpcBindingEnabled {
-		bindings = append(bindings,
-			fmt.Sprintf("%s.ipc:/datadir/opera.ipc", config.Label),
-		)
 	}
 
 	host, err := network.RetryReturn(network.DefaultRetryAttempts, 1*time.Second, func() (*docker.Container, error) {
@@ -132,7 +125,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
-			Binds:   bindings,
+			Mounts: config.Mounts,
 		})
 	})
 	if err != nil {
