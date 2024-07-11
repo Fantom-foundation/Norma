@@ -6,7 +6,7 @@
 name: B1
 duration: 300 # 5 minutes sim (new val joins half way through)
 
-# backward compatibility
+# backward compatibility, to be removed.
 num_validators: 4
 
 nodes:
