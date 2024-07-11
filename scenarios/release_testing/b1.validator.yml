@@ -6,10 +6,16 @@
 name: B1
 duration: 300 # 5 minutes sim (new val joins half way through)
 
-# backward compatibility
-num_validators: 4
+# backward compatibility, to be removed.
+#num_validators: 4
 
 nodes:
+  - name: static-validator
+    instances: 4
+    client:
+      imagename: main
+      type: validator
+
   - name: RPC
     instances: 2
     client: 
@@ -23,12 +29,11 @@ nodes:
       type: observer
 
   - name: new-validator
-    start: 100
-    features: 
-      - validator
+    start: 150
     client:
       imagename: main
       type: validator
+    
 
 # In the network there is a single application producing constant load.
 applications:
