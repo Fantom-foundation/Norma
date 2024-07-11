@@ -82,41 +82,6 @@ func (s *Scenario) Check() error {
 	return errors.Join(errs...)
 }
 
-// GetEternalValidatorCount returns the number of validators that 
-// begins at time 0 and ends at time = duration.
-func (s *Scenario) GetEternalValidatorCount() int {
-	var count = 0
-	for _, node := range s.Nodes {
-		fmt.Println(node)
-		if node.Client.Type == "validator" && 
-		(node.Start == nil || *node.Start == 0) && 
-		(node.End == nil || *node.End == s.Duration) {
-			if node.Instances != nil {
-				count += *node.Instances
-			} else {
-				count += 1
-			}
-		}
-	}
-	return count
-}
-
-// GetValidatorCount returns the total number of validators throughout the run.
-func (s *Scenario) GetValidatorCount() int {
-	var count = 0
-	for _, node := range s.Nodes {
-		if node.Client.Type == "validator" {
-			if node.Instances != nil {
-				count += *node.Instances
-			} else {
-				count += 1
-			}
-		}
-	}
-	return count
-}
-
-
 // Check tests semantic constraints on the node configuration of a scenario.
 func (n *Node) Check(scenario *Scenario) error {
 	errs := []error{}
