@@ -36,6 +36,8 @@ type Clock interface {
 
 	// NotifyAt creates a channel sending a message when the given time is reached.
 	NotifyAt(Time) <-chan Time
+
+	Delay(Time) time.Duration
 }
 
 // Time is used to model time in a scenario, relative to the start time. Thus,
@@ -98,6 +100,10 @@ func (c *SimClock) NotifyAt(time Time) <-chan Time {
 	return ch
 }
 
+func (c *SimClock) Delay(deadline Time) time.Duration {
+	return time.Duration(c.now - deadline)
+}
+
 // WallTimeClock is a clock aiming to follow real wall-clock time. It is
 // intended to be used when running scenarios for actual evaluations.
 type WallTimeClock struct {
@@ -135,4 +141,8 @@ func (c *WallTimeClock) NotifyAt(deadline Time) <-chan Time {
 		res <- c.Now()
 	}
 	return res
+}
+
+func (c *WallTimeClock) Delay(deadline Time) time.Duration {
+	return time.Duration(c.Now() - deadline)
 }
