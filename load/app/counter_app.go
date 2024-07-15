@@ -70,7 +70,7 @@ func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Counter contract is deployed; %v", err)
 	}

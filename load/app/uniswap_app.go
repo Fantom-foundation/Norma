@@ -87,7 +87,7 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	}
 
 	// wait until contracts are available on the chain
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %v", err)
 	}
@@ -146,7 +146,7 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	}
 
 	// wait until the starting accounts will be available on the chain (and will be possible to call CreateUser)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %v", err)
 	}
