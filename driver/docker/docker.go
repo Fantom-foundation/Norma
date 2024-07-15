@@ -128,7 +128,6 @@ func Purge() error {
 			return err
 		}
 	}
-	
 
 	// get all networks created by norma
 	networks, err := cli.listNetworks()
