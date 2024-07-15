@@ -78,6 +78,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/a1.ValRpcObs.yml
 			}
 		}
 
@@ -90,6 +91,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/a2.MultSonicVer.yml
 			}
 		}
 
@@ -102,6 +104,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/b1.NewValMidRun.yml
 			}
 		}
 
@@ -114,6 +117,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/b2.KillValMidRun.yml
 			}
 		}
 
@@ -126,6 +130,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/b3.RestartValMidRun.yml
 			}
 		}
 
@@ -138,6 +143,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/b4.ValCheatMustSealEpoch.yml
 			}
 		}
 
@@ -150,6 +156,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/b5.ValsBlackout.yml
 			}
 		}
 
@@ -162,6 +169,7 @@ pipeline {
 			}
 
 			steps {
+				build/norma run release_testing/c1.RpcRequests.yml
 			}
 		}
 	}
