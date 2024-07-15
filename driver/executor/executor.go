@@ -194,7 +194,8 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		var instance = new(driver.Node)
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting node %s", name), func() error {
 			newNode, err := net.CreateNode(&driver.NodeConfig{
-				Name: name,
+				Name:      name,
+				Validator: node.IsValidator(),
 			})
 			*instance = newNode
 			return err

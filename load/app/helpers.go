@@ -49,8 +49,8 @@ func createTx(from *Account, toAddress common.Address, value *big.Int, data []by
 	return types.SignTx(tx, types.NewEIP155Signer(from.chainID), from.privateKey)
 }
 
-// waitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
-func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient rpc.RpcClient) error {
+// WaitUntilAccountNonceIs blocks until the account nonce at the latest block on the chain is given value
+func WaitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcClient rpc.RpcClient) error {
 	var nonce uint64
 	var err error
 	for i := 0; i < 300; i++ {
@@ -69,7 +69,7 @@ func waitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 // waitUntilAllSentTxsAreOnChain blocks until all txs sent from given accounts are on the chain (by account nonce)
 func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient rpc.RpcClient) error {
 	for i := 0; i < len(accounts); i++ {
-		err := waitUntilAccountNonceIs(accounts[i].address, accounts[i].getCurrentNonce(), rpcClient)
+		err := WaitUntilAccountNonceIs(accounts[i].address, accounts[i].getCurrentNonce(), rpcClient)
 		if err != nil {
 			return err
 		}
