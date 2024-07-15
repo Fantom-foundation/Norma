@@ -116,7 +116,7 @@ func Purge() error {
 	}
 
 	// get all volumes created by norma
-	volumess, err = cli.listVolumes()
+	volumes, err := cli.listVolumes()
 	if err != nil {
 		return err
 	}
