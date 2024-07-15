@@ -116,12 +116,19 @@ func Purge() error {
 	}
 
 	// get all volumes created by norma
-	_, err = cli.listVolumes()
+	volumess, err = cli.listVolumes()
 	if err != nil {
 		return err
 	}
 
-	// TODO: remove all volumes
+	// remove all volumes
+	for _, v := range volumes {
+		err := cli.cli.VolumeRemove(context.Background(), v.ClusterVolume.Info.VolumeID, true)
+		if err != nil {
+			return err
+		}
+	}
+	
 
 	// get all networks created by norma
 	networks, err := cli.listNetworks()
