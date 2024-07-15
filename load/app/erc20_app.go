@@ -75,7 +75,7 @@ func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the ERC20 contract is deployed; %v", err)
 	}
