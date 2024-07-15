@@ -76,6 +76,8 @@ type LocalNetwork struct {
 	rpcWorkerPool *rpc.RpcWorkerPool
 }
 
+// LocalVolumes is a list of mapping between local volumes to path in docker.
+// Format: localname:/path/in/docker
 var LocalVolumes = map[string]string{
 	"ipc": "/datadir/ipc",
 }
