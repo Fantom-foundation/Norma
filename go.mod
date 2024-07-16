@@ -13,6 +13,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/urfave/cli/v2 v2.25.7
+	go.uber.org/mock v0.2.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	gopkg.in/yaml.v3 v3.0.1
 )
