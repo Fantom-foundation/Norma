@@ -55,6 +55,7 @@ type LocalNetwork struct {
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
 	// of the network.
+	// TODO dynamically created validators are not added to this list. Can't be added without old epoch is sealed, because method randomValidatorRPC could return a non validator node.
 	validators []*node.OperaNode
 
 	// nodes provide a register for all nodes in the network, including
@@ -180,58 +181,65 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 
 // CreateNode creates nodes in the network during run.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
+	return n.createNode(&node.OperaNodeConfig{
+		Label:            config.Name,
+		NetworkConfig:    &n.config,
+		VmImplementation: n.config.VmImplementation,
+	})
+}
+
+// CreateValidatorNode creates validator non genesis validator node in the network during run.
+func (n *LocalNetwork) CreateValidatorNode(config *driver.NodeConfig) (driver.Node, error) {
 	newValId := 0
-	if config.Validator {
-		log.Printf("Creating validator node %s", config.Name)
-		rpcClient, err := n.DialRandomRpc()
-		if err != nil {
-			return nil, err
-		}
-		defer rpcClient.Close()
+	//
+	rpcClient, err := n.dialRandomGenesisValidatorRpc()
+	if err != nil {
+		return nil, err
+	}
+	defer rpcClient.Close()
 
-		// get a representation of the deployed contract
-		SFCContract, err := contract.NewSFC(common.HexToAddress("0xFC00FACE00000000000000000000000000000000"), rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get SFC contract representation; %v", err)
-		}
+	// get a representation of the deployed contract
+	SFCContract, err := contract.NewSFC(common.HexToAddress("0xFC00FACE00000000000000000000000000000000"), rpcClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SFC contract representation; %v", err)
+	}
 
-		var lastValId *big.Int
-		lastValId, err = SFCContract.LastValidatorID(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get validator count; %v", err)
-		}
+	var lastValId *big.Int
+	lastValId, err = SFCContract.LastValidatorID(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get validator count; %v", err)
+	}
 
-		newValId = int(lastValId.Int64()) + 1
-		fmt.Println("newValId", newValId)
+	newValId = int(lastValId.Int64()) + 1
+	log.Printf("Creating validator node %s; %d", config.Name, newValId)
 
-		privateKeyECDSA := evmcore.FakeKey(uint32(newValId))
-		validatorPubKey := validatorpk.PubKey{
-			Raw:  crypto.FromECDSAPub(&privateKeyECDSA.PublicKey),
-			Type: validatorpk.Types.Secp256k1,
-		}
+	privateKeyECDSA := evmcore.FakeKey(uint32(newValId))
+	validatorPubKey := validatorpk.PubKey{
+		Raw:  crypto.FromECDSAPub(&privateKeyECDSA.PublicKey),
+		Type: validatorpk.Types.Secp256k1,
+	}
 
-		validatorPrivateKeykHex := strings.TrimPrefix(hexutil.Encode(crypto.FromECDSA(privateKeyECDSA)), "0x")
-		validatorAccount, err := app.NewAccount(newValId, validatorPrivateKeykHex, validatorPubKey.Raw, 0xfa3)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create validator account: %v", err)
-		}
+	validatorPrivateKeykHex := strings.TrimPrefix(hexutil.Encode(crypto.FromECDSA(privateKeyECDSA)), "0x")
+	validatorAccount, err := app.NewAccount(newValId, validatorPrivateKeykHex, validatorPubKey.Bytes(), 0xfa3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create validator account: %v", err)
+	}
 
-		_, err = validatorAccount.CreateValidator(SFCContract, rpcClient)
-		if err != nil {
-			return nil, err
-		}
-		err = app.WaitUntilAccountNonceIs(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey), 1, rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("createValidator; failed to wait for nonce; %v", err)
-		}
+	_, err = validatorAccount.CreateValidator(SFCContract, rpcClient)
+	if err != nil {
+		return nil, err
+	}
+	err = app.WaitUntilAccountNonceIs(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey), 1, rpcClient)
+	if err != nil {
+		return nil, fmt.Errorf("createValidator; failed to wait for nonce; %v", err)
+	}
 
-		lastValId, err = SFCContract.LastValidatorID(nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get validator count; %v", err)
-		}
-		if newValId != int(lastValId.Int64()) {
-			return nil, fmt.Errorf("failed to create validator %d", newValId)
-		}
+	lastValId, err = SFCContract.LastValidatorID(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get validator count; %v", err)
+	}
+	if newValId != int(lastValId.Int64()) {
+		return nil, fmt.Errorf("failed to create validator %d", newValId)
 	}
 
 	return n.createNode(&node.OperaNodeConfig{
@@ -276,7 +284,11 @@ func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
 	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
 
-func (n *LocalNetwork) dialRandomValidatorRpc() (rpc2.RpcClient, error) {
+// dialRandomGenesisValidatorRpc dials a random genesis validator node.
+// When network starts and still doesn't have any traffic, then first transaction must come from validator node.
+// Caused by: the regular nodes even when connected won't send transactions from their txpool,
+// because they don't know whether they are on head or not if blockchain is empty.
+func (n *LocalNetwork) dialRandomGenesisValidatorRpc() (rpc2.RpcClient, error) {
 	return n.validators[rand.Intn(len(n.validators))].DialRpc()
 }
 
@@ -336,16 +348,8 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 	return a.controller.GetReceivedTransactions()
 }
 
-//func (n *LocalNetwork) CreateValidator(config *driver.NodeConfig) (driver.Node, error) {
-//	return n.createNode(&node.OperaNodeConfig{
-//		Label:            config.Name,
-//		NetworkConfig:    &n.config,
-//		VmImplementation: n.config.VmImplementation,
-//	})
-//}
-
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
-	rpcClient, err := n.dialRandomValidatorRpc()
+	rpcClient, err := n.dialRandomGenesisValidatorRpc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}

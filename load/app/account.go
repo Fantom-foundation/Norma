@@ -149,6 +149,6 @@ func (a *Account) CreateValidator(SFCContract *contract.SFC, rpcClient rpc.RpcCl
 	}
 	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
 	txOpts.Nonce = big.NewInt(int64(a.getNextNonce()))
-	txOpts.Value = big.NewInt(0).Mul(big.NewInt(500_000), big.NewInt(1_000_000_000_000_000_000)) // 500_000 FTM
+	txOpts.Value = big.NewInt(0).Mul(big.NewInt(5_000_000), big.NewInt(1_000_000_000_000_000_000)) // 5_000_000 FTM
 	return SFCContract.CreateValidator(txOpts, a.publicKey)
 }

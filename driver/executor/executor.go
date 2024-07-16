@@ -193,12 +193,19 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting node %s", name), func() error {
-			newNode, err := net.CreateNode(&driver.NodeConfig{
-				Name:      name,
-				Validator: node.IsValidator(),
-			})
-			*instance = newNode
-			return err
+			if node.IsValidator() {
+				newNode, err := net.CreateValidatorNode(&driver.NodeConfig{
+					Name: name,
+				})
+				*instance = newNode
+				return err
+			} else {
+				newNode, err := net.CreateNode(&driver.NodeConfig{
+					Name: name,
+				})
+				*instance = newNode
+				return err
+			}
 		}))
 
 		if &node.Genesis != nil {
