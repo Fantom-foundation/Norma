@@ -181,10 +181,65 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 
 // CreateNode creates nodes in the network during run.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
+	newValId := 0
+	if config.Validator {
+		log.Printf("Creating validator node %s", config.Name)
+		rpcClient, err := n.DialRandomRpc()
+		if err != nil {
+			return nil, err
+		}
+		defer rpcClient.Close()
+
+		// get a representation of the deployed contract
+		SFCContract, err := contract.NewSFC(common.HexToAddress("0xFC00FACE00000000000000000000000000000000"), rpcClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get SFC contract representation; %v", err)
+		}
+
+		var lastValId *big.Int
+		lastValId, err = SFCContract.LastValidatorID(nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get validator count; %v", err)
+		}
+
+		newValId = int(lastValId.Int64()) + 1
+		fmt.Println("newValId", newValId)
+
+		privateKeyECDSA := evmcore.FakeKey(uint32(newValId))
+		validatorPubKey := validatorpk.PubKey{
+			Raw:  crypto.FromECDSAPub(&privateKeyECDSA.PublicKey),
+			Type: validatorpk.Types.Secp256k1,
+		}
+
+		validatorPrivateKeykHex := strings.TrimPrefix(hexutil.Encode(crypto.FromECDSA(privateKeyECDSA)), "0x")
+		validatorAccount, err := app.NewAccount(newValId, validatorPrivateKeykHex, validatorPubKey.Raw, 0xfa3)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create validator account: %v", err)
+		}
+
+		_, err = validatorAccount.CreateValidator(SFCContract, rpcClient)
+		if err != nil {
+			return nil, err
+		}
+		err = app.WaitUntilAccountNonceIs(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey), 1, rpcClient)
+		if err != nil {
+			return nil, fmt.Errorf("createValidator; failed to wait for nonce; %v", err)
+		}
+
+		lastValId, err = SFCContract.LastValidatorID(nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get validator count; %v", err)
+		}
+		if newValId != int(lastValId.Int64()) {
+			return nil, fmt.Errorf("failed to create validator %d", newValId)
+		}
+	}
+
 	return n.createNode(&node.OperaNodeConfig{
 		Label:            config.Name,
 		NetworkConfig:    &n.config,
 		VmImplementation: n.config.VmImplementation,
+		ValidatorId:      &newValId,
 	})
 }
 
@@ -347,6 +402,14 @@ func (a *localApplication) GetSentTransactions(user int) (uint64, error) {
 func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 	return a.controller.GetReceivedTransactions()
 }
+
+//func (n *LocalNetwork) CreateValidator(config *driver.NodeConfig) (driver.Node, error) {
+//	return n.createNode(&node.OperaNodeConfig{
+//		Label:            config.Name,
+//		NetworkConfig:    &n.config,
+//		VmImplementation: n.config.VmImplementation,
+//	})
+//}
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
 	rpcClient, err := n.dialRandomGenesisValidatorRpc()
