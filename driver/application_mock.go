@@ -23,7 +23,7 @@ package driver
 import (
 	reflect "reflect"
 
-	gomock "github.com/uber-go/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockApplication is a mock of Application interface.

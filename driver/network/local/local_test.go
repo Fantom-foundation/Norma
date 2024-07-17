@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/uber-go/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestLocalNetworkIsNetwork(t *testing.T) {

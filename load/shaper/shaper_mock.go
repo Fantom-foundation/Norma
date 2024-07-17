@@ -24,7 +24,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/uber-go/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockShaper is a mock of Shaper interface.
