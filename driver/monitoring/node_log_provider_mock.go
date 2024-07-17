@@ -23,7 +23,7 @@ package monitoring
 import (
 	reflect "reflect"
 
-	gomock "github.com/uber-go/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockLogListener is a mock of LogListener interface.

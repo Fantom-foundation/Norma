@@ -8,7 +8,7 @@ require (
 	github.com/Fantom-foundation/go-opera v1.1.3-rc.5
 	github.com/docker/go-connections v0.4.0
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/uber-go/mock v0.4.0
+	go.uber.org/mock v0.4.0
 	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
@@ -82,3 +82,5 @@ require (
 replace github.com/Fantom-foundation/go-opera v1.1.3-rc.5 => github.com/Fantom-foundation/Sonic v1.2.1-d
 
 replace github.com/ethereum/go-ethereum => github.com/Fantom-foundation/go-ethereum-substate v1.1.1-0.20240523185630-b058188a043a
+
+replace github.com/golang/mock v1.3.1 => go.uber.org/mock v0.4.0

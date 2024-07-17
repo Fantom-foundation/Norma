@@ -23,7 +23,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
-	"github.com/uber-go/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCaptureSeriesFromNodeBlocksNodeMetrics(t *testing.T) {

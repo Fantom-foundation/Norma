@@ -26,7 +26,7 @@ import (
 
 	network "github.com/Fantom-foundation/Norma/driver/network"
 	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
-	gomock "github.com/uber-go/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockNode is a mock of Node interface.

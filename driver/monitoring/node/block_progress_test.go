@@ -32,7 +32,7 @@ import (
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/uber-go/mock/gomock"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/exp/slices"
 )
 
