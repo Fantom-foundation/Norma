@@ -44,7 +44,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(0, PrivateKey, FakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
