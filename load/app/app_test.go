@@ -61,7 +61,7 @@ func TestGenerators(t *testing.T) {
 		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
-		}a
+		}
 		testGenerator(t, erc20app, rpcClient)
 	})
 	t.Run("Store", func(t *testing.T) {
