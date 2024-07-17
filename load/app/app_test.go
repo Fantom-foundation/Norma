@@ -45,7 +45,7 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(0, PrivateKey, FakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestGenerators(t *testing.T) {
 		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
 		if err != nil {
 			t.Fatal(err)
-		}
+		}a
 		testGenerator(t, erc20app, rpcClient)
 	})
 	t.Run("Store", func(t *testing.T) {
