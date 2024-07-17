@@ -14,7 +14,7 @@ import (
 
 	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
 	types "github.com/ethereum/go-ethereum/core/types"
-	gomock "go.uber.org/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockNetwork is a mock of Network interface.
