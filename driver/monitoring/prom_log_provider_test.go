@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 )
 
 func TestLogsDispatchedImplements(t *testing.T) {

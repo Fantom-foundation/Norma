@@ -28,7 +28,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
-	gomock "github.com/golang/mock/gomock"
+	gomock "github.com/uber-go/mock/gomock"
 )
 
 // MockRpcClient is a mock of RpcClient interface.

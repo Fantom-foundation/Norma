@@ -26,7 +26,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	opera "github.com/Fantom-foundation/Norma/driver/node"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 	"golang.org/x/exp/slices"
 )
 

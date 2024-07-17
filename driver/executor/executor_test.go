@@ -24,7 +24,7 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/parser"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 )
 
 func TestExecutor_RunEmptyScenario(t *testing.T) {
