@@ -8,7 +8,7 @@ require (
 	github.com/Fantom-foundation/go-opera v1.1.3-rc.5
 	github.com/docker/go-connections v0.4.0
 	github.com/ethereum/go-ethereum v1.11.6
-	github.com/golang/mock v1.6.0
+	github.com/uber-go/mock v0.4.0
 	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
