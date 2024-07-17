@@ -41,8 +41,6 @@ github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e h1:ahyvB3q25Yn
 github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e/go.mod h1:kGUqhHd//musdITWjFvNTHn90WG9bMLBEPQZ17Cmlpw=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69mGp/UtRPn422BH4/Y4Q3SLUrD9KHuDkm8iodFc=
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
-github.com/Fantom-foundation/Sonic v1.2.1-a h1:tUQHld8q2gkvKdXBQJ9fv4n3xZAOm9jpG9MPRj03aIw=
-github.com/Fantom-foundation/Sonic v1.2.1-a/go.mod h1:6PlZIOBpEpN4TSutMGrP5Dkohgox4Dk5H5FZgDqG+bI=
 github.com/Fantom-foundation/Sonic v1.2.1-d h1:q4bG967j/P5VGzwgJ68awISHL760Xtfl2VI1OiT9/vY=
 github.com/Fantom-foundation/Sonic v1.2.1-d/go.mod h1:6PlZIOBpEpN4TSutMGrP5Dkohgox4Dk5H5FZgDqG+bI=
 github.com/Fantom-foundation/Substate v0.0.0-20230224090651-4c8c024214f4 h1:AA0BtERxmlf7jvDF4fwIB2k/Lsc7HTRE3QHTZnfcSVA=

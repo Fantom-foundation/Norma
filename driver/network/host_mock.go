@@ -24,7 +24,7 @@ import (
 	io "io"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "github.com/uber-go/mock/gomock"
 )
 
 // MockHost is a mock of Host interface.

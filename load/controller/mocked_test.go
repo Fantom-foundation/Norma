@@ -26,7 +26,7 @@ import (
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 )
 
 func TestMockedTrafficGenerating(t *testing.T) {

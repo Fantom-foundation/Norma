@@ -22,7 +22,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 )
 
 func TestBlockHashesCheckerValid(t *testing.T) {

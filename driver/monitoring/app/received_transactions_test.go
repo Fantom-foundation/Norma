@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/golang/mock/gomock"
+	"github.com/uber-go/mock/gomock"
 )
 
 func TestReceivedTransactionSensorReportsProperValue(t *testing.T) {
