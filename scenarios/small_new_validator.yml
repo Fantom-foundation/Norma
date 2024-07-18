@@ -5,7 +5,6 @@
 name: Small Network
 
 # The duration of the scenario's runtime, in seconds.
-<<<<<<< HEAD
 duration: 6000
 
 # The number of validator nodes in the network.
