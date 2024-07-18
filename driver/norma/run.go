@@ -67,7 +67,7 @@ var (
 	}
 	evalLabel = cli.StringFlag{
 		Name:  "label",
-		Usage: "define a label for to be added to the monitoring data for this run. I empty, a random label is used.",
+		Usage: "define a label for to be added to the monitoring data for this run. If empty, a random label is used.",
 		Value: "",
 	}
 	keepPrometheusRunning = cli.BoolFlag{
@@ -99,7 +99,7 @@ func run(ctx *cli.Context) (err error) {
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
 	} else if db != "geth" {
-		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
+		return fmt.Errorf("unknown value for --%v flag: %v", dbImpl.Name, db)
 	}
 
 	vm := strings.ToLower(ctx.String(vmImpl.Name))
@@ -107,7 +107,7 @@ func run(ctx *cli.Context) (err error) {
 		vm = "lfvm"
 	}
 	if !isValidVmImpl(vm) {
-		return fmt.Errorf("unknown value fore --%v flag: %v", vmImpl.Name, vm)
+		return fmt.Errorf("unknown value for --%v flag: %v", vmImpl.Name, vm)
 	}
 
 	label := ctx.String(evalLabel.Name)
