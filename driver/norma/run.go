@@ -24,6 +24,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"ioutil"
+	"path/filepath"
 
 	"github.com/Fantom-foundation/Norma/driver/checking"
 
@@ -150,6 +152,16 @@ func run(ctx *cli.Context) (err error) {
 	os.Symlink(outputDir, symlink)
 
 	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+
+	// Copy scenario yml to outputDir as well to provide context
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(outputDir, filepath.Base(path)), data, 0644)
+	if err != nil {
+		return err
+	}
 
 	clock := executor.NewWallTimeClock()
 
