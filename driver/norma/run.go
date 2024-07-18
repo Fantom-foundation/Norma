@@ -18,13 +18,13 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
-	"ioutil"
-	"path/filepath"
 
 	"github.com/Fantom-foundation/Norma/driver/checking"
 
