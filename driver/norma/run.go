@@ -170,6 +170,9 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
+	// create symlink as qol (_latest => _####) where #### is the randomly generated name
+	os.SymLink(outputDir, fmt.Sprintf("/tmp/norma_data_%s_latest", label))
+
 	clock := executor.NewWallTimeClock()
 
 	//
