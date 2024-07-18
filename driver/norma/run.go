@@ -141,6 +141,10 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+
+	// create symlink as qol (_latest => _####) where #### is the randomly generated name
+	os.SymLink(outputDir, fmt.Sprintf("/tmp/norma_data_%s_latest", label))
+
 	clock := executor.NewWallTimeClock()
 
 	// Startup network.
