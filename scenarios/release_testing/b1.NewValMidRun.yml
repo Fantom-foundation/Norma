@@ -29,7 +29,6 @@ nodes:
     client:
       imagename: main
       type: validator
-    
 
 # In the network there is a single application producing constant load.
 applications:
