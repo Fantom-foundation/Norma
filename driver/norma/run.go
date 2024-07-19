@@ -166,9 +166,9 @@ func run(ctx *cli.Context) (err error) {
 
 	// NumValidators must be able to accept nil to allow backward compat.
 	if scenario.NumValidators != nil && *scenario.NumValidators != genesisValidatorCount {
-		return fmt.Errorf("Provided scenario has conflicting amount of validators. Scenario reports %d but is configured to %d.", genesisValidatorCount, scenario.NumValidators) 
+		return fmt.Errorf("Provided scenario has conflicting amount of validators. Scenario reports %d but is configured to %d.", genesisValidatorCount, scenario.NumValidators)
 	}
-		
+
 	netConfig.NumberOfValidators = genesisValidatorCount
 
 	fmt.Printf("Creating network with %d starting validators, using the `%v` DB and `%v` VM implementation ...\n",

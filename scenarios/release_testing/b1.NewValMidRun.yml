@@ -4,7 +4,7 @@
 # - Validation: check list of validator and validate final state of nodes
 
 name: B1
-duration: 300 # 5 minutes sim (new val joins half way through)
+duration: 6000 # 5 minutes sim (new val joins half way through)
 
 # backward compatibility
 num_validators: 4
@@ -23,7 +23,7 @@ nodes:
       type: observer
 
   - name: new-validator
-    start: 100
+    start: 300
     features: 
       - validator
     client:
@@ -34,9 +34,9 @@ nodes:
 # In the network there is a single application producing constant load.
 applications:
   - name: load
-    type: counter
-    start: 0            # start time
-    end: 300            # termination time
+    type: uniswap
+    start: 10            # start time
+    end: 5000            # termination time
     users: 20           # number of users / accounts generating txs
     rate:
-      constant: 100     # Tx/s
+      constant: 400     # Tx/s
