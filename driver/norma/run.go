@@ -151,6 +151,13 @@ func run(ctx *cli.Context) (err error) {
 		return fmt.Errorf("Couldn't create temp dir for output; %s", err)
 	}
 
+	// create symlink as qol (_latest => _####) where #### is the randomly generated name
+	symlink := filepath.Join(filepath.Dir(outputDir), fmt.Sprintf("norma_data_%s_latest", label))
+	if _, err := os.LStat(symlink); err == nil {
+		os.Remove(symlink)
+	}
+	os.Symlink(outputDir, symlink)
+
 	fmt.Printf("Monitoring data is written to %v\n", outputDir)
 
 	// Copy scenario yml to outputDir as well to provide context
