@@ -57,6 +57,7 @@ var runCommand = cli.Command{
 		&skipChecks,
 		&skipReportRendering,
 		&vmImpl,
+		&outputDirectory,
 	},
 }
 
