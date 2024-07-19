@@ -153,7 +153,7 @@ func run(ctx *cli.Context) (err error) {
 
 	// create symlink as qol (_latest => _####) where #### is the randomly generated name
 	symlink := filepath.Join(filepath.Dir(outputDir), fmt.Sprintf("norma_data_%s_latest", label))
-	if _, err := os.LStat(symlink); err == nil {
+	if _, err := os.Lstat(symlink); err == nil {
 		os.Remove(symlink)
 	}
 	os.Symlink(outputDir, symlink)
