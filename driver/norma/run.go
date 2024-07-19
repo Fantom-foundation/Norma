@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -140,10 +141,15 @@ func run(ctx *cli.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Monitoring data is written to %v\n", outputDir)
 
 	// create symlink as qol (_latest => _####) where #### is the randomly generated name
-	os.Symlink(outputDir, fmt.Sprintf("/tmp/norma_data_%s_latest", label))
+	symlink := filepath.Join(filepath.Dir(outputDir), fmt.Sprintf("norma_data_%s_latest", label))
+	if _, err := os.LStat(symlink); err == nil {
+		os.Remove(symlink)
+	}
+	os.Symlink(outputDir, symlink)
+
+	fmt.Printf("Monitoring data is written to %v\n", outputDir)
 
 	clock := executor.NewWallTimeClock()
 
