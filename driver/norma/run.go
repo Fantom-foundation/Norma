@@ -71,6 +71,12 @@ var (
 		Usage: "define a label for to be added to the monitoring data for this run. If empty, a random label is used.",
 		Value: "",
 	}
+	outputDirectory = cli.StringFlag{
+		Name:    "output-directory",
+		Usage:   "define a directory at which the monitoring artifact will be saved.",
+		Value:   "",
+		Aliases: []string{"o"},
+	}
 	keepPrometheusRunning = cli.BoolFlag{
 		Name:    "keep-prometheus-running",
 		Usage:   "if set, the Prometheus instance will not be shut down after the run is complete.",
@@ -138,9 +144,11 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	fmt.Printf("Starting evaluation %s\n", label)
-	outputDir, err := os.MkdirTemp("", fmt.Sprintf("norma_data_%s_", label))
+
+	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
+	outputDir, err := os.MkdirTemp(ctx.String(outputDirectory.Name), fmt.Sprintf("norma_data_%s_", label))
 	if err != nil {
-		return err
+		return fmt.Errorf("Couldn't create temp dir for output; %s", err)
 	}
 
 	// create symlink as qol (_latest => _####) where #### is the randomly generated name
