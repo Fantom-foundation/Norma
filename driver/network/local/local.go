@@ -353,14 +353,6 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 	return a.controller.GetReceivedTransactions()
 }
 
-//func (n *LocalNetwork) CreateValidator(config *driver.NodeConfig) (driver.Node, error) {
-//	return n.createNode(&node.OperaNodeConfig{
-//		Label:            config.Name,
-//		NetworkConfig:    &n.config,
-//		VmImplementation: n.config.VmImplementation,
-//	})
-//}
-
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
 	rpcClient, err := n.dialRandomGenesisValidatorRpc()
 	if err != nil {

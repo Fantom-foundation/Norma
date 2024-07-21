@@ -7,6 +7,10 @@ name: Small Network new Validator
 # TODO configure the network configuration
 #"MaxEpochGas": 20500000, # TODO in meantime use this limit in genesis file
 
+# The network configuration to use.
+# TODO configure the network configuration
+#"MaxEpochGas": 20500000, # TODO in meantime use this limit in genesis file
+
 # The duration of the scenario's runtime, in seconds.
 duration: 200
 
