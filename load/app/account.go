@@ -138,7 +138,7 @@ func (a *Account) getCurrentNonce() uint64 {
 // CreateValidator creates non genesis validator trough createValidator sfc call
 func (a *Account) CreateValidator(SFCContract *contract.SFC, rpcClient rpc.RpcClient) (*types.Transaction, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}

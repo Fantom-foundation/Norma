@@ -77,8 +77,8 @@ func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient rpc.RpcClient)
 	return nil
 }
 
-// getGasPrice obtains optimal gasPrice for regular transactions
-func getGasPrice(rpcClient rpc.RpcClient) (*big.Int, error) {
+// GetGasPrice obtains optimal gasPrice for regular transactions
+func GetGasPrice(rpcClient rpc.RpcClient) (*big.Int, error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to suggest gas price; %v", err)

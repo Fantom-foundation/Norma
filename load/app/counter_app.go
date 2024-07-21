@@ -34,7 +34,7 @@ import (
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
 func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ type CounterApplication struct {
 func (f *CounterApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,6 @@ func (f *CounterApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	gen := &CounterUser{
 		abi:      f.abi,
 		sender:   workerAccount,
-		gasPrice: regularGasPrice,
 		contract: f.contractAddress,
 	}
 	return gen, nil
@@ -144,12 +143,11 @@ func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 type CounterUser struct {
 	abi      *abi.ABI
 	sender   *Account
-	gasPrice *big.Int
 	contract common.Address
 	sentTxs  uint64
 }
 
-func (g *CounterUser) GenerateTx() (*types.Transaction, error) {
+func (g *CounterUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	// prepare tx data
 	data, err := g.abi.Pack("incrementCounter")
 	if err != nil || data == nil {
@@ -158,7 +156,7 @@ func (g *CounterUser) GenerateTx() (*types.Transaction, error) {
 
 	// prepare tx
 	const gasLimit = 50000 // IncrementCounter method call takes 43426 of gas
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
+	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
 	if err == nil {
 		atomic.AddUint64(&g.sentTxs, 1)
 	}

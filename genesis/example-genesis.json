@@ -3,9 +3,9 @@
   "rules": {
     "networkName": "norma-privatenet",
     "networkId": "0xfa3",
-    "MaxBlockGas": 20500000000,
+    "MaxBlockGas": 20500000,
     "MaxEventGas": 10028000000,
-    "MaxEpochGas": 1500000000000,
+    "MaxEpochGas": 1500000000,
     "ShortGasAllocPerSec": 5600000000000,
     "LongGasAllocPerSec": 2800000000000
   },

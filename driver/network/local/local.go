@@ -38,7 +38,7 @@ import (
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/Fantom-foundation/go-opera/evmcore"
 	"github.com/Fantom-foundation/go-opera/inter/validatorpk"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/Fantom-foundation/go-opera/opera/contracts/sfc"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -191,7 +191,7 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 		defer rpcClient.Close()
 
 		// get a representation of the deployed contract
-		SFCContract, err := contract.NewSFC(common.HexToAddress("0xFC00FACE00000000000000000000000000000000"), rpcClient)
+		SFCContract, err := contract.NewSFC(sfc.ContractAddress, rpcClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get SFC contract representation; %v", err)
 		}
@@ -254,7 +254,7 @@ func (n *LocalNetwork) CreateValidatorNode(config *driver.NodeConfig) (driver.No
 	defer rpcClient.Close()
 
 	// get a representation of the deployed contract
-	SFCContract, err := contract.NewSFC(common.HexToAddress("0xFC00FACE00000000000000000000000000000000"), rpcClient)
+	SFCContract, err := contract.NewSFC(sfc.ContractAddress, rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get SFC contract representation; %v", err)
 	}
@@ -402,14 +402,6 @@ func (a *localApplication) GetSentTransactions(user int) (uint64, error) {
 func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 	return a.controller.GetReceivedTransactions()
 }
-
-//func (n *LocalNetwork) CreateValidator(config *driver.NodeConfig) (driver.Node, error) {
-//	return n.createNode(&node.OperaNodeConfig{
-//		Label:            config.Name,
-//		NetworkConfig:    &n.config,
-//		VmImplementation: n.config.VmImplementation,
-//	})
-//}
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
 	rpcClient, err := n.dialRandomGenesisValidatorRpc()

@@ -61,7 +61,7 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			application.EXPECT().CreateUser(gomock.Any()).AnyTimes().Return(user, nil)
 			application.EXPECT().WaitUntilApplicationIsDeployed(gomock.Any()).Return(nil)
 
-			user.EXPECT().GenerateTx().AnyTimes().Return(&transaction, nil)
+			user.EXPECT().GenerateTx(gomock.Any()).AnyTimes().Return(&transaction, nil)
 
 			shaper := shaper.NewConstantShaper(float64(rate))
 			controller, err := NewAppController(application, shaper, 100, rpcClient, net)

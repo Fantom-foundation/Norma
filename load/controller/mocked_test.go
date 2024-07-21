@@ -49,7 +49,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	mockedApp.EXPECT().WaitUntilApplicationIsDeployed(mockedRpcClient).Return(nil)
 
 	// app should be called 10-times to generate 10 txs
-	mockedGenerator.EXPECT().GenerateTx().Return(&demoTx, nil).MinTimes(5).MaxTimes(11)
+	mockedGenerator.EXPECT().GenerateTx(gomock.Any()).Return(&demoTx, nil).MinTimes(5).MaxTimes(11)
 	// network should be called 10-times to send 10 txs
 	mockedNetwork.EXPECT().SendTransaction(&demoTx).MinTimes(5).MaxTimes(11)
 

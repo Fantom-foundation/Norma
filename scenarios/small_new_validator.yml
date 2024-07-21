@@ -1,21 +1,34 @@
-# This scenario similuates a small network running a few thousand
-# transactions on a small number of nodes and applications.
+# This scenario simulates a small network, where 3 new validator that are added during small transaction load.
 
 # The name of the scenario
 name: Small Network new Validator
 
+# The network configuration to use.
+# TODO configure the network configuration
+#"MaxEpochGas": 20500000, # TODO in meantime use this limit in genesis file
+
 # The duration of the scenario's runtime, in seconds.
-duration: 60
+duration: 200
 
 # The number of validator nodes in the network.
 num_validators: 2
 
 # The network scenario to exercise.
 nodes:
-  # We include three additional non-validator nodes for the full duration.
+  # We include 3 additional validator node one by one with 1 minute gaps.
   - name: A
     instances: 1
-    start: 9
+    start: 15
+    features:
+      - validator
+  - name: B
+    instances: 1
+    start: 75
+    features:
+      - validator
+  - name: C
+    instances: 1
+    start: 135
     features:
       - validator
 
@@ -24,7 +37,7 @@ applications:
   - name: load
     type: counter
     start: 10          # start time
-    end: 50           # termination time
+    end: 180     # termination time
     users: 20          # number of users using the app
     rate:
       constant: 10     # Tx/s

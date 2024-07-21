@@ -19,6 +19,7 @@ package app_test
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -92,7 +93,7 @@ func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
 
 	numTransactions := 10
 	for i := 0; i < numTransactions; i++ {
-		tx, err := gen.GenerateTx()
+		tx, err := gen.GenerateTx(new(big.Int))
 		if err != nil {
 			t.Fatal(err)
 		}
