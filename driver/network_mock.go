@@ -14,7 +14,7 @@ import (
 
 	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
 	types "github.com/ethereum/go-ethereum/core/types"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockNetwork is a mock of Network interface.
@@ -68,21 +68,6 @@ func (m *MockNetwork) CreateNode(config *NodeConfig) (Node, error) {
 func (mr *MockNetworkMockRecorder) CreateNode(config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNode", reflect.TypeOf((*MockNetwork)(nil).CreateNode), config)
-}
-
-// CreateValidatorNode mocks base method.
-func (m *MockNetwork) CreateValidatorNode(config *NodeConfig) (Node, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateValidatorNode", config)
-	ret0, _ := ret[0].(Node)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateValidatorNode indicates an expected call of CreateValidatorNode.
-func (mr *MockNetworkMockRecorder) CreateValidatorNode(config any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateValidatorNode", reflect.TypeOf((*MockNetwork)(nil).CreateValidatorNode), config)
 }
 
 // DialRandomRpc mocks base method.

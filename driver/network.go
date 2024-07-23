@@ -34,8 +34,6 @@ type Network interface {
 	// nodes to the network as needed.
 	CreateNode(config *NodeConfig) (Node, error)
 
-	CreateValidatorNode(config *NodeConfig) (Node, error)
-
 	// RemoveNode removes node from the network
 	RemoveNode(Node) error
 
