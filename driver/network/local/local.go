@@ -31,7 +31,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/docker"
 	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/Fantom-foundation/Norma/driver/node"
-	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
+	rpcdriver "github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/Fantom-foundation/Norma/load/controller"
@@ -334,7 +334,7 @@ func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
 	n.rpcWorkerPool.SendTransaction(tx)
 }
 
-func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
+func (n *LocalNetwork) DialRandomRpc() (rpcdriver.RpcClient, error) {
 	nodes := n.GetActiveNodes()
 	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
@@ -343,7 +343,7 @@ func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
 // When network starts and still doesn't have any traffic, then first transaction must come from validator node.
 // Caused by: the regular nodes even when connected won't send transactions from their txpool,
 // because they don't know whether they are on head or not if blockchain is empty.
-func (n *LocalNetwork) dialRandomGenesisValidatorRpc() (rpc2.RpcClient, error) {
+func (n *LocalNetwork) dialRandomGenesisValidatorRpc() (rpcdriver.RpcClient, error) {
 	return n.validators[rand.Intn(len(n.validators))].DialRpc()
 }
 

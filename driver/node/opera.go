@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"time"
 
-	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
+	rpcdriver "github.com/Fantom-foundation/Norma/driver/rpc"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
@@ -205,7 +205,7 @@ func (n *OperaNode) Cleanup() error {
 	return n.host.Cleanup()
 }
 
-func (n *OperaNode) DialRpc() (rpc2.RpcClient, error) {
+func (n *OperaNode) DialRpc() (rpcdriver.RpcClient, error) {
 	url := n.GetServiceUrl(&OperaRpcService)
 	if url == nil {
 		return nil, fmt.Errorf("node %s does not export an RPC server", n.label)
@@ -217,7 +217,7 @@ func (n *OperaNode) DialRpc() (rpc2.RpcClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial RPC for node %s; %v", n.label, err)
 	}
-	return rpc2.WrapRpcClient(rpcClient), nil
+	return rpcdriver.WrapRpcClient(rpcClient), nil
 }
 
 // AddPeer informs the client instance represented by the OperaNode about the
