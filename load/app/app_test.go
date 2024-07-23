@@ -93,7 +93,8 @@ func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
 
 	numTransactions := 10
 	for i := 0; i < numTransactions; i++ {
-		tx, err := gen.GenerateTx(new(big.Int))
+		// empty network uses about 921_486_720_000 gas price
+		tx, err := gen.GenerateTx(big.NewInt(1_000_000_000_000))
 		if err != nil {
 			t.Fatal(err)
 		}
