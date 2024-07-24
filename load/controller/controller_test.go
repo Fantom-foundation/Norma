@@ -30,7 +30,7 @@ import (
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
