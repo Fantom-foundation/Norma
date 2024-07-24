@@ -212,8 +212,16 @@ func TestLogsDispatchedUnregisterListener(t *testing.T) {
 		calls = append(calls, listener.EXPECT().OnLog(gomock.Any(), gomock.Any(), float64(i+1)))
 	}
 
+	// convert calls from []*gomock.Call to []any
+	// InOrder has its signature change during migration to go.uber
+	// https://go.dev/doc/faq#convert_slice_of_interface
+	s := make([]any, len(calls))
+	for i, call := range calls {
+		s[i] = call
+	}
+
 	// check all called in order
-	gomock.InOrder(calls...)
+	gomock.InOrder(s...)
 
 	metrics := []string{"A", "B"}
 	var mu sync.Mutex // use lock to either run logs processing loop or run checking the processing is at the end
