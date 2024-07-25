@@ -263,8 +263,6 @@ func (_SFC *SFCCaller) CreateValidator(opts *bind.TransactOpts, pubkey []byte) (
 func (_SFC *SFCSession) CreateValidator(pubkey []byte) (*types.Transaction, error) {
 	return _SFC.Contract.CreateValidator(&_SFC.TransactOpts, pubkey)
 }
-<<<<<<< HEAD
-=======
 
 // SFCApprovalIterator is returned from FilterApproval and is used to iterate over the raw logs and unpacked data for Approval events raised by the SFC contract.
 type SFCApprovalIterator struct {
@@ -573,4 +571,3 @@ func (_SFC *SFCFilterer) ParseTransfer(log types.Log) (*SFCTransfer, error) {
 	event.Raw = log
 	return event, nil
 }
->>>>>>> e87c184 (Add createValidator)
