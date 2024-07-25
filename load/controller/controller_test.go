@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/big"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -61,6 +62,7 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			application.EXPECT().CreateUser(gomock.Any()).AnyTimes().Return(user, nil)
 			application.EXPECT().WaitUntilApplicationIsDeployed(gomock.Any()).Return(nil)
 
+			rpcClient.EXPECT().SuggestGasPrice(gomock.Any()).AnyTimes().Return(big.NewInt(0), nil)
 			user.EXPECT().GenerateTx(gomock.Any()).AnyTimes().Return(&transaction, nil)
 
 			shaper := shaper.NewConstantShaper(float64(rate))
