@@ -19,7 +19,6 @@ package app_test
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"testing"
 	"time"
 
@@ -93,8 +92,11 @@ func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
 
 	numTransactions := 10
 	for i := 0; i < numTransactions; i++ {
-		// empty network uses about 921_486_720_000 gas price
-		tx, err := gen.GenerateTx(big.NewInt(1_000_000_000_000))
+		price, err := rpcClient.SuggestGasPrice(context.Background())
+		if err != nil {
+			return
+		}
+		tx, err := gen.GenerateTx(price)
 		if err != nil {
 			t.Fatal(err)
 		}
