@@ -69,6 +69,10 @@ type Network interface {
 type NetworkConfig struct {
 	// NumberOfValidators is the (static) number of validators in the network.
 	NumberOfValidators int
+	// MaxBlockGas is the maximum gas limit for a block in the network.
+	MaxBlockGas uint64
+	// MaxEpochGas is the maximum gas limit for an epoch in the network.
+	MaxEpochGas uint64
 	// The name of the StateDB implementation to be used by network nodes.
 	StateDbImplementation string
 	// The name of the EVM implementation to be used by network nodes.

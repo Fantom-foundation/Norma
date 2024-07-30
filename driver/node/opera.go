@@ -119,6 +119,8 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			Environment: map[string]string{
 				"VALIDATOR_ID":     validatorId,
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
+				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
+				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
 				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 				"VM_IMPL":          config.VmImplementation,
 			},

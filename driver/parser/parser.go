@@ -30,6 +30,8 @@ type Scenario struct {
 	Name          string
 	Duration      float32
 	NumValidators *int          `yaml:"num_validators,omitempty"` // nil == 1
+	MaxBlockGas   uint64        `yaml:"max_block_gas,omitempty"`  // nil == 1
+	MaxEpochGas   uint64        `yaml:"max_epoch_gas,omitempty"`  // nil == 1
 	Nodes         []Node        `yaml:",omitempty"`
 	Applications  []Application `yaml:",omitempty"`
 	Cheats        []Cheat       `yaml:",omitempty"`

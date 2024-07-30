@@ -3,6 +3,30 @@
 GENESIS_PATH=$1
 ADDRESS_LOAD_ACCOUNTS_COUNT=$2
 VALIDATORS_COUNT=$3
+MAX_BLOCK_GAS_ARG=$4
+MAX_EPOCH_GAS_ARG=$5
+
+# Set genesis network parameters/rules
+DEFAULT_MAX_BLOCK_GAS=20500000000
+DEFAULT_MAX_EPOCH_GAS=1500000000000
+
+if [[ -n "$MAX_BLOCK_GAS_ARG" && "$MAX_BLOCK_GAS_ARG" -gt 0 ]]; then
+  MaxBlockGas=$MAX_BLOCK_GAS_ARG
+else
+  MaxBlockGas=$DEFAULT_MAX_BLOCK_GAS
+fi
+
+if [[ -n "$MAX_EPOCH_GAS_ARG" && "$MAX_EPOCH_GAS_ARG" -gt 0 ]]; then
+  MaxEpochGas=$MAX_EPOCH_GAS_ARG
+else
+  MaxEpochGas=$DEFAULT_MAX_EPOCH_GAS
+fi
+
+echo "MaxBlockGas=${MaxBlockGas}"
+echo "MaxEpochGas=${MaxEpochGas}"
+
+rules="{ \"networkName\": \"norma-privatenet\", \"networkId\": \"0xfa3\", \"MaxBlockGas\": $MaxBlockGas, \"MaxEventGas\": 10028000000, \"MaxEpochGas\": $MaxEpochGas, \"ShortGasAllocPerSec\": 5600000000000, \"LongGasAllocPerSec\": 2800000000000 }"
+sed -i 's|GENESIS_RULES_PLACEHOLDER|'"$rules"'|g' "$GENESIS_PATH"
 
 # Set genesis validator accounts
 accounts=""
