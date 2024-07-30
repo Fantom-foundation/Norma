@@ -25,7 +25,20 @@ import (
 
 func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Network) {
 	for range trigger {
-		tx, err := user.GenerateTx()
+		// retrieve gas price for each tx individually as the gasPrice can change by amount of time passed(larger db size),
+		// or by new validator registration, etc.
+		rpcClient, err := network.DialRandomRpc()
+		if err != nil {
+			log.Printf("generator loop; failed to dial random rpc; %v", err)
+			continue
+		}
+		currentRegularGasPrice, err := app.GetGasPrice(rpcClient)
+		if err != nil {
+			log.Printf("generator loop; failed to get gas price; %v", err)
+			continue
+		}
+
+		tx, err := user.GenerateTx(currentRegularGasPrice)
 		if err != nil {
 			log.Printf("failed to generate tx; %v", err)
 		} else {

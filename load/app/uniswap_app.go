@@ -43,7 +43,7 @@ var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.New
 // This app swaps first token for the last one, using all intermediate tokens.
 func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	}
 
 	// wait until contracts are available on the chain
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %v", err)
 	}
@@ -146,7 +146,7 @@ func NewUniswapApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 	}
 
 	// wait until the starting accounts will be available on the chain (and will be possible to call CreateUser)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %v", err)
 	}
@@ -175,7 +175,7 @@ type UniswapApplication struct {
 // CreateUser creates a new user for the app.
 func (f *UniswapApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,6 @@ func (f *UniswapApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	return &UniswapUser{
 		routerAbi:               f.routerAbi,
 		sender:                  workerAccount,
-		gasPrice:                regularGasPrice,
 		routerAddress:           f.routerAddress,
 		tokensAddresses:         f.tokensAddresses,
 		pairsAddresses:          f.pairsAddresses,
@@ -250,7 +249,6 @@ func (f *UniswapApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 type UniswapUser struct {
 	routerAbi               *abi.ABI
 	sender                  *Account
-	gasPrice                *big.Int
 	routerAddress           common.Address
 	tokensAddresses         []common.Address
 	pairsAddresses          []common.Address
@@ -259,7 +257,7 @@ type UniswapUser struct {
 	sentTxs                 uint64
 }
 
-func (g *UniswapUser) GenerateTx() (*types.Transaction, error) {
+func (g *UniswapUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	var data []byte
 	var err error
 
@@ -278,7 +276,7 @@ func (g *UniswapUser) GenerateTx() (*types.Transaction, error) {
 	// prepare tx
 	// swapExactTokensForTokens consumes 157571 for 2 tokens + cca 94314 for each additional token
 	const gasLimit = 160_000 + (TokensInChain-2)*95000
-	tx, err := createTx(g.sender, g.routerAddress, big.NewInt(0), data, g.gasPrice, gasLimit)
+	tx, err := createTx(g.sender, g.routerAddress, big.NewInt(0), data, currentGasPrice, gasLimit)
 	if err == nil {
 		atomic.AddUint64(&g.sentTxs, 1)
 	}

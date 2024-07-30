@@ -35,7 +35,7 @@ import (
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
 func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the ERC20 contract is deployed; %v", err)
 	}
@@ -113,7 +113,7 @@ type ERC20Application struct {
 // CreateUser creates a new user for the app.
 func (f *ERC20Application) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,6 @@ func (f *ERC20Application) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	return &ERC20User{
 		abi:        f.abi,
 		sender:     workerAccount,
-		gasPrice:   regularGasPrice,
 		contract:   f.contractAddress,
 		recipients: f.recipients,
 	}, nil
@@ -180,13 +179,12 @@ func (f *ERC20Application) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 type ERC20User struct {
 	abi        *abi.ABI
 	sender     *Account
-	gasPrice   *big.Int
 	contract   common.Address
 	recipients []common.Address
 	sentTxs    uint64
 }
 
-func (g *ERC20User) GenerateTx() (*types.Transaction, error) {
+func (g *ERC20User) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	// choose random recipient
 	recipient := g.recipients[rand.Intn(len(g.recipients))]
 
@@ -198,7 +196,7 @@ func (g *ERC20User) GenerateTx() (*types.Transaction, error) {
 
 	// prepare tx
 	const gasLimit = 52000 // Transfer method call takes 51349 of gas
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
+	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
 	if err == nil {
 		atomic.AddUint64(&g.sentTxs, 1)
 	}

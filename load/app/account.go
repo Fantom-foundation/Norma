@@ -24,7 +24,10 @@ import (
 	"sync/atomic"
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
+	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -82,10 +85,11 @@ type Account struct {
 	address    common.Address
 	chainID    *big.Int
 	nonce      uint64
+	publicKey  []byte
 }
 
 // NewAccount creates an Account instance from the provided private key
-func NewAccount(id int, privateKeyHex string, chainID int64) (*Account, error) {
+func NewAccount(id int, privateKeyHex string, publicKey []byte, chainID int64) (*Account, error) {
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, err
@@ -97,6 +101,7 @@ func NewAccount(id int, privateKeyHex string, chainID int64) (*Account, error) {
 		address:    address,
 		chainID:    big.NewInt(chainID),
 		nonce:      0,
+		publicKey:  publicKey,
 	}, nil
 }
 
@@ -128,4 +133,22 @@ func (a *Account) getNextNonce() uint64 {
 
 func (a *Account) getCurrentNonce() uint64 {
 	return atomic.LoadUint64(&a.nonce)
+}
+
+// CreateValidator creates non genesis validator trough createValidator sfc call
+func (a *Account) CreateValidator(SFCContract *contract.SFC, rpcClient rpc.RpcClient) (*types.Transaction, error) {
+	// get price of gas from the network
+	regularGasPrice, err := GetGasPrice(rpcClient)
+	if err != nil {
+		return nil, err
+	}
+
+	txOpts, err := bind.NewKeyedTransactorWithChainID(a.privateKey, a.chainID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create txOpts; %v", err)
+	}
+	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
+	txOpts.Nonce = big.NewInt(int64(a.getNextNonce()))
+	txOpts.Value = big.NewInt(0).Mul(big.NewInt(5_000_000), big.NewInt(1_000_000_000_000_000_000)) // 5_000_000 FTM
+	return SFCContract.CreateValidator(txOpts, a.publicKey)
 }

@@ -35,7 +35,7 @@ import (
 // It is intended to produce state-heavy transactions.
 func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = waitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the Store contract is deployed; %v", err)
 	}
@@ -97,7 +97,7 @@ type StoreApplication struct {
 func (f *StoreApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 
 	// get price of gas from the network
-	regularGasPrice, err := getGasPrice(rpcClient)
+	regularGasPrice, err := GetGasPrice(rpcClient)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,6 @@ func (f *StoreApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
 	gen := &StoreUser{
 		abi:      f.abi,
 		sender:   workerAccount,
-		gasPrice: regularGasPrice,
 		contract: f.contractAddress,
 	}
 	return gen, nil
@@ -144,12 +143,11 @@ func (f *StoreApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 type StoreUser struct {
 	abi      *abi.ABI
 	sender   *Account
-	gasPrice *big.Int
 	contract common.Address
 	sentTxs  atomic.Uint64
 }
 
-func (g *StoreUser) GenerateTx() (*types.Transaction, error) {
+func (g *StoreUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	const updateSize = 260 // ~ 1 GB/minute new netto data at 1000 Tx/s
 
 	// prepare tx data -- since as single put is rather cheap, we use the 'fill' operation
@@ -165,7 +163,7 @@ func (g *StoreUser) GenerateTx() (*types.Transaction, error) {
 
 	// prepare tx
 	const gasLimit = 52000 + 25000*updateSize // wild guess ...
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, g.gasPrice, gasLimit)
+	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
 	if err == nil {
 		g.sentTxs.Add(1)
 	}

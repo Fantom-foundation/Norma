@@ -21,21 +21,27 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"math/rand"
+	"strings"
 	"sync"
 	"sync/atomic"
 
-	rpc2 "github.com/Fantom-foundation/Norma/driver/rpc"
-
-	"github.com/Fantom-foundation/Norma/driver/network/rpc"
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
+	"github.com/Fantom-foundation/Norma/driver/network/rpc"
 	"github.com/Fantom-foundation/Norma/driver/node"
+	rpcdriver "github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
+	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
+	"github.com/Fantom-foundation/go-opera/evmcore"
+	"github.com/Fantom-foundation/go-opera/inter/validatorpk"
+	"github.com/Fantom-foundation/go-opera/opera/contracts/sfc"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // LocalNetwork is a Docker based network running each individual node
@@ -49,6 +55,7 @@ type LocalNetwork struct {
 	// validators lists the validator nodes in the network. Validators
 	// are created during network startup and run for the full duration
 	// of the network.
+	// TODO dynamically created validators are not added to this list. Can't be added without old epoch is sealed, because method randomValidatorRPC could return a non validator node.
 	validators []*node.OperaNode
 
 	// nodes provide a register for all nodes in the network, including
@@ -88,7 +95,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	}
 
 	// Create chain account, which will be used for the initialization
-	primaryAccount, err := app.NewAccount(0, treasureAccountPrivateKey, fakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, treasureAccountPrivateKey, nil, fakeNetworkID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create primary account; %v", err)
 	}
@@ -172,13 +179,80 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 	return node, nil
 }
 
-// CreateNode creates non-validator nodes in the network.
+// CreateNode creates nodes in the network during run.
 func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error) {
+	newValId := 0
+	if config.Validator {
+		var err error
+		newValId, err = n.registerValidatorNode(config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return n.createNode(&node.OperaNodeConfig{
 		Label:            config.Name,
 		NetworkConfig:    &n.config,
 		VmImplementation: n.config.VmImplementation,
+		ValidatorId:      &newValId,
 	})
+}
+
+// registerValidatorNode creates non genesis validator node in the network during run.
+func (n *LocalNetwork) registerValidatorNode(config *driver.NodeConfig) (int, error) {
+	newValId := 0
+	//
+	rpcClient, err := n.dialRandomGenesisValidatorRpc()
+	if err != nil {
+		return 0, err
+	}
+	defer rpcClient.Close()
+
+	// get a representation of the deployed contract
+	SFCContract, err := contract.NewSFC(sfc.ContractAddress, rpcClient)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get SFC contract representation; %v", err)
+	}
+
+	var lastValId *big.Int
+	lastValId, err = SFCContract.LastValidatorID(nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get validator count; %v", err)
+	}
+
+	newValId = int(lastValId.Int64()) + 1
+	log.Printf("Creating validator node %s; id %d", config.Name, newValId)
+
+	privateKeyECDSA := evmcore.FakeKey(uint32(newValId))
+	validatorPubKey := validatorpk.PubKey{
+		Raw:  crypto.FromECDSAPub(&privateKeyECDSA.PublicKey),
+		Type: validatorpk.Types.Secp256k1,
+	}
+
+	validatorPrivateKeykHex := strings.TrimPrefix(hexutil.Encode(crypto.FromECDSA(privateKeyECDSA)), "0x")
+	validatorAccount, err := app.NewAccount(newValId, validatorPrivateKeykHex, validatorPubKey.Bytes(), 0xfa3)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create validator account: %v", err)
+	}
+
+	_, err = validatorAccount.CreateValidator(SFCContract, rpcClient)
+	if err != nil {
+		return 0, err
+	}
+	err = app.WaitUntilAccountNonceIs(crypto.PubkeyToAddress(privateKeyECDSA.PublicKey), 1, rpcClient)
+	if err != nil {
+		return 0, fmt.Errorf("createValidator; failed to wait for nonce; %v", err)
+	}
+
+	lastValId, err = SFCContract.LastValidatorID(nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get validator count; %v", err)
+	}
+	if newValId != int(lastValId.Int64()) {
+		return 0, fmt.Errorf("failed to create validator %d", newValId)
+	}
+
+	return newValId, nil
 }
 
 func (n *LocalNetwork) RemoveNode(node driver.Node) error {
@@ -210,12 +284,16 @@ func (n *LocalNetwork) SendTransaction(tx *types.Transaction) {
 	n.rpcWorkerPool.SendTransaction(tx)
 }
 
-func (n *LocalNetwork) DialRandomRpc() (rpc2.RpcClient, error) {
+func (n *LocalNetwork) DialRandomRpc() (rpcdriver.RpcClient, error) {
 	nodes := n.GetActiveNodes()
 	return nodes[rand.Intn(len(nodes))].DialRpc()
 }
 
-func (n *LocalNetwork) dialRandomValidatorRpc() (rpc2.RpcClient, error) {
+// dialRandomGenesisValidatorRpc dials a random genesis validator node.
+// When network starts and still doesn't have any traffic, then first transaction must come from validator node.
+// Caused by: the regular nodes even when connected won't send transactions from their txpool,
+// because they don't know whether they are on head or not if blockchain is empty.
+func (n *LocalNetwork) dialRandomGenesisValidatorRpc() (rpcdriver.RpcClient, error) {
 	return n.validators[rand.Intn(len(n.validators))].DialRpc()
 }
 
@@ -276,7 +354,7 @@ func (a *localApplication) GetReceivedTransactions() (uint64, error) {
 }
 
 func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driver.Application, error) {
-	rpcClient, err := n.dialRandomValidatorRpc()
+	rpcClient, err := n.dialRandomGenesisValidatorRpc()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RPC to initialize the application; %v", err)
 	}

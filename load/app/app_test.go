@@ -45,7 +45,7 @@ func TestGenerators(t *testing.T) {
 		t.Fatal("unable to connect the the rpc")
 	}
 
-	primaryAccount, err := app.NewAccount(0, PrivateKey, FakeNetworkID)
+	primaryAccount, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,11 @@ func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
 
 	numTransactions := 10
 	for i := 0; i < numTransactions; i++ {
-		tx, err := gen.GenerateTx()
+		price, err := rpcClient.SuggestGasPrice(context.Background())
+		if err != nil {
+			return
+		}
+		tx, err := gen.GenerateTx(price)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -40,9 +40,11 @@ func (s *Scenario) Check() error {
 	if s.Duration <= 0 {
 		errs = append(errs, fmt.Errorf("scenario duration must be > 0"))
 	}
-	if s.NumValidators != nil && *s.NumValidators <= 0 {
-		errs = append(errs, fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators))
+
+	if err := s.checkValidatorConstrains(); err != nil {
+		errs = append(errs, err)
 	}
+
 	names := map[string]bool{}
 	for _, node := range s.Nodes {
 		if err := node.Check(s); err != nil {
@@ -294,4 +296,36 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// checkValidatorConstrains makes sure that there is correct number of validators
+// if during whole run there are just genesis validators, then one validator is enough
+// if there is creation of new validators trough sfc, then at all times there has to be at least two validators validating at every time
+// note during run validator won't be immediately registered for epoch, because it only happens during epoch seal,
+// therefore this check is not sufficient on its own
+func (s *Scenario) checkValidatorConstrains() error {
+	// check genesis validators
+	if s.NumValidators != nil && *s.NumValidators <= 0 {
+		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
+	}
+
+	dynamicVals := make([]Node, 0)
+	// check dynamically created validators
+	for _, node := range s.Nodes {
+		if node.IsValidator() {
+			dynamicVals = append(dynamicVals, node)
+		}
+	}
+
+	if len(dynamicVals) == 0 {
+		return nil
+	}
+
+	if *s.NumValidators < 2 {
+		return fmt.Errorf("invalid number of genesis validators for sfc createValidator scenario: %d < 2", *s.NumValidators)
+	}
+
+	// TODO add check for dynamic validators to have always at least two running at any time
+	// needs to be implemented before enabling to shut down genesis validators
+	return nil
 }

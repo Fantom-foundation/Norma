@@ -1,4 +1,4 @@
-# This scenario similuates a small network running a few thousand
+# This scenario simulates a small network running a few thousand
 # transactions on a small number of nodes and applications.
 
 # The name of the scenario
@@ -10,7 +10,7 @@ duration: 60
 # The number of validator nodes in the network.
 num_validators: 1
 
-# The network scenario to exercise. 
+# The network scenario to exercise.
 nodes:
   # We include three additional non-validator nodes for the full duration.
   - name: A
