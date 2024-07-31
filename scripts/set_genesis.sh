@@ -7,6 +7,8 @@ MAX_BLOCK_GAS_ARG=$4
 MAX_EPOCH_GAS_ARG=$5
 
 # Set genesis network parameters/rules
+
+# Default values
 DEFAULT_MAX_BLOCK_GAS=20500000000
 DEFAULT_MAX_EPOCH_GAS=1500000000000
 

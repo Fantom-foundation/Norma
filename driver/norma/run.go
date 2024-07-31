@@ -52,8 +52,6 @@ var runCommand = cli.Command{
 		&evalLabel,
 		&keepPrometheusRunning,
 		&numValidators,
-		&maxBlockGas,
-		&maxEpochGas,
 		&skipChecks,
 		&skipReportRendering,
 		&vmImpl,
@@ -79,14 +77,6 @@ var (
 	numValidators = cli.IntFlag{
 		Name:  "num-validators",
 		Usage: "overrides the number of validators specified in the scenario file.",
-	}
-	maxBlockGas = cli.Uint64Flag{
-		Name:  "max-block-gas",
-		Usage: "overrides the maximum gas limit for a block specified in the scenario file.",
-	}
-	maxEpochGas = cli.Uint64Flag{
-		Name:  "max-epoch-gas",
-		Usage: "overrides the maximum gas limit for an epoch specified in the scenario file.",
 	}
 	skipChecks = cli.BoolFlag{
 		Name:  "skip-checks",
@@ -141,16 +131,6 @@ func run(ctx *cli.Context) (err error) {
 		scenario.NumValidators = &num
 	}
 
-	if maxBlkGas := ctx.Uint64(maxBlockGas.Name); maxBlkGas > 0 {
-		fmt.Printf("Overriding max block gas to %d (--%s)\n", maxBlkGas, maxBlockGas.Name)
-		scenario.MaxBlockGas = maxBlkGas
-	}
-
-	if maxEpoGas := ctx.Uint64(maxEpochGas.Name); maxEpoGas > 0 {
-		fmt.Printf("Overriding max epoch gas to %d (--%s)\n", maxEpoGas, maxEpochGas.Name)
-		scenario.MaxEpochGas = maxEpoGas
-	}
-
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -175,8 +155,8 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
 		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
 	)
-	netConfig.MaxBlockGas = scenario.MaxBlockGas
-	netConfig.MaxEpochGas = scenario.MaxEpochGas
+	netConfig.MaxBlockGas = scenario.GenesisGasLimits.MaxBlockGas
+	netConfig.MaxEpochGas = scenario.GenesisGasLimits.MaxEpochGas
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
