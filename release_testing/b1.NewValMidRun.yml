@@ -11,25 +11,21 @@ nodes:
   - name: genesis-validator
     instances: 4
     client:
-      imagename: main
       type: validator
 
   - name: RPC
     instances: 2
     client: 
-      imagename: main
       type: RPC
     
   - name: observer
     instances: 2
     client:
-      imagename: main
       type: observer
 
   - name: new-validator
     start: 170
     client:
-      imagename: main
       type: validator
 
 # In the network there is a single application producing constant load.
