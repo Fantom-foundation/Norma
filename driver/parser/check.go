@@ -133,27 +133,32 @@ func (n *Node) Check(scenario *Scenario) error {
 		start = *n.Start
 	}
 
-	ev, startAlreadyExist := n.Timer[start]
-	if startAlreadyExist {
-		if ev != "start" {
-			errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", start, ev))
-		}
-	} else {
-		n.Timer[start] = "start"
-	}
-
 	end := scenario.Duration
 	if n.End != nil {
 		end = *n.End
 	}
-
-	ev, endAlreadyExist := n.Timer[end]
-	if endAlreadyExist {
-		if ev != "end" {
-			errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", end, ev))
+	
+	// note that start = end = 0 is short-hand for test
+	// so we will ignore case where start == end
+	if start != end {
+		ev, startAlreadyExist := n.Timer[start]
+		if startAlreadyExist {
+			if ev != "start" {
+				errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", start, ev))
+			}
+		} else {
+			n.Timer[start] = "start"
 		}
-	} else {
-		n.Timer[end] = "end"
+
+
+		ev, endAlreadyExist := n.Timer[end]
+		if endAlreadyExist {
+			if ev != "end" {
+				errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", end, ev))
+			}
+		} else {
+			n.Timer[end] = "end"
+		}
 	}
 
 	if err := n.isTimerSequenceValid(); err != nil {
