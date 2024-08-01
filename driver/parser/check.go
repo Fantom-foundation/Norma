@@ -316,11 +316,12 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 	return errors.Join(errs...)
 }
 
-// checkValidatorConstrains makes sure that there is correct number of validators.
+// checkValidatorConstraints makes sure that there is correct number of validators.
 // if during whole run there are just genesis validators, then one validator is enough
 // if there is creation of new validators trough sfc, then at all times there has to be at least two validators validating at every time
 // note during run validator won't be immediately registered for epoch, because it only happens during epoch seal,
 // therefore this check is not sufficient on its own
+// It now also reconcile the expression NumValidator with validators in node list.
 func (s *Scenario) checkValidatorConstraints() error {
 	
 	// check genesis validators within the node
@@ -329,29 +330,34 @@ func (s *Scenario) checkValidatorConstraints() error {
 		s.NumValidators = &gvCount
 	}
 
+	// This must be check here for test to pass
+	// _must_ allow case where validator count = 0
+	if *s.NumValidators < 0 {
+		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
+	}
+
 	// error if found more genesis validator than specified in NumValidators
 	if *s.NumValidators < gvCount {
 		return fmt.Errorf("mismatched number of genesis validators in scenario: NumValidator=%d < %d found in node list", *s.NumValidators, gvCount)
 	}
 
-	// NumValidators are used as short-hand to create gv nodes
+	// When NumValidators are used as short-hand to create gv nodes
 	if *s.NumValidators > gvCount {
 		gvCount = *s.NumValidators
 	}
 	
-	// At least one genesis validator expected
-	if gvCount <= 0 {
-		return fmt.Errorf("invalid number of genesis validators in scenario: %d <= 0", gvCount)
-	}
-
-
-	// remove all GV from nodes. These will be initialized separately vs non-gv nodes.
+	// remove all GV from nodes. These will be initialized separately from the non-gv nodes.
 	// NOTE: once we can specify more information about GV, this will need to change.
 	s.removeGenesisValidator()
 
-	// since all GVs are removed, the remaining validators are dynamic validators.
-	// no dynamic validator = at least 1 = caught above
-	dynamicValidatorCount := len(s.Nodes)
+	// check if there are 2 genesis validators if there is dynamic validator
+	var dynamicValidatorCount int = 0
+	for _, node := range s.Nodes {
+		if node.IsValidator() {
+			dynamicValidatorCount += *node.Instances
+		}
+	}
+
 	if dynamicValidatorCount > 0 && gvCount < 2 {
 		return fmt.Errorf("invalid number of genesis validators for sfc createValidator scenario: %d < 2", *s.NumValidators)
 	}

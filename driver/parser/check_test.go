@@ -170,7 +170,7 @@ func TestWaveCheck_NonPositivePeriodeIsDetected(t *testing.T) {
 	}
 	wave.Period = -1
 	if err := wave.Check(); err == nil {
-		t.Errorf("neagtive period length should not be allowed")
+		t.Errorf("negative period length should not be allowed")
 	}
 }
 
@@ -379,7 +379,7 @@ func TestScenario_NegativeDurationIsDetected(t *testing.T) {
 	scenario := Scenario{Name: "Test"}
 	scenario.Duration = -10
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "scenario duration must be > 0") {
-		t.Errorf("neagative duration was not detected")
+		t.Errorf("negative duration was not detected")
 	}
 }
 
@@ -388,7 +388,7 @@ func TestScenario_NegativeNumberOfValidatorsIsDetected(t *testing.T) {
 	scenario.NumValidators = new(int)
 	*scenario.NumValidators = -5
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "invalid number of validators: -5 <= 0") {
-		t.Errorf("neagative number of validators was not detected")
+		t.Errorf("negative number of validators was not detected")
 	}
 }
 
