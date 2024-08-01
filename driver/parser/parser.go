@@ -59,12 +59,7 @@ type Node struct {
 
 // IsValidator returns true if the node is defined as validator in Features
 func (n *Node) IsValidator() bool {
-	for _, item := range n.Features {
-		if item == "validator" {
-			return true
-		}
-	}
-	return false
+	return n.Client.Type == "validator"
 }
 
 // Genesis is an optional configuration for a node.
