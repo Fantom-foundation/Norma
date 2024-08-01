@@ -91,6 +91,9 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.Instances != nil && *n.Instances < 0 {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
+	if n.Client.Type == "" {
+		n.Client.Type = "observer"
+	}
 
 	// Event import/export, Genesis import/export are being refactored.
 	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
@@ -112,7 +115,27 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
+	if !n.isTypeValid() {
+		errs = append(errs, fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", n.Client.Type))
+	}
+
 	return errors.Join(errs...)
+}
+
+// isTypeValid returns true if the node has valid type, false otherwise
+func (n *Node) isTypeValid() bool {
+	return isTypeValid(n.Client.Type)
+}
+
+func isTypeValid(t string) bool {
+	switch t {
+	case
+		"validator",
+		"rpc",
+		"observer":
+		return true
+	}
+	return false
 }
 
 // GetGenesisValidatorCount returns the number of validator that begins at time 0
