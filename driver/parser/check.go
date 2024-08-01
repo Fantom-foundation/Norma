@@ -115,6 +115,28 @@ func (n *Node) Check(scenario *Scenario) error {
 	return errors.Join(errs...)
 }
 
+// GetGenesisValidatorCount returns the number of validator that begins at time 0
+// and last the entire duration.
+func (s *Scenario) GetGenesisValidatorCount() (int, error) {
+	var total int = 0
+	for _, n := range s.Nodes {
+		count, err := n.GetGenesisValidatorCount(s)
+		if err != nil {
+			return 0, err
+		}
+		total += count
+	}
+	return total, nil
+}
+
+func (n *Node) GetGenesisValidatorCount(scenario *Scenario) (int, error) {
+	if n.IsValidator && float(0) == &n.Start && s.Duration == &n.End {
+		return &n.Instances, nil 
+	}
+	return 0, nil
+}
+
+
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
 func isGenesisFile(path string, isImport bool) error {
 	errs := []error{}
