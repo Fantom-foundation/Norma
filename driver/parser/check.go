@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"slices"
 
 	"github.com/Fantom-foundation/Norma/load/app"
 )
@@ -123,6 +124,29 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
+	// reconcile n.Start/n.End with n.Timer
+	ev, startAlreadyExist := n.Timer[*n.Start]
+	if startAlreadyExist {
+		if ev != "start" {
+			errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", n.Start, ev))
+		}
+	} else {
+		n.Timer[*n.Start] = "start"
+	}
+
+	ev, endAlreadyExist := n.Timer[*n.End]
+	if endAlreadyExist {
+		if ev != "end" {
+			errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", n.End, ev))
+		}
+	} else {
+		n.Timer[*n.End] = "end"
+	}
+
+	if err := n.isTimerSequenceValid(); err != nil {
+		errs = append(errs, err)
+	}
+
 	return errors.Join(errs...)
 }
 
@@ -163,6 +187,54 @@ func isTimerEventValid(e string) error {
 		return nil
 	}
 	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e) 
+}
+
+// isTimerSequenceValid returns true if the timer sequence make sense e.g. start only happens if the node is off, end only happens if the node is on, etc.
+func (n *Node) isTimerSequenceValid() error {
+	var now bool = false
+	
+	// sort timer sequence
+	timings := make([]float32, 0, len(n.Timer))
+	for t, _ := range n.Timer {
+		timings = append(timings, t)
+	}
+	slices.Sort(timings)
+
+	for _, t := range timings {
+		next, err := isTimerSequenceValid(now, n.Timer[t])
+		if err != nil {
+			return fmt.Errorf("At time %f: %v", err)
+		}
+		now = next
+	}
+
+	return nil
+}
+
+func isTimerSequenceValid(on bool, event string) (bool, error) {
+	switch event {
+	case "start":
+		if on {
+			return false, fmt.Errorf("asked to start, already on")
+		}
+		return true, nil
+	case "end":
+		if !on {
+			return false, fmt.Errorf("asked to end, already off")
+		}
+		return false, nil
+	case "kill":
+		if !on {
+			return false, fmt.Errorf("asked to kill, already off")
+		}
+		return false, nil
+	case "restart":
+		if !on {
+			return false, fmt.Errorf("asked to restart, already off")
+		}
+		return true, nil
+	}
+	return false, fmt.Errorf("event not recognized: %s", event)
 }
 
 // GetGenesisValidatorCount returns the number of validator that begins at time 0
