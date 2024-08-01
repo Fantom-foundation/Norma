@@ -18,8 +18,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -55,6 +57,7 @@ var runCommand = cli.Command{
 		&skipChecks,
 		&skipReportRendering,
 		&vmImpl,
+		&outputDirectory,
 	},
 }
 
@@ -66,8 +69,14 @@ var (
 	}
 	evalLabel = cli.StringFlag{
 		Name:  "label",
-		Usage: "define a label for to be added to the monitoring data for this run. I empty, a random label is used.",
+		Usage: "define a label for to be added to the monitoring data for this run. If empty, a random label is used.",
 		Value: "",
+	}
+	outputDirectory = cli.StringFlag{
+		Name:    "output-directory",
+		Usage:   "define a directory at which the monitoring artifact will be saved.",
+		Value:   "",
+		Aliases: []string{"o"},
 	}
 	keepPrometheusRunning = cli.BoolFlag{
 		Name:    "keep-prometheus-running",
@@ -98,7 +107,7 @@ func run(ctx *cli.Context) (err error) {
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
 	} else if db != "geth" {
-		return fmt.Errorf("unknown value fore --%v flag: %v", dbImpl.Name, db)
+		return fmt.Errorf("unknown value for --%v flag: %v", dbImpl.Name, db)
 	}
 
 	vm := strings.ToLower(ctx.String(vmImpl.Name))
@@ -106,7 +115,7 @@ func run(ctx *cli.Context) (err error) {
 		vm = "lfvm"
 	}
 	if !isValidVmImpl(vm) {
-		return fmt.Errorf("unknown value fore --%v flag: %v", vmImpl.Name, vm)
+		return fmt.Errorf("unknown value for --%v flag: %v", vmImpl.Name, vm)
 	}
 
 	label := ctx.String(evalLabel.Name)
@@ -136,11 +145,32 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	fmt.Printf("Starting evaluation %s\n", label)
-	outputDir, err := os.MkdirTemp("", fmt.Sprintf("norma_data_%s_", label))
+
+	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
+	outputDir, err := os.MkdirTemp(ctx.String(outputDirectory.Name), fmt.Sprintf("norma_data_%s_", label))
+	if err != nil {
+		return fmt.Errorf("Couldn't create temp dir for output; %w", err)
+	}
+
+	// create symlink as qol (_latest => _####) where #### is the randomly generated name
+	symlink := filepath.Join(filepath.Dir(outputDir), fmt.Sprintf("norma_data_%s_latest", label))
+	if _, err := os.Lstat(symlink); err == nil {
+		os.Remove(symlink)
+	}
+	os.Symlink(outputDir, symlink)
+
+	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+
+	// Copy scenario yml to outputDir as well to provide context
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Monitoring data is written to %v\n", outputDir)
+	err = ioutil.WriteFile(filepath.Join(outputDir, filepath.Base(path)), data, 0644)
+	if err != nil {
+		return err
+	}
+
 	clock := executor.NewWallTimeClock()
 
 	// Startup network.

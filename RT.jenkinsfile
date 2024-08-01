@@ -64,7 +64,9 @@ pipeline {
 
 			post {
 				success {
-					buildSuccess = true
+					script {
+						buildSuccess = true
+					}
 				}
 			}
 		}
@@ -78,7 +80,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/a1.ValRpcObs.yml
+				build/norma run --label a1 -o . release_testing/a1.ValRpcObs.yml
+			}
+
+			post {
+				success {
+					dir('./norma_data_a1_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -91,8 +101,17 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/a2.MultSonicVer.yml
+				build/norma run --label a2 -o . release_testing/a2.MultSonicVer.yml
 			}
+
+			post {
+				success {
+					dir('./norma_data_a2_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
+			}
+
 		}
 
 		stage('Test B1 - NewValMidRun') {
@@ -104,7 +123,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/b1.NewValMidRun.yml
+				build/norma run --label b1 -o . release_testing/b1.NewValMidRun.yml
+			}
+
+			post {
+				success {
+					dir('./norma_data_b1_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -117,7 +144,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/b2.KillValMidRun.yml
+				build/norma run --label b2 -o . release_testing/b2.KillValMidRun.yml
+			}
+
+			post {
+				success {
+					dir('./norma_data_b2_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -130,7 +165,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/b3.RestartValMidRun.yml
+				build/norma run --label b3 -o . release_testing/b3.RestartValMidRun.yml
+			}
+
+			post {
+				success {
+					dir('./norma_data_b3_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -143,7 +186,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/b4.ValCheatMustSealEpoch.yml
+				build/norma run --label b4 -o . release_testing/b4.ValCheatMustSealEpoch.yml
+			}
+
+			post {
+				success {
+					dir('./norma_data_b4_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -156,7 +207,15 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/b5.ValsBlackout.yml
+				build/norma run --label b5 -o . release_testing/b5.ValsBlackout.yml
+			}
+			
+			post {
+				success {
+					dir('./norma_data_b5_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
 			}
 		}
 
@@ -169,8 +228,17 @@ pipeline {
 			}
 
 			steps {
-				build/norma run release_testing/c1.RpcRequests.yml
+				build/norma run --label c1 -o . release_testing/c1.RpcRequests.yml
 			}
+
+			post {
+				success {
+					dir('./norma_data_c1_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
+			}
+
 		}
 	}
 }
