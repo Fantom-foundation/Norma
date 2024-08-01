@@ -331,7 +331,7 @@ func (s *Scenario) checkValidatorConstraints() error {
 
 	// check genesis validators configured in NumValidators
 	if s.NumValidators == nil {
-		&s.NumValidators = gvCount
+		s.NumValidators = &gvCount
 	}
 
 	if s.NumValidators != nil && *s.NumValidators != gvCount {
@@ -356,13 +356,13 @@ func (s *Scenario) checkValidatorConstraints() error {
 
 // removeGenesisValidator removes genesis validator from the list of nodes
 func (s *Scenario) removeGenesisValidator() {
-	s.Nodes = removeGenesisValidator(s.Nodes)
+	s.Nodes = removeGenesisValidator(s, s.Nodes)
 }
 
-func removeGenesisValidator(nodes []Node) []Node {
+func removeGenesisValidator(scenario *Scenario, nodes []Node) []Node {
 	var ret []Node
-	for _, n := nodes {
-		if !n.isGenesisValidator() {
+	for _, n := range nodes {
+		if !n.IsGenesisValidator(scenario) {
 			ret = append(ret, n)
 		}
 	}
