@@ -84,6 +84,8 @@ type OperaNodeConfig struct {
 	VmImplementation string
 	// ValidatorPubkey is nil if not a validator, else used as pubkey for the validator.
 	ValidatorPubkey *string
+	// Volumes is the list of volumes to bind to the node
+	Mounts map[string]string // localname:/path/in/docker
 }
 
 // labelPattern restricts labels for nodes to non-empty alpha-numerical strings
@@ -125,6 +127,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
+			Mounts:  config.Mounts,
 		})
 	})
 	if err != nil {

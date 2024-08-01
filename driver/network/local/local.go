@@ -83,6 +83,12 @@ type LocalNetwork struct {
 	rpcWorkerPool *rpc.RpcWorkerPool
 }
 
+// LocalVolumes is a list of mapping between local volumes to path in docker.
+// Format: localname:/path/in/docker
+var LocalVolumes = map[string]string{
+	"ipc": "/datadir/ipc",
+}
+
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	client, err := docker.NewClient()
 	if err != nil {
@@ -92,6 +98,13 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	dn, err := client.CreateBridgeNetwork()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bridge network; %v", err)
+	}
+
+	for localName := range LocalVolumes {
+		_, err := client.CreateVolume(localName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create volume %s; %v", localName, err)
+		}
 	}
 
 	// Create chain account, which will be used for the initialization
@@ -130,6 +143,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 				NetworkConfig:    config,
 				Label:            fmt.Sprintf("_validator-%d", validatorId),
 				VmImplementation: config.VmImplementation,
+				Mounts:           LocalVolumes,
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
 		}()
