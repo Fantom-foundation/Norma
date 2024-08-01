@@ -118,19 +118,15 @@ func (n *Node) Check(scenario *Scenario) error {
 // GetGenesisValidatorCount returns the number of validator that begins at time 0
 // and last the entire duration.
 func (s *Scenario) GetGenesisValidatorCount() int {
-	var total int = 0
+	var count int = 0
 	for _, n := range s.Nodes {
-		count, err := n.GetGenesisValidatorCount(s)
-		if err != nil {
-			return 0
-		}
-		total += count
+		count += n.GetGenesisValidatorCount(s)
 	}
-	return total
+	return count
 }
 
 func (n *Node) GetGenesisValidatorCount(scenario *Scenario) int {
-	if n.IsGenesisValidator() {
+	if n.IsGenesisValidator(scenario) {
 		return *n.Instances
 	}
 	return 0
