@@ -95,6 +95,9 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.Client.Type == "" {
 		n.Client.Type = "observer"
 	}
+	if n.Timer == nil {
+		n.Timer = make(map[float32]string, 10)
+	}
 
 	// Event import/export, Genesis import/export are being refactored.
 	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
@@ -125,22 +128,32 @@ func (n *Node) Check(scenario *Scenario) error {
 	}
 
 	// reconcile n.Start/n.End with n.Timer
-	ev, startAlreadyExist := n.Timer[*n.Start]
-	if startAlreadyExist {
-		if ev != "start" {
-			errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", n.Start, ev))
-		}
-	} else {
-		n.Timer[*n.Start] = "start"
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
 	}
 
-	ev, endAlreadyExist := n.Timer[*n.End]
-	if endAlreadyExist {
-		if ev != "end" {
-			errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", n.End, ev))
+	ev, startAlreadyExist := n.Timer[start]
+	if startAlreadyExist {
+		if ev != "start" {
+			errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", start, ev))
 		}
 	} else {
-		n.Timer[*n.End] = "end"
+		n.Timer[start] = "start"
+	}
+
+	end := scenario.Duration
+	if n.End != nil {
+		end = *n.End
+	}
+
+	ev, endAlreadyExist := n.Timer[end]
+	if endAlreadyExist {
+		if ev != "end" {
+			errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", end, ev))
+		}
+	} else {
+		n.Timer[end] = "end"
 	}
 
 	if err := n.isTimerSequenceValid(); err != nil {
@@ -203,7 +216,7 @@ func (n *Node) isTimerSequenceValid() error {
 	for _, t := range timings {
 		next, err := isTimerSequenceValid(now, n.Timer[t])
 		if err != nil {
-			return fmt.Errorf("At time %f: %v", err)
+			return fmt.Errorf("At time %f: %v", t, err)
 		}
 		now = next
 	}
