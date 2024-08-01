@@ -12,7 +12,7 @@ echo "genesis validator count=${VALIDATORS_COUNT}"
 # Call set genesis script - add balance to all possible validators
 # VALIDATOR_COUNT defines genesis validator count
 # TODO change 100 funded validator addresses to specific number
-./set_genesis.sh genesis.json 100 ${VALIDATORS_COUNT}
+./set_genesis.sh genesis.json 100 ${VALIDATORS_COUNT} ${MAX_BLOCK_GAS} ${MAX_EPOCH_GAS}
 
 # Initialize datadir
 mkdir /datadir

@@ -155,6 +155,8 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Creating network with %d validator(s) using the `%v` DB and `%v` VM implementation ...\n",
 		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
 	)
+	netConfig.MaxBlockGas = scenario.GenesisGasLimits.MaxBlockGas
+	netConfig.MaxEpochGas = scenario.GenesisGasLimits.MaxEpochGas
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err

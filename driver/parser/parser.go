@@ -27,12 +27,19 @@ import (
 // Scenario is the root element of a scenario description. It defines basic
 // scenario properties and lists a set of nodes and transaction source.
 type Scenario struct {
-	Name          string
-	Duration      float32
-	NumValidators *int          `yaml:"num_validators,omitempty"` // nil == 1
-	Nodes         []Node        `yaml:",omitempty"`
-	Applications  []Application `yaml:",omitempty"`
-	Cheats        []Cheat       `yaml:",omitempty"`
+	Name             string
+	Duration         float32
+	NumValidators    *int          `yaml:"num_validators,omitempty"` // nil == 1
+	GenesisGasLimits GasLimits     `yaml:"genesis_gas_limit,omitempty"`
+	Nodes            []Node        `yaml:",omitempty"`
+	Applications     []Application `yaml:",omitempty"`
+	Cheats           []Cheat       `yaml:",omitempty"`
+}
+
+// GasLimits is a configuration group for gas limit rules
+type GasLimits struct {
+	MaxBlockGas uint64 `yaml:"max_block_gas,omitempty"`
+	MaxEpochGas uint64 `yaml:"max_epoch_gas,omitempty"`
 }
 
 // Node is a configuration for a group of nodes with similar properties.
