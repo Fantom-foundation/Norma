@@ -130,8 +130,8 @@ func (s *Scenario) GetGenesisValidatorCount() (int, error) {
 }
 
 func (n *Node) GetGenesisValidatorCount(scenario *Scenario) (int, error) {
-	if n.IsValidator && float(0) == &n.Start && s.Duration == &n.End {
-		return &n.Instances, nil 
+	if n.IsValidator() && *n.Start == float32(0) && *n.End == scenario.Duration {
+		return *n.Instances, nil 
 	}
 	return 0, nil
 }
