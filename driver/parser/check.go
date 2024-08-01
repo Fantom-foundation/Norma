@@ -325,18 +325,25 @@ func (s *Scenario) checkValidatorConstraints() error {
 	
 	// check genesis validators within the node
 	gvCount := s.GetGenesisValidatorCount()
-	if gvCount <= 0 {
-		return fmt.Errorf("invalid number of genesis validators in scenario: %d <= 0", gvCount)
-	}
-
-	// check genesis validators configured in NumValidators
 	if s.NumValidators == nil {
 		s.NumValidators = &gvCount
 	}
 
-	if s.NumValidators != nil && *s.NumValidators != gvCount {
-		return fmt.Errorf("mismatched number of genesis validators in scenario: NumValidator configured as %d, detect %d", *s.NumValidators, gvCount)
+	// error if found more genesis validator than specified in NumValidators
+	if *s.NumValidators < gvCount {
+		return fmt.Errorf("mismatched number of genesis validators in scenario: NumValidator=%d < %d found in node list", *s.NumValidators, gvCount)
 	}
+
+	// NumValidators are used as short-hand to create gv nodes
+	if *s.NumValidators > gvCount {
+		gvCount = *s.NumValidators
+	}
+	
+	// At least one genesis validator expected
+	if gvCount <= 0 {
+		return fmt.Errorf("invalid number of genesis validators in scenario: %d <= 0", gvCount)
+	}
+
 
 	// remove all GV from nodes. These will be initialized separately vs non-gv nodes.
 	// NOTE: once we can specify more information about GV, this will need to change.
