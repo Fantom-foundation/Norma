@@ -115,27 +115,54 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
-	if !n.isTypeValid() {
-		errs = append(errs, fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", n.Client.Type))
+	if err := n.isTypeValid(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := n.isTimerEventValid(); err != nil {
+		errs = append(errs, err)
 	}
 
 	return errors.Join(errs...)
 }
 
 // isTypeValid returns true if the node has valid type, false otherwise
-func (n *Node) isTypeValid() bool {
+func (n *Node) isTypeValid() error {
 	return isTypeValid(n.Client.Type)
 }
 
-func isTypeValid(t string) bool {
+func isTypeValid(t string) error {
 	switch t {
 	case
 		"validator",
 		"rpc",
 		"observer":
-		return true
+		return nil
 	}
-	return false
+	return fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", t)
+}
+
+// isTimerEventValid returns true if the timer event has valid type, false otherwise
+func (n *Node) isTimerEventValid() error {
+	errs := []error{}
+	for _, event := range n.Timer {
+		if err := isTimerEventValid(event); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func isTimerEventValid(e string) error {
+	switch e {
+	case
+		"start",
+		"end",
+		"kill",
+		"restart":
+		return nil
+	}
+	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e) 
 }
 
 // GetGenesisValidatorCount returns the number of validator that begins at time 0
