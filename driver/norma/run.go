@@ -149,7 +149,7 @@ func run(ctx *cli.Context) (err error) {
 	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
 	outputDir, err := os.MkdirTemp(ctx.String(outputDirectory.Name), fmt.Sprintf("norma_data_%s_", label))
 	if err != nil {
-		return fmt.Errorf("Couldn't create temp dir for output; %s", err)
+		return fmt.Errorf("Couldn't create temp dir for output; %w", err)
 	}
 
 	// create symlink as qol (_latest => _####) where #### is the randomly generated name
