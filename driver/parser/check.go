@@ -492,7 +492,11 @@ func (s *Scenario) checkValidatorConstraints() error {
 	var dynamicValidatorCount int = 0
 	for _, node := range s.Nodes {
 		if node.IsValidator() {
-			dynamicValidatorCount += *node.Instances
+			instances := 1
+			if node.Instances != nil {
+				instances = *node.Instances
+			}
+			dynamicValidatorCount += instances
 		}
 	}
 
