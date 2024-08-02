@@ -3,47 +3,31 @@
 # - Test: process transactions for 5 minutes, then then stop a validator and remove it from the validator list.
 # - Validation: check list of validator and validate final state of nodes
 
-name: B3
+name: B3.RestartValMidRun
 duration: 600 # 10 minutes sim: 5 minutes sim > crash > 5 minutes further
 
-# backward compatibility, to be removed.
 num_validators: 4
 
 nodes:
-  - name: validator
+  - name: genesis-validator
     instances: 3
-    timer:
-      start: 0
-      end: 600
     client:
-      imagename: main
       type: validator
   
   - name: crashing-validator
     timer: 
-      start: 0
-      killandrestart: 300
-      end: 600
+      restart: 300
     client:
-      imagename: main
       type: validator
   
-  - name: RPC
+  - name: rpc
     instances: 2
-    timer:
-      start: 0
-      end: 600
     client: 
-      imagename: main
-      type: RPC
+      type: rpc
     
   - name: observer
     instances: 2
-    timer: 
-      start: 0
-      end: 600
     client:
-      imagename: main
       type: observer
 
 # In the network there is a single application producing constant load.
@@ -55,5 +39,3 @@ applications:
     users: 20           # number of users / accounts generating txs
     rate:
       constant: 100     # Tx/s
-
-validate: true # check list of validator and validate final state of nodes?

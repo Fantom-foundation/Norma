@@ -5,7 +5,7 @@ def enableA1 = false
 def enableA2 = false
 def enableB1 = false
 def enableB2 = false
-def enableB3 = false
+def enableB3 = true
 def enableB4 = false
 def enableB5 = false
 def enableC1 = false
@@ -165,13 +165,14 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b3 -o . release_testing/b3.RestartValMidRun.yml
+				build/norma run --label b3 -o . scenarios/release_testing/b3.RestartValMidRun.yml
 			}
 
 			post {
 				success {
-					dir('./norma_data_b3_latest') {
-						archiveArtifacts artifacts: '**'
+					script {
+						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
+						uploadArtifacts(artifacts)
 					}
 				}
 			}
