@@ -1,3 +1,5 @@
+@Library('shared-library') _
+
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
@@ -5,6 +7,7 @@ def enableA1 = false
 def enableA2 = false
 def enableB1 = false
 def enableB2 = false
+def enableB2B = true
 def enableB3 = false
 def enableB4 = false
 def enableB5 = false
@@ -156,6 +159,27 @@ pipeline {
 			}
 		}
 
+		stage('Test B2B - KillValMidRun') {
+			when {
+				expression {
+					buildSuccess
+					enableB2B
+				}
+			}
+
+			steps {
+				build/norma run --label b2b -o . scenarios/release_testing/b2.KillValMidRun.yml
+			}
+
+			post {
+				success {
+					script {
+						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
+						uploadArtifacts(artifacts)
+					}
+				}
+			}
+		}
 		stage('Test B3 - RestartValMidRun') {
 			when {
 				expression {
