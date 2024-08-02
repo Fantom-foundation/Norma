@@ -65,7 +65,17 @@ func (n *Node) IsValidator() bool {
 
 // IsGenesisValidator returns true if the node is defined as validator in Features
 func (n *Node) IsGenesisValidator(s *Scenario) bool {
-	return n.IsValidator() && *n.Start == float32(0) && *n.End == s.Duration
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
+	}
+
+	end := s.Duration
+	if n.End != nil {
+		end = *n.End
+	}
+
+	return n.IsValidator() && start == float32(0) && end == s.Duration
 }
 
 // Genesis is an optional configuration for a node.
