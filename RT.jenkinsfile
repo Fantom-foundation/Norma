@@ -1,3 +1,5 @@
+@Library('shared-library') _
+
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
@@ -7,7 +9,7 @@ def enableB1 = false
 def enableB2 = false
 def enableB3 = false
 def enableB4 = false
-def enableB5 = false
+def enableB5 = true
 def enableC1 = false
 
 
@@ -207,13 +209,14 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b5 -o . release_testing/b5.ValsBlackout.yml
+				build/norma run --label b5 -o . scenarios/release_testing/b5.ValsBlackout.yml
 			}
 			
 			post {
 				success {
-					dir('./norma_data_b5_latest') {
-						archiveArtifacts artifacts: '**'
+					script {
+						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
+						uploadArtifacts(artifacts)
 					}
 				}
 			}
