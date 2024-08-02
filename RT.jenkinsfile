@@ -131,7 +131,7 @@ pipeline {
 			post {
 				success {
 					script {
-						def artifacts = ["*.cpuprofile", "*.memprofile", "*.log", "*.html"]
+						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
 						uploadArtifacts(artifacts)
 					}
 				}
