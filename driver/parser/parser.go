@@ -86,6 +86,7 @@ func (n *Node) IsCheater() bool {
 		}
 	}
 	return false
+}
 
 // Genesis is an optional configuration for a node.
 // GenesisImport will stop the client and restart the client with the target
