@@ -55,7 +55,7 @@ type Node struct {
 	Genesis   Genesis  `yaml:",omitempty"`
 	Event     Event
 	Client    ClientType
-	Timer	  map[float32]string `yaml:",omitempty"`
+	Timer     map[float32]string `yaml:",omitempty"`
 }
 
 // IsValidator returns true if the node is defined as validator in Features
@@ -63,12 +63,10 @@ func (n *Node) IsValidator() bool {
 	return n.Client.Type == "validator"
 }
 
-
 // IsGenesisValidator returns true if the node is defined as validator in Features
 func (n *Node) IsGenesisValidator(s *Scenario) bool {
 	return n.IsValidator() && *n.Start == float32(0) && *n.End == s.Duration
 }
-
 
 // Genesis is an optional configuration for a node.
 // GenesisImport will stop the client and restart the client with the target

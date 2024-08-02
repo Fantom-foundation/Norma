@@ -22,8 +22,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"slices"
+	"strings"
 
 	"github.com/Fantom-foundation/Norma/load/app"
 )
@@ -137,7 +137,7 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.End != nil {
 		end = *n.End
 	}
-	
+
 	// note that start = end = 0 is short-hand for test
 	// so we will ignore case where start == end
 	if start != end {
@@ -149,7 +149,6 @@ func (n *Node) Check(scenario *Scenario) error {
 		} else {
 			n.Timer[start] = "start"
 		}
-
 
 		ev, endAlreadyExist := n.Timer[end]
 		if endAlreadyExist {
@@ -204,16 +203,16 @@ func isTimerEventValid(e string) error {
 		"restart":
 		return nil
 	}
-	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e) 
+	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e)
 }
 
 // isTimerSequenceValid returns true if the timer sequence make sense e.g. start only happens if the node is off, end only happens if the node is on, etc.
 func (n *Node) isTimerSequenceValid() error {
 	var now bool = false
-	
+
 	// sort timer sequence
 	timings := make([]float32, 0, len(n.Timer))
-	for t, _ := range n.Timer {
+	for t := range n.Timer {
 		timings = append(timings, t)
 	}
 	slices.Sort(timings)
@@ -271,7 +270,6 @@ func (n *Node) GetGenesisValidatorCount(scenario *Scenario) int {
 	}
 	return 0
 }
-
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
 func isGenesisFile(path string, isImport bool) error {
@@ -463,7 +461,7 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 // therefore this check is not sufficient on its own
 // It now also reconcile the expression NumValidator with validators in node list.
 func (s *Scenario) checkValidatorConstraints() error {
-	
+
 	// check genesis validators within the node
 	gvCount := s.GetGenesisValidatorCount()
 	if s.NumValidators == nil {
@@ -485,7 +483,7 @@ func (s *Scenario) checkValidatorConstraints() error {
 	if *s.NumValidators > gvCount {
 		gvCount = *s.NumValidators
 	}
-	
+
 	// remove all GV from nodes. These will be initialized separately from the non-gv nodes.
 	// NOTE: once we can specify more information about GV, this will need to change.
 	s.removeGenesisValidator()

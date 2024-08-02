@@ -179,7 +179,7 @@ func run(ctx *cli.Context) (err error) {
 		StateDbImplementation: db,
 		VmImplementation:      vm,
 	}
-	
+
 	if scenario.NumValidators != nil {
 		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
