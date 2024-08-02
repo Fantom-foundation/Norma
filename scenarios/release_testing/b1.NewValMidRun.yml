@@ -22,8 +22,8 @@ nodes:
       type: rpc
     
   - name: observer
+    instances: 2
     client:
-      imagename: main
       type: observer
 
   - name: midrun-validator
