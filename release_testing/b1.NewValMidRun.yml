@@ -3,55 +3,33 @@
 # - Test: process transactions for 5 minutes, then create a genesis. Add a new validator syncing using the genesis.
 # - Validation: check list of validator and validate final state of nodes
 
-name: B1
-duration: 310 # 5 minutes sim + 10s to add new validator
+name: B1.NewValMidRun
+duration: 300 # 5 minutes sim + 10s to add new validator
 
-# backward compatibility, to be removed.
-num_validators: 4
+# This is equivalent to the genesis-validator in node section
+num_validators: 4 
+
 
 nodes:
-  - name: validator
+  - name: genesis-validator
     instances: 4
-    timer:
-      start: 0
-      end: 300
     client:
-      imagename: main
       type: validator
-    genesis:
-      export:
-        start: 300
-        path: /to/be/configured/b1.g
 
-  - name: RPC
+  - name: rpc
     instances: 2
-    timer:
-      start: 0
-      end: 310
     client: 
-      imagename: main
-      type: RPC
+      type: rpc
     
   - name: observer
-    instances: 2
-    timer: 
-      start: 0
-      end: 310
     client:
       imagename: main
       type: observer
 
-  - name: new-validator
-    timer:
-      start: 300
-      end: 310
+  - name: midrun-validator
+    start: 150
     client:
-      imagename: main
       type: validator
-    genesis:
-      import:
-        start: 301
-        path: /to/be/configured/b1.g
     
 
 # In the network there is a single application producing constant load.
@@ -59,9 +37,7 @@ applications:
   - name: load
     type: counter
     start: 1            # start time
-    end: 309            # termination time
+    end: 299      # termination time
     users: 20           # number of users / accounts generating txs
     rate:
       constant: 100     # Tx/s
-
-validate: true # check list of validator and validate final state of nodes?

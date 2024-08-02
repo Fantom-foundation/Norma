@@ -1,9 +1,11 @@
+@Library('shared-library') _
+
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
 def enableA1 = false
 def enableA2 = false
-def enableB1 = false
+def enableB1 = true
 def enableB2 = false
 def enableB3 = false
 def enableB4 = false
@@ -128,8 +130,9 @@ pipeline {
 
 			post {
 				success {
-					dir('./norma_data_b1_latest') {
-						archiveArtifacts artifacts: '**'
+					script {
+						def artifacts = ["*.cpuprofile", "*.memprofile", "*.log", "*.html"]
+						uploadArtifacts(artifacts)
 					}
 				}
 			}
