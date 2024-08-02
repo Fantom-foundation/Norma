@@ -4,7 +4,7 @@
 # - Validation: check list of validator and validate final state of nodes
 
 name: B1.NewValMidRun
-duration: 300 # 5 minutes sim + 10s to add new validator
+duration: 300 
 
 # This is equivalent to the genesis-validator in node section
 num_validators: 4 
