@@ -125,7 +125,7 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b1 -o . release_testing/b1.NewValMidRun.yml
+				build/norma run --label b1 -o . scenarios/release_testing/b1.NewValMidRun.yml
 			}
 
 			post {
