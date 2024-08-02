@@ -16,7 +16,7 @@ nodes:
   
   - name: crashing-validator
     timer: 
-      restart: 300
+      300: restart 
     client:
       type: validator
   
