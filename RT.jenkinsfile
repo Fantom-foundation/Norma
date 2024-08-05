@@ -150,7 +150,7 @@ pipeline {
 			}
 
 			post {
-				success {
+				always {
 					script {
 						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
 						uploadArtifacts(artifacts)
