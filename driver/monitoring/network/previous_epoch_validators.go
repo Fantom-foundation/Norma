@@ -18,10 +18,13 @@ package netmon
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
+	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
+	"github.com/Fantom-foundation/go-opera/opera/contracts/sfc"
 )
 
 // PreviousEpochValidators retains a time-series for the list of validators in previous
@@ -71,14 +74,44 @@ func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration
 		for {
 			select {
 			case now := <-ticker.C:
-				numNodes := len(monitor.Network().GetActiveNodes())
-				res.data.Append(mon.NewTime(now), []int{numNodes})
+				// if not here, may fail when node ends
+				rpcClient, err := monitor.Network().DialRandomRpc()
+				if err != nil {
+					return
+				}
+
+				sfcc, err := contract.NewSFC(sfc.ContractAddress, rpcClient)
+				if err != nil {
+					return
+				}
+
+				currentEpoch, err := sfcc.CurretEpoch(nil)
+				if err != nil {
+					return
+				}
+
+				bIds, err := sfcc.GetEpochValidatorIDs(nil, currentEpoch)
+				if err != nil {
+					return
+				}
+				ids := toInts(bIds)
+				fmt.Println(ids)
+
+				res.data.Append(mon.NewTime(now), ids)
 			case <-stop:
 				return
 			}
 		}
 	}()
 
+	return res
+}
+
+func toInts(bigs []*big.Int) []int {
+	res := make([]int, len(bigs))
+	for i, b := range bigs {
+		res[i] = int(b.Int64())
+	}
 	return res
 }
 

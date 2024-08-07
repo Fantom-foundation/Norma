@@ -234,6 +234,19 @@ func (_SFC *SFCCaller) GetValidator(opts *bind.CallOpts, arg0 *big.Int) (struct 
 
 }
 
+func (_SFC *SFCCaller) CurrentEpoch(opts *bind.CallOpts) (*big.Int, error) {
+	var out []interface{}
+	err := _SFC.contract.Call(opts, &out, "currentEpoch")
+
+	if err != nil {
+		return nil, err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+}
+
 // GetEpochValidatorIDs is a free data retrieval call binding the contract method 0xb88a37e2.
 //
 // Solidity: function getEpochValidatorIDs(uint256 epoch) view returns(uint256[])

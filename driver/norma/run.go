@@ -188,6 +188,7 @@ func run(ctx *cli.Context) (err error) {
 	)
 	netConfig.MaxBlockGas = scenario.GenesisGasLimits.MaxBlockGas
 	netConfig.MaxEpochGas = scenario.GenesisGasLimits.MaxEpochGas
+
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
