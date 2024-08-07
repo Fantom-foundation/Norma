@@ -95,7 +95,6 @@ func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration
 					return
 				}
 				ids := toInts(bIds)
-				fmt.Println(ids)
 
 				res.data.Append(mon.NewTime(now), ids)
 			case <-stop:
