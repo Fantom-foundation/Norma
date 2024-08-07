@@ -136,13 +136,13 @@ func TestLocalRpcServer_CanHandleRequests(t *testing.T) {
 		t.Fatalf("failed to connect to server: %v", err)
 	}
 
-	var result string
+	var result map[string]any
 	err = rpcClient.Call(&result, "eth_blockNumber")
 	if err != nil {
 		t.Fatalf("failed to call service: %v", err)
 	}
 
-	if result != "0x12" {
+	if result["number"] != "0x12" {
 		t.Errorf("invalid response: %v", result)
 	}
 	server.Shutdown()
@@ -198,7 +198,10 @@ func getBlockHeight(w http.ResponseWriter, r *http.Request) {
 	response := `{
 		"jsonrpc": "2.0",
 		"id": "1234",
-		"result": "0x12"
+		"result": {
+			"epoch": "0x34",
+			"number": "0x12"
+		}
 	}`
 	io.WriteString(w, response)
 }
