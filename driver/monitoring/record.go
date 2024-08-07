@@ -83,6 +83,8 @@ func (r *Record) SetValue(value any) *Record {
 		r.Value = fmt.Sprintf("%d", v.UTC().UnixNano())
 	case time.Duration:
 		r.Value = fmt.Sprintf("%d", v.Nanoseconds())
+	case []int:
+		r.Value = fmt.Sprintf("%v", v)
 	default:
 		panic(fmt.Sprintf("unsupported value encountered: %v (type: %v)", value, reflect.TypeOf(value)))
 	}
