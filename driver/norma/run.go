@@ -320,7 +320,7 @@ func logState(monitor *monitoring.Monitor, prevVals []int) []int {
 
 	vals := getPreviousEpochValidators(monitor)
 	if !slices.Equal(prevVals, vals) {
-		log.Printf("Validator list updated: %v", vals)
+		log.Printf(" ==== Validator list updated: %v", vals)
 	}
 	return vals
 }
