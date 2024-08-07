@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -280,6 +281,7 @@ type progressLogger struct {
 func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
 	stop := make(chan bool)
 	done := make(chan bool)
+	var prevVals []int // list of validators in previous epoch
 
 	go func() {
 		defer close(done)
@@ -289,7 +291,7 @@ func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
 			case <-stop:
 				return
 			case <-ticker.C:
-				logState(monitor)
+				prevVals = logState(monitor, prevVals)
 			}
 		}
 	}()
@@ -306,7 +308,7 @@ func (l *progressLogger) shutdown() {
 	<-l.done
 }
 
-func logState(monitor *monitoring.Monitor) {
+func logState(monitor *monitoring.Monitor, prevVals []int) []int {
 	numNodes := getNumNodes(monitor)
 	blockHeights := getBlockHeights(monitor)
 	txPers := getTxPerSec(monitor)
@@ -314,11 +316,31 @@ func logState(monitor *monitoring.Monitor) {
 	gas := getGasUsed(monitor)
 	processingTimes := getBlockProcessingTimes(monitor)
 	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txPers, txs, gas, processingTimes)
+
+	vals := getPreviousEpochValidators(monitor)
+	if !slices.Equal(prevVals, vals) {
+		log.Printf("Validator list updated: %v", vals)
+	}
+	return vals
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
 	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
 	return getLastValAsString[monitoring.Time, int](exists, data)
+}
+
+func getPreviousEpochValidators(monitor *monitoring.Monitor) []int {
+	series, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.PreviousEpochValidators)
+	if !exists || series == nil {
+		return []int{}
+	}
+
+	point := series.GetLatest()
+	if point == nil {
+		return []int{}
+	}
+
+	return point.Value
 }
 
 func getNumTxs(monitor *monitoring.Monitor) string {
