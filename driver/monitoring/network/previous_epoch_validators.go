@@ -85,7 +85,7 @@ func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration
 					return
 				}
 
-				currentEpoch, err := sfcc.CurretEpoch(nil)
+				currentEpoch, err := sfcc.CurrentEpoch(nil)
 				if err != nil {
 					return
 				}
