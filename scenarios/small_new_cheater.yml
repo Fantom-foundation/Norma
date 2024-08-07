@@ -1,14 +1,22 @@
-# This scenario simulates a small network, where 3 new validator that are added during small transaction load.
+# This scenario simulates a small network, where same validator key is added to two nodes simultaneously.
+# Three possible outcomes are possible occurring randomly:
+# 1. Cheater node 1 detects that Cheater node 2 signing event with their key and shuts down.
+#  Cheater node 2 continues running in network and network doesn't register any change.
+# 2. Both cheater nodes sign different event and recognize that another event was sign not by them, both of them panic.
+#  But network keeps running as there was no same event double signed.
+# 3. Both cheater nodes sign same event. And network should detect the validator key as a cheater.
+
 
 # The name of the scenario
 name: Small Network new Validator
 
 # The duration of the scenario's runtime, in seconds.
-duration: 200
+duration: 400
 
 # The number of validator nodes in the network.
-num_validators: 2
+num_validators: 3
 
+# Lower maximum gas limit to increase epoch rate.
 genesis_gas_limit:
   max_block_gas: 20500000
   max_epoch_gas: 20500000
@@ -17,7 +25,7 @@ genesis_gas_limit:
 nodes:
   - name: A
     instances: 1
-    start: 15
+    start: 10
     features:
       - validator
       - cheater
@@ -26,8 +34,12 @@ nodes:
 applications:
   - name: load
     type: counter
-    start: 10          # start time
-    end: 180     # termination time
+    start: 30          # start time
+    end: 380     # termination time
     users: 20          # number of users using the app
     rate:
-      constant: 10     # Tx/s
+      constant: 1     # Tx/s
+
+
+
+
