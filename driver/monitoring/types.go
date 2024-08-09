@@ -64,8 +64,8 @@ type BlockNumber int
 
 // BlockStatus encapsulates epoch, blockheight
 type BlockStatus struct {
-	Epoch       int
-	BlockHeight int
+	Epoch       uint64
+	BlockHeight uint64
 }
 
 func (b BlockStatus) String() string {
