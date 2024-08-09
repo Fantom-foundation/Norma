@@ -118,7 +118,7 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 			t.Errorf("no data collected for node %s", subject)
 		}
 		for _, point := range subrange {
-			if got, want := point.Value.BlockHeight, 0x12; got != want {
+			if got, want := point.Value.BlockHeight, uint64(0x12); got != want {
 				t.Errorf("unexpected value collected for subject %s: wanted %d, got %d", subject, want, got)
 			}
 		}
