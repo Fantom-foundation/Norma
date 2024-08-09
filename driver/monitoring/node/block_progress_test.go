@@ -74,7 +74,7 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to initiate monitor: %v", err)
 	}
-	source := newNodeBlockHeightSource(monitor, 50*time.Millisecond)
+	source := newNodeBlockStatusSource(monitor, 50*time.Millisecond)
 
 	// Check that existing nodes are tracked.
 	subjects := source.GetSubjects()
@@ -118,7 +118,7 @@ func TestNodeBlockHeightSourceRetrievesBlockHeight(t *testing.T) {
 			t.Errorf("no data collected for node %s", subject)
 		}
 		for _, point := range subrange {
-			if got, want := point.Value, 0x12; got != want {
+			if got, want := point.Value.BlockHeight, uint64(0x12); got != want {
 				t.Errorf("unexpected value collected for subject %s: wanted %d, got %d", subject, want, got)
 			}
 		}
@@ -136,15 +136,16 @@ func TestLocalRpcServer_CanHandleRequests(t *testing.T) {
 		t.Fatalf("failed to connect to server: %v", err)
 	}
 
-	var result string
+	var result map[string]any
 	err = rpcClient.Call(&result, "eth_blockNumber")
 	if err != nil {
 		t.Fatalf("failed to call service: %v", err)
 	}
 
-	if result != "0x12" {
+	if result["number"] != "0x12" || result["epoch"] != "0x34" {
 		t.Errorf("invalid response: %v", result)
 	}
+
 	server.Shutdown()
 }
 
@@ -198,7 +199,10 @@ func getBlockHeight(w http.ResponseWriter, r *http.Request) {
 	response := `{
 		"jsonrpc": "2.0",
 		"id": "1234",
-		"result": "0x12"
+		"result": {
+			"epoch": "0x34",
+			"number": "0x12"
+		}
 	}`
 	io.WriteString(w, response)
 }
