@@ -142,9 +142,10 @@ func TestLocalRpcServer_CanHandleRequests(t *testing.T) {
 		t.Fatalf("failed to call service: %v", err)
 	}
 
-	if result["number"] != "0x12" {
+	if result["number"] != "0x12" || result["epoch"] != "0x34" {
 		t.Errorf("invalid response: %v", result)
 	}
+
 	server.Shutdown()
 }
 
