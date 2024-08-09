@@ -78,24 +78,15 @@ func (s *blockProgressSensor) ReadValue() (mon.BlockStatus, error) {
 		return mon.BlockStatus{}, err
 	}
 
-	epoch, err := fromHexToInt(raw["epoch"].(string))
+	epoch, err := strconv.ParseUint(raw["epoch"].(string), 0, 64)
 	if err != nil {
 		return mon.BlockStatus{}, err
 	}
 
-	number, err := fromHexToInt(raw["number"].(string))
+	number, err := strconv.ParseUint(raw["number"].(string), 0, 64)
 	if err != nil {
 		return mon.BlockStatus{}, err
 	}
 
 	return mon.BlockStatus{epoch, number}, nil
-}
-
-func fromHexToInt(hex string) (int, error) {
-	s := strings.TrimPrefix(hex, "0x")
-	i64, err := strconv.ParseInt(s, 16, 32)
-	if err != nil {
-		return 0, fmt.Errorf("failed to convert hex %s to int; %w", hex, err)
-	}
-	return int(i64), nil
 }
