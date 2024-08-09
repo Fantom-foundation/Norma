@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
@@ -88,5 +87,5 @@ func (s *blockProgressSensor) ReadValue() (mon.BlockStatus, error) {
 		return mon.BlockStatus{}, err
 	}
 
-	return mon.BlockStatus{epoch, number}, nil
+	return mon.BlockStatus{int(epoch), int(number)}, nil
 }
