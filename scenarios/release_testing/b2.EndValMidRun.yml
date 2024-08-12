@@ -6,11 +6,8 @@
 name: B2.EndValMidRun
 duration: 300
 
-# This is equivalent to the genesis-validator in node section
-num_validators: 3
-
 nodes:
-  - name: genesis-validator
+  - name: static-validator
     instances: 3
     client:
       type: validator
