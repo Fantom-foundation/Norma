@@ -189,9 +189,12 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	if node.End != nil {
 		endTime = Seconds(*node.End)
 	}
+
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
+
+		// add initial start
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting node %s", name), func() error {
 			newNode, err := net.CreateNode(&driver.NodeConfig{
 				Name:      name,
@@ -202,6 +205,26 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			return err
 		}))
 
+		// handle timer
+		if &node.Timer != nil {
+			for timing, evt := range node.Timer {
+				switch evt {
+				case "start":
+				case "end":
+				case "kill":
+					queue.add(toSingleEvent(
+						Seconds(timing),
+						fmt.Sprintf("SigKill to node %s", name),
+						func() error {
+							return net.KillNode(*instance)
+						},
+					))
+				case "restart":
+				}
+			}
+		}
+
+		// handle genesis
 		if &node.Genesis != nil {
 			if node.Genesis.Import != "" {
 				queue.add(toSingleEvent(
@@ -223,6 +246,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			}
 		}
 
+		// handle event
 		if &node.Event != nil {
 			if node.Event.Import != nil {
 				queue.add(toSingleEvent(
@@ -244,6 +268,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			}
 		}
 
+		// handle final end
 		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping node %s", name), func() error {
 			if instance == nil {
 				return nil
