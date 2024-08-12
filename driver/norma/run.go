@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -40,6 +40,8 @@ import (
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/user"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
+	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
+	"github.com/Fantom-foundation/go-opera/opera/contracts/sfc"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/exp/constraints"
 )
@@ -282,7 +284,7 @@ type progressLogger struct {
 func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
 	stop := make(chan bool)
 	done := make(chan bool)
-	var prevVals []int // list of validators in previous epoch
+	var prevEpochNumber int
 
 	go func() {
 		defer close(done)
@@ -292,7 +294,7 @@ func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
 			case <-stop:
 				return
 			case <-ticker.C:
-				prevVals = logState(monitor, prevVals)
+				prevEpochNumber = logState(monitor, prevEpochNumber)
 			}
 		}
 	}()
@@ -309,7 +311,7 @@ func (l *progressLogger) shutdown() {
 	<-l.done
 }
 
-func logState(monitor *monitoring.Monitor, prevVals []int) []int {
+func logState(monitor *monitoring.Monitor, prevEpochNumber int) int {
 	numNodes := getNumNodes(monitor)
 	blockHeights := getBlockHeights(monitor)
 	txPers := getTxPerSec(monitor)
@@ -318,11 +320,32 @@ func logState(monitor *monitoring.Monitor, prevVals []int) []int {
 	processingTimes := getBlockProcessingTimes(monitor)
 	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txPers, txs, gas, processingTimes)
 
-	vals := getPreviousEpochValidators(monitor)
-	if !slices.Equal(prevVals, vals) {
-		log.Printf(" ==== Validator list updated: %v", vals)
+	epoch := getEpochProgress(monitor)
+	if epoch > prevEpochNumber {
+		logValidatorList(monitor, epoch, prevEpochNumber)
 	}
-	return vals
+
+	return epoch
+}
+
+func logValidatorList(monitor *monitoring.Monitor, epoch int, prevEpoch int) error {
+	rpcClient, err := monitor.Network().DialRandomRpc()
+	if err != nil {
+		return err
+	}
+
+	sfcc, err := contract.NewSFC(sfc.ContractAddress, rpcClient)
+	if err != nil {
+		return err
+	}
+
+	bIds, err := sfcc.GetEpochValidatorIDs(nil, big.NewInt(int64(epoch)))
+	if err != nil {
+		return err
+	}
+
+	log.Printf(" ==== Validator list updated [E#%d => E#%d]: %v", prevEpoch, epoch, bIds)
+	return nil
 }
 
 func getNumNodes(monitor *monitoring.Monitor) string {
@@ -330,17 +353,15 @@ func getNumNodes(monitor *monitoring.Monitor) string {
 	return getLastValAsString[monitoring.Time, int](exists, data)
 }
 
-func getPreviousEpochValidators(monitor *monitoring.Monitor) []int {
-	series, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.PreviousEpochValidators)
-	if !exists || series == nil {
-		return []int{}
+func getEpochProgress(monitor *monitoring.Monitor) int {
+	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.EpochProgress)
+	if !exists || data == nil {
+		return -1
 	}
-
-	point := series.GetLatest()
+	point := data.GetLatest()
 	if point == nil {
-		return []int{}
+		return -1
 	}
-
 	return point.Value
 }
 

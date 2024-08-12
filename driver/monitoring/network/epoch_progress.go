@@ -18,7 +18,6 @@ package netmon
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
@@ -27,42 +26,40 @@ import (
 	"github.com/Fantom-foundation/go-opera/opera/contracts/sfc"
 )
 
-// PreviousEpochValidators retains a time-series for the list of validators in previous
-// epoch in the network run by Norma.
-var PreviousEpochValidators = mon.Metric[mon.Network, mon.Series[mon.Time, []int]]{
-	Name:        "PreviousEpochValidators",
-	Description: "The list of ValidatorId participated in previous epoch sealing.",
+// EpochProgress retains a time-series for the epoch number relative to sfc.
+var EpochProgress = mon.Metric[mon.Network, mon.Series[mon.Time, int]]{
+	Name:        "EpochProgress",
+	Description: "The epoch number wrt SFC as a time-series.",
 }
 
 func init() {
-	if err := mon.RegisterSource(PreviousEpochValidators, NewPreviousEpochValidatorsSource); err != nil {
+	if err := mon.RegisterSource(EpochProgress, NewEpochProgressSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
 
-// previousEpochValidatorsSource is a monitoring data source tracking
-// the list of ValidatorId participated in previous epoch sealing.
-type previousEpochValidatorsSource struct {
-	*utils.SyncedSeriesSource[mon.Network, mon.Time, []int]
-	data *mon.SyncedSeries[mon.Time, []int]
+// epochProgressSource is a monitoring data source tracking the epoch number.
+type epochProgressSource struct {
+	*utils.SyncedSeriesSource[mon.Network, mon.Time, int]
+	data *mon.SyncedSeries[mon.Time, int]
 	stop chan<- bool
 	done <-chan bool
 }
 
-// NewNumNodesSource creates a new data source periodically collecting data on
-// the number of nodes in the network.
-func NewPreviousEpochValidatorsSource(monitor *mon.Monitor) mon.Source[mon.Network, mon.Series[mon.Time, []int]] {
-	return newPreviousEpochValidatorsSource(monitor, time.Second)
+// NewEpochProgressSource creates a new data source periodically collecting data on
+// the current epoch number.
+func NewEpochProgressSource(monitor *mon.Monitor) mon.Source[mon.Network, mon.Series[mon.Time, int]] {
+	return newEpochProgressSource(monitor, time.Second)
 }
 
-// newPreviousEpochValidatorsSource creates a new data source periodically collecting
+// newEpochProgressSource creates a new data source periodically collecting
 // data on the the list of ValidatorId participated in previous epoch sealing.
-func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Network, mon.Series[mon.Time, []int]] {
+func newEpochProgressSource(monitor *mon.Monitor, period time.Duration) mon.Source[mon.Network, mon.Series[mon.Time, int]] {
 	stop := make(chan bool)
 	done := make(chan bool)
 
-	res := &previousEpochValidatorsSource{
-		SyncedSeriesSource: utils.NewSyncedSeriesSource(PreviousEpochValidators),
+	res := &epochProgressSource{
+		SyncedSeriesSource: utils.NewSyncedSeriesSource(EpochProgress),
 		stop:               stop,
 		done:               done,
 	}
@@ -90,13 +87,7 @@ func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration
 					return
 				}
 
-				bIds, err := sfcc.GetEpochValidatorIDs(nil, currentEpoch)
-				if err != nil {
-					return
-				}
-				ids := toInts(bIds)
-
-				res.data.Append(mon.NewTime(now), ids)
+				res.data.Append(mon.NewTime(now), int(currentEpoch.Int64()))
 			case <-stop:
 				return
 			}
@@ -106,15 +97,7 @@ func newPreviousEpochValidatorsSource(monitor *mon.Monitor, period time.Duration
 	return res
 }
 
-func toInts(bigs []*big.Int) []int {
-	res := make([]int, len(bigs))
-	for i, b := range bigs {
-		res[i] = int(b.Int64())
-	}
-	return res
-}
-
-func (s *previousEpochValidatorsSource) Shutdown() error {
+func (s *epochProgressSource) Shutdown() error {
 	close(s.stop)
 	<-s.done
 	return s.SyncedSeriesSource.Shutdown()
