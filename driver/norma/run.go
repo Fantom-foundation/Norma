@@ -103,6 +103,10 @@ var (
 )
 
 func run(ctx *cli.Context) (err error) {
+	if num := ctx.Int(numValidators.Name); num != 0 {
+		fmt.Printf("[DEPRECATED] --num-validator flag has been deprecated along with NumValidator configuration in scenarios.\n --num-validator %d will not have any effect when running the provided scenarios.", num)
+	}
+
 	db := strings.ToLower(ctx.String(dbImpl.Name))
 	if db == "carmen" || db == "go-file" {
 		db = "go-file"
@@ -133,11 +137,6 @@ func run(ctx *cli.Context) (err error) {
 	scenario, err := parser.ParseFile(path)
 	if err != nil {
 		return err
-	}
-
-	if num := ctx.Int(numValidators.Name); num > 0 {
-		fmt.Printf("Overriding number of validators to %d (--%s)\n", num, numValidators.Name)
-		scenario.NumValidators = &num
 	}
 
 	if err := scenario.Check(); err != nil {
