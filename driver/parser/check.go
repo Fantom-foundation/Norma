@@ -266,9 +266,15 @@ func (s *Scenario) GetStaticValidatorCount() int {
 }
 
 func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
-	if n.IsStaticValidator(scenario) {
-		return *n.Instances
+	var count int = 0
+	if n.Instances != nil {
+		count = *n.Instances
 	}
+
+	if n.IsStaticValidator(scenario) {
+		return count
+	}
+
 	return 0
 }
 
@@ -487,7 +493,7 @@ func (s *Scenario) checkValidatorConstraints() error {
 	}
 
 	if dynamicValidatorCount > 0 && gvCount < 2 {
-		return fmt.Errorf("invalid number of genesis validators for sfc createValidator scenario: %d < 2", *s.NumValidators)
+		return fmt.Errorf("Dynamic Validator count = %d; Number of static validators should have been at least 2: %d < 2", dynamicValidatorCount, *s.NumValidators)
 	}
 
 	// TODO add check for dynamic validators to have always at least two running at any time
