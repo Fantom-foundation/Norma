@@ -317,8 +317,8 @@ func logState(monitor *monitoring.Monitor, prevEpochNumber int) int {
 	txPers := getTxPerSec(monitor)
 	txs := getNumTxs(monitor)
 	gas := getGasUsed(monitor)
-  processingTimes := getBlockProcessingTimes(monitor)
-	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txPers, txs, gas, processingTimes)
+	processingTimes := getBlockProcessingTimes(monitor)
+	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockStatuses, txPers, txs, gas, processingTimes)
 
 	epoch := getEpochProgress(monitor)
 	if epoch > prevEpochNumber {
