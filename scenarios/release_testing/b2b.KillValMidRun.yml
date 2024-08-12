@@ -6,9 +6,6 @@
 name: B2B.KillValMidRun
 duration: 300 
 
-# This is equivalent to the genesis-validator in node section
-num_validators: 4
-
 nodes:
   - name: genesis-validator
     instances: 3
