@@ -179,7 +179,7 @@ func run(ctx *cli.Context) (err error) {
 		VmImplementation:      vm,
 	}
 
-	fmt.Printf("Creating network with %d genesis validator(s) using the `%v` DB and `%v` VM implementation ...\n",
+	fmt.Printf("Creating network with %d static validator(s) using the `%v` DB and `%v` VM implementation ...\n",
 		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
 	)
 	netConfig.MaxBlockGas = scenario.GenesisGasLimits.MaxBlockGas

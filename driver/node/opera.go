@@ -76,7 +76,7 @@ type OperaNode struct {
 type OperaNodeConfig struct {
 	// The label to be used to name this node. The label should not be empty.
 	Label string
-	// The ID of the validator, nil if the node should node be a validator.
+	// The ID of the validator, nil if the node should not be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
