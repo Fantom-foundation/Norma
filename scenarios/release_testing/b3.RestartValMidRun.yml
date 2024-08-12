@@ -6,8 +6,6 @@
 name: B3.RestartValMidRun
 duration: 600 # 10 minutes sim: 5 minutes sim > crash > 5 minutes further
 
-num_validators: 4
-
 nodes:
   - name: genesis-validator
     instances: 3
