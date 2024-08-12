@@ -1,10 +1,12 @@
+@Library('shared-library') _
+
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
 def enableA1 = false
 def enableA2 = false
 def enableB1 = false
-def enableB2 = false
+def enableB2 = true
 def enableB3 = true
 def enableB4 = false
 def enableB5 = false
@@ -135,7 +137,7 @@ pipeline {
 			}
 		}
 
-		stage('Test B2 - KillValMidRun') {
+		stage('Test B2 - EndValMidRun') {
 			when {
 				expression {
 					buildSuccess
@@ -144,13 +146,14 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b2 -o . release_testing/b2.KillValMidRun.yml
+				build/norma run --label b2 -o . scenarios/release_testing/b2.KillValMidRun.yml
 			}
 
 			post {
-				success {
-					dir('./norma_data_b2_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
+						uploadArtifacts(artifacts)
 					}
 				}
 			}
