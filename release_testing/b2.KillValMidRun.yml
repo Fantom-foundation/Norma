@@ -3,28 +3,47 @@
 # - Test: process transactions for 5 minutes, then then stop a validator and remove it from the validator list.
 # - Validation: check list of validator and validate final state of nodes
 
-name: B2.EndValMidRun
-duration: 300
+name: B2
+duration: 310 # 5 minutes sim + 10s for the validators that are not leaving
+
+# backward compatibility, to be removed.
+num_validators: 4
 
 nodes:
-  - name: static-validator
-    instances: 3
+  - name: validator
+    instances: 4
+    timer:
+      start: 0
+      end: 310
     client:
+      imagename: main
       type: validator
 
   - name: leaving-validator
-    end: 100
+    # instances: 1 is implicit
+    timer: 
+      start: 0
+      end: 300
     client:
+      imagename: main
       type: validator
   
-  - name: rpc
+  - name: RPC
     instances: 2
+    timer:
+      start: 0
+      end: 310
     client: 
-      type: rpc
+      imagename: main
+      type: RPC
     
   - name: observer
     instances: 2
+    timer: 
+      start: 0
+      end: 310
     client:
+      imagename: main
       type: observer
     
 
@@ -33,7 +52,9 @@ applications:
   - name: load
     type: counter
     start: 1           # start time
-    end: 299            # termination time
+    end: 309            # termination time
     users: 20           # number of users / accounts generating txs
     rate:
       constant: 100     # Tx/s
+
+validate: true # check list of validator and validate final state of nodes?
