@@ -63,8 +63,8 @@ func (n *Node) IsValidator() bool {
 	return n.Client.Type == "validator"
 }
 
-// IsGenesisValidator returns true if the node is defined as validator in Features
-func (n *Node) IsGenesisValidator(s *Scenario) bool {
+// IsStaticValidator returns true if the node is defined as validator in Features
+func (n *Node) IsStaticValidator(s *Scenario) bool {
 	start := float32(0)
 	if n.Start != nil {
 		start = *n.Start
@@ -76,6 +76,16 @@ func (n *Node) IsGenesisValidator(s *Scenario) bool {
 	}
 
 	return n.IsValidator() && start == float32(0) && end == s.Duration
+}
+
+// IsCheater returns true if the node is defined as cheater in Features
+func (n *Node) IsCheater() bool {
+	for _, item := range n.Features {
+		if item == "cheater" {
+			return true
+		}
+	}
+	return false
 }
 
 // Genesis is an optional configuration for a node.

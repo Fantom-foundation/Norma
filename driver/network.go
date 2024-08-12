@@ -93,6 +93,7 @@ type NetworkListener interface {
 type NodeConfig struct {
 	Name      string
 	Validator bool
+	Cheater   bool
 	// TODO: add other parameters as needed
 	//  - features to include on the node
 	//  - state DB configuration

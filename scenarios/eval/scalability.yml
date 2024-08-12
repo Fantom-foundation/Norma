@@ -3,7 +3,11 @@
 
 name: Scalability
 duration: 600
-num_validators: 1   # to be overriden by command line flag
+
+nodes:
+  - name: validator
+    client:
+      type: validator
 
 # There is a single application, using slope-load to probe out the
 # limits of configurations.
