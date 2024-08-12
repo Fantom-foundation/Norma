@@ -494,4 +494,3 @@ func (s *Scenario) checkValidatorConstraints() error {
 	// needs to be implemented before enabling to shut down genesis validators
 	return nil
 }
-
