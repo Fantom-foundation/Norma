@@ -78,6 +78,16 @@ func (n *Node) IsStaticValidator(s *Scenario) bool {
 	return n.IsValidator() && start == float32(0) && end == s.Duration
 }
 
+// IsCheater returns true if the node is defined as cheater in Features
+func (n *Node) IsCheater() bool {
+	for _, item := range n.Features {
+		if item == "cheater" {
+			return true
+		}
+	}
+	return false
+}
+
 // Genesis is an optional configuration for a node.
 // GenesisImport will stop the client and restart the client with the target
 // genesis file at the provided time.
