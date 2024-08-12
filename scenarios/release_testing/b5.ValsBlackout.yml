@@ -16,8 +16,8 @@ nodes:
     instances: 4
     start: 1
     timer:
-      end: 300
-      start: 600
+      300: end
+      600: start
     client:
       type: validator
   
