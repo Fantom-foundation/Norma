@@ -483,7 +483,7 @@ func (s *Scenario) checkValidatorConstraints() error {
 	// check if there are 2 genesis validators if there is dynamic validator
 	var dynamicValidatorCount int = 0
 	for _, node := range s.Nodes {
-		if node.IsValidator() {
+		if node.IsValidator() && !node.IsStaticValidator(s) {
 			instances := 1
 			if node.Instances != nil {
 				instances = *node.Instances
