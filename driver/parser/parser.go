@@ -75,7 +75,7 @@ func (n *Node) IsStaticValidator(s *Scenario) bool {
 		end = *n.End
 	}
 
-	return n.IsValidator() && start == float32(0) && end == s.Durationp
+	return n.IsValidator() && start == float32(0) && end == s.Duration
 }
 
 // IsCheater returns true if the node is defined as cheater in Features
