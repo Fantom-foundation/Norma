@@ -6,10 +6,12 @@
 name: B5.ValsBlackout
 duration: 900 # 15 minute sim: 5 minutes > stop 3 validators > 5 minutes further > start the stopped 3 validators > 5 minutes
 
-# This is equivalent to the genesis-validator in node section
-num_validators: 2
-
 nodes:
+  - name: static-validator
+    instances: 2
+    client:
+      type: validator
+
   - name: crashing-validator
     instances: 4
     start: 1
