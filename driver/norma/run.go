@@ -174,13 +174,9 @@ func run(ctx *cli.Context) (err error) {
 
 	// Startup network.
 	netConfig := driver.NetworkConfig{
-		NumberOfValidators:    1,
+		NumberOfValidators:    scenario.GetStaticValidatorCount(),
 		StateDbImplementation: db,
 		VmImplementation:      vm,
-	}
-
-	if scenario.NumValidators != nil {
-		netConfig.NumberOfValidators = *scenario.NumValidators
 	}
 
 	fmt.Printf("Creating network with %d genesis validator(s) using the `%v` DB and `%v` VM implementation ...\n",
