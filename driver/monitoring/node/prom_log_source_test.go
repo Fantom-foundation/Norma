@@ -87,6 +87,8 @@ func TestLogsAddedToSeries(t *testing.T) {
 }
 
 func TestLogsIntegrationGetRealMetric(t *testing.T) {
+	t.Cleanup(SuppressVerboseLog())
+
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	net := driver.NewMockNetwork(ctrl)

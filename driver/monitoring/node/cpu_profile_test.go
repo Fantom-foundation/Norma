@@ -17,6 +17,8 @@
 package nodemon
 
 import (
+	"log"
+	"os"
 	"testing"
 	"time"
 
@@ -26,6 +28,8 @@ import (
 )
 
 func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
+	t.Cleanup(SuppressVerboseLog())
+
 	docker, err := docker.NewClient()
 	if err != nil {
 		t.Fatalf("failed to create a docker client: %v", err)
@@ -49,5 +53,21 @@ func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 	}
 	if len(data) == 0 {
 		t.Errorf("fetched empty CPU profile")
+	}
+}
+
+func SuppressVerboseLog() func() {
+	null, _ := os.Open(os.DevNull)
+	sout := os.Stdout
+	serr := os.Stderr
+	os.Stdout = null
+	os.Stderr = null
+	log.SetOutput(null)
+
+	return func() {
+		defer null.Close()
+		os.Stdout = sout
+		os.Stderr = serr
+		log.SetOutput(os.Stderr)
 	}
 }
