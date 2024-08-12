@@ -62,6 +62,16 @@ func (t Time) String() string {
 // BlockNumber is the type used to identify a block.
 type BlockNumber int
 
+// BlockStatus encapsulates epoch, blockheight
+type BlockStatus struct {
+	Epoch       uint64
+	BlockHeight uint64
+}
+
+func (b BlockStatus) String() string {
+	return fmt.Sprintf("%d/%d", b.Epoch, b.BlockHeight)
+}
+
 // Percent is used to represent a percentage of some value. Internaly it is
 // represented as a float value, typically in the range between [0,1] denoting
 // values between 0% and 100%. However, values exceeding those boundaries are

@@ -313,11 +313,11 @@ func (l *progressLogger) shutdown() {
 
 func logState(monitor *monitoring.Monitor, prevEpochNumber int) int {
 	numNodes := getNumNodes(monitor)
-	blockHeights := getBlockHeights(monitor)
+	blockStatuses := getBlockStatuses(monitor)
 	txPers := getTxPerSec(monitor)
 	txs := getNumTxs(monitor)
 	gas := getGasUsed(monitor)
-	processingTimes := getBlockProcessingTimes(monitor)
+  processingTimes := getBlockProcessingTimes(monitor)
 	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockHeights, txPers, txs, gas, processingTimes)
 
 	epoch := getEpochProgress(monitor)
@@ -380,9 +380,9 @@ func getGasUsed(monitor *monitoring.Monitor) string {
 	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
 }
 
-func getBlockHeights(monitor *monitoring.Monitor) []string {
-	metric := nodemon.NodeBlockHeight
-	return getLastValAllSubjects[monitoring.Time, int, monitoring.Series[monitoring.Time, int]](monitor, metric)
+func getBlockStatuses(monitor *monitoring.Monitor) []string {
+	metric := nodemon.NodeBlockStatus
+	return getLastValAllSubjects[monitoring.Time, monitoring.BlockStatus, monitoring.Series[monitoring.Time, monitoring.BlockStatus]](monitor, metric)
 }
 
 func getBlockProcessingTimes(monitor *monitoring.Monitor) []string {
