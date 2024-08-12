@@ -63,8 +63,8 @@ func (n *Node) IsValidator() bool {
 	return n.Client.Type == "validator"
 }
 
-// IsGenesisValidator returns true if the node is defined as validator in Features
-func (n *Node) IsGenesisValidator(s *Scenario) bool {
+// IsStaticValidator returns true if the node is defined as validator in Features
+func (n *Node) IsStaticValidator(s *Scenario) bool {
 	start := float32(0)
 	if n.Start != nil {
 		start = *n.Start

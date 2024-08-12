@@ -254,18 +254,19 @@ func isTimerSequenceValid(on bool, event string) (bool, error) {
 	return false, fmt.Errorf("event not recognized: %s", event)
 }
 
-// GetGenesisValidatorCount returns the number of validator that begins at time 0
+// GetStaticValidatorCount returns the number of validator that begins at time 0
 // and last the entire duration.
-func (s *Scenario) GetGenesisValidatorCount() int {
+// Static Validator = Validator that lasts the entire duration of the run.
+func (s *Scenario) GetStaticValidatorCount() int {
 	var count int = 0
 	for _, n := range s.Nodes {
-		count += n.GetGenesisValidatorCount(s)
+		count += n.GetStaticValidatorCount(s)
 	}
 	return count
 }
 
-func (n *Node) GetGenesisValidatorCount(scenario *Scenario) int {
-	if n.IsGenesisValidator(scenario) {
+func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
+	if n.IsStaticValidator(scenario) {
 		return *n.Instances
 	}
 	return 0
@@ -459,11 +460,10 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 // if there is creation of new validators trough sfc, then at all times there has to be at least two validators validating at every time
 // note during run validator won't be immediately registered for epoch, because it only happens during epoch seal,
 // therefore this check is not sufficient on its own
-// It now also reconcile the expression NumValidator with validators in node list.
 func (s *Scenario) checkValidatorConstraints() error {
 
-	// check genesis validators within the node
-	gvCount := s.GetGenesisValidatorCount()
+	// count static validators within the node
+	gvCount := s.GetStaticValidatorCount()
 	if s.NumValidators == nil {
 		s.NumValidators = &gvCount
 	}
@@ -473,20 +473,6 @@ func (s *Scenario) checkValidatorConstraints() error {
 	if *s.NumValidators < 0 {
 		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
 	}
-
-	// error if found more genesis validator than specified in NumValidators
-	if *s.NumValidators < gvCount {
-		return fmt.Errorf("mismatched number of genesis validators in scenario: NumValidator=%d < %d found in node list", *s.NumValidators, gvCount)
-	}
-
-	// When NumValidators are used as short-hand to create gv nodes
-	if *s.NumValidators > gvCount {
-		gvCount = *s.NumValidators
-	}
-
-	// remove all GV from nodes. These will be initialized separately from the non-gv nodes.
-	// NOTE: once we can specify more information about GV, this will need to change.
-	s.removeGenesisValidator()
 
 	// check if there are 2 genesis validators if there is dynamic validator
 	var dynamicValidatorCount int = 0
@@ -509,17 +495,3 @@ func (s *Scenario) checkValidatorConstraints() error {
 	return nil
 }
 
-// removeGenesisValidator removes genesis validator from the list of nodes
-func (s *Scenario) removeGenesisValidator() {
-	s.Nodes = removeGenesisValidator(s, s.Nodes)
-}
-
-func removeGenesisValidator(scenario *Scenario, nodes []Node) []Node {
-	var ret []Node
-	for _, n := range nodes {
-		if !n.IsGenesisValidator(scenario) {
-			ret = append(ret, n)
-		}
-	}
-	return ret
-}
