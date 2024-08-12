@@ -9,11 +9,12 @@ name: Various Number of Nodes
 # The duration of the scenario's runtime, in seconds.
 duration: 600
 
-# The number of validator nodes in the network.
-num_validators: 1
-
 # The network scenario to exercise. 
 nodes:
+  - name: validator
+    client:
+      type: validator
+
   # Gradually increase the number of nodes 
   - name: A
     start: 0          # start time

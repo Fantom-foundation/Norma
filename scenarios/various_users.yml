@@ -12,8 +12,11 @@ name: Various Number of Users
 # The duration of the scenario's runtime, in seconds.
 duration: 600
 
-# The number of validator nodes in the network.
-num_validators: 1
+nodes:
+  # 1x validator from beginning to end
+  - name: validator
+    client:
+      type: validator
 
 # In the network there are multiple applications, always at most one produces load.
 applications:

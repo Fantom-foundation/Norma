@@ -190,6 +190,18 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 		}
 	}
 
+	if config.Cheater {
+		_, err := n.createNode(&node.OperaNodeConfig{
+			Label:            "cheater-" + config.Name,
+			NetworkConfig:    &n.config,
+			VmImplementation: n.config.VmImplementation,
+			ValidatorId:      &newValId,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return n.createNode(&node.OperaNodeConfig{
 		Label:            config.Name,
 		NetworkConfig:    &n.config,
