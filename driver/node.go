@@ -62,6 +62,9 @@ type Node interface {
 	// are expected to succeed.
 	Stop() error
 
+	// Kill shuts down this node disgracefully by using SigKill.
+	Kill() error
+
 	// Cleanup releases all underlying resources. After the cleanup no more
 	// operations on this node are expected to succeed.
 	Cleanup() error
