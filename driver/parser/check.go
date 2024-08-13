@@ -198,11 +198,11 @@ func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
 
 	for ix, t := range timings {
 		if t < start {
-			return fmt.Errorf("Node %s has event at time %f < start=%f", t, start)
+			return fmt.Errorf("Node %s has event at time %f < start=%f", n.Name, t, start)
 		}
 
 		if t > end {
-			return fmt.Errorf("Node %s has event at time %f > end=%f", t, end)
+			return fmt.Errorf("Node %s has event at time %f > end=%f", n.Name, t, end)
 		}
 
 		next, err := isTimerSequenceValid(now, n.Timer[t])
