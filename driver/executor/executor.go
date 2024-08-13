@@ -236,12 +236,11 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 
 							return []event{
 								toSingleEvent(
-									// define successor here
 									Seconds(timing)+30, // 30 seconds grace period
-									//fmt.Sprintf("Restart - starting node %s", name),
-									fmt.Sprintf("[NOT IMPLEMENTED] Restart - starting node %s.", name),
+									fmt.Sprintf("Restart - starting node %s", name),
 									func() error {
-										return nil
+										_, err := net.StartNode(*instance)
+										return err
 									},
 								),
 							}, nil

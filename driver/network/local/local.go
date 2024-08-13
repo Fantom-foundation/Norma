@@ -148,14 +148,16 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	return net, nil
 }
 
-// createNode is an internal version of CreateNode enabling the creation
-// of validator and non-validator nodes in the network.
-func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
-	node, err := node.StartOperaDockerNode(n.docker, n.network, nodeConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start opera docker; %v", err)
+// StartNode starts a node after it has been created.
+func (n *LocalNetwork) StartNode(nd driver.Node) (driver.Node, error) {
+	opera, ok := nd.(*node.OperaNode)
+	if !ok {
+		return nil, fmt.Errorf("trying to start non-sonic node")
 	}
+	return n.startNode(opera)
+}
 
+func (n *LocalNetwork) startNode(node *node.OperaNode) (*node.OperaNode, error) {
 	n.nodesMutex.Lock()
 	id, err := node.GetNodeID()
 	if err != nil {
@@ -177,6 +179,16 @@ func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.Opera
 	n.listenerMutex.Unlock()
 
 	return node, nil
+}
+
+// createNode is an internal version of CreateNode enabling the creation
+// of validator and non-validator nodes in the network.
+func (n *LocalNetwork) createNode(nodeConfig *node.OperaNodeConfig) (*node.OperaNode, error) {
+	node, err := node.StartOperaDockerNode(n.docker, n.network, nodeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start opera docker; %v", err)
+	}
+	return n.startNode(node)
 }
 
 // CreateNode creates nodes in the network during run.

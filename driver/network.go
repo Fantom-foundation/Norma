@@ -34,7 +34,10 @@ type Network interface {
 	// nodes to the network as needed.
 	CreateNode(config *NodeConfig) (Node, error)
 
-	// RemoveNode gracefully removes node from the network
+	// StartNode starts a node that has already been created.
+	StartNode(Node) (Node, error)
+
+	// RemoveNode ends the client gracefully and removes node from the network
 	RemoveNode(Node) error
 
 	// KillNode disgracefully removes node from the network
