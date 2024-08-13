@@ -219,16 +219,20 @@ func (n *Node) isTimerSequenceValid() error {
 	}
 	slices.Sort(timings)
 
-	for _, t := range timings {
+	for ix, t := range timings {
 		next, err := isTimerSequenceValid(now, n.Timer[t])
 		if err != nil {
-			return fmt.Errorf("Node %s at time %f: %v", n.GetLabel(), t, err)
+			return fmt.Errorf("Node %s at time %f: %v", n.Name, t, err)
+		}
+		// if event is "kill", then it must be last
+		if n.Timer[t] == "kill" && ix < len(timings) {
+			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
 		}
 		now = next
 	}
 
 	if now {
-		return fmt.Errorf("Node %s not terminated.", n.GetLabel())
+		return fmt.Errorf("Node %s not terminated.", n.Name)
 	}
 
 	return nil
