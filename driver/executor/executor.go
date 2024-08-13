@@ -213,7 +213,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				case "end":
 				case "kill":
 					queue.add(toSingleEvent(
-						Seconds(timing), 
+						Seconds(timing),
 						fmt.Sprintf("SigKill to node %s", name),
 						func() error {
 							return net.KillNode(*instance)
@@ -239,7 +239,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 									// define successor here
 									Seconds(timing)+30, // 30 seconds grace period
 									//fmt.Sprintf("Restart - starting node %s", name),
-									fmt.Sprintf("[NOT IMPLEMENTED] Restart - starting node %s.", name, node.Genesis.Import),
+									fmt.Sprintf("[NOT IMPLEMENTED] Restart - starting node %s.", name),
 									func() error {
 										return nil
 									},
