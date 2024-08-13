@@ -140,7 +140,7 @@ func (n *Node) Check(scenario *Scenario) error {
 		end = *n.End
 	}
 
-	// note that start = end = 0 is short-hand for test
+	// note that start = end = 0 is a short-hand used in test
 	// so we will ignore case where start == end
 	if start != end {
 		ev, startAlreadyExist := n.Timer[start]
@@ -222,9 +222,13 @@ func (n *Node) isTimerSequenceValid() error {
 	for _, t := range timings {
 		next, err := isTimerSequenceValid(now, n.Timer[t])
 		if err != nil {
-			return fmt.Errorf("At time %f: %v", t, err)
+			return fmt.Errorf("Node %s at time %f: %v", n.GetLabel(), t, err)
 		}
 		now = next
+	}
+
+	if now {
+		return fmt.Errorf("Node %s not terminated.", n.GetLabel())
 	}
 
 	return nil
