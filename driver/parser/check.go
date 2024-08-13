@@ -214,11 +214,8 @@ func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
 		if n.Timer[t] == "kill" && ix < len(timings) {
 			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
 		}
-		now = next
-	}
 
-	if now {
-		return fmt.Errorf("Node %s not terminated.", n.Name)
+		now = next
 	}
 
 	return nil
