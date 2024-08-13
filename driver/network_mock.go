@@ -195,6 +195,21 @@ func (mr *MockNetworkMockRecorder) Shutdown() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockNetwork)(nil).Shutdown))
 }
 
+// StartNode mocks base method.
+func (m *MockNetwork) StartNode(arg0 Node) (Node, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StartNode", arg0)
+	ret0, _ := ret[0].(Node)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StartNode indicates an expected call of StartNode.
+func (mr *MockNetworkMockRecorder) StartNode(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartNode", reflect.TypeOf((*MockNetwork)(nil).StartNode), arg0)
+}
+
 // UnregisterListener mocks base method.
 func (m *MockNetwork) UnregisterListener(arg0 NetworkListener) {
 	m.ctrl.T.Helper()
