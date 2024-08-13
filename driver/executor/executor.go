@@ -195,7 +195,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		var instance = new(driver.Node)
 
 		// add initial start
-		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting node %s", name), func() error {
+		queue.add(toSingleEvent(startTime, fmt.Sprintf("Creating node %s", name), func() error {
 			newNode, err := net.CreateNode(&driver.NodeConfig{
 				Name:      name,
 				Validator: node.IsValidator(),
@@ -210,7 +210,31 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			for timing, evt := range node.Timer {
 				switch evt {
 				case "start":
+					queue.add(toSingleEvent(
+						Seconds(timing),
+						fmt.Sprintf("Starting node %s", name),
+						func() error {
+							_, err := net.StartNode(*instance)
+							return err
+						},
+					))
 				case "end":
+					queue.add(toSingleEvent(
+						Seconds(timing),
+						fmt.Sprintf("Ending node %s", name),
+						func() error {
+							if instance == nil {
+								return nil
+							}
+							if err := net.RemoveNode(*instance); err != nil {
+								return err
+							}
+							if err := (*instance).Stop(); err != nil {
+								return err
+							}
+							return nil
+						},
+					))
 				case "kill":
 					queue.add(toSingleEvent(
 						Seconds(timing),
@@ -233,7 +257,6 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 							if err := (*instance).Stop(); err != nil {
 								return []event{}, err
 							}
-
 							return []event{
 								toSingleEvent(
 									Seconds(timing)+30, // 30 seconds grace period
