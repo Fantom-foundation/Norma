@@ -481,7 +481,7 @@ func (s *Scenario) checkValidatorConstraints() error {
 	if *s.NumValidators < 0 {
 		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
 	}
-	
+
 	// check if there are 2 genesis validators if there is dynamic validator
 	var dynamicValidatorCount int = 0
 	for _, node := range s.Nodes {
