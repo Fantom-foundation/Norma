@@ -211,7 +211,7 @@ func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
 		}
 
 		// if event is "kill", then it must be last
-		if n.Timer[t] == "kill" && ix < len(timings) - 1 {
+		if n.Timer[t] == "kill" && ix < len(timings)-1 {
 			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
 		}
 
