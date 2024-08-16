@@ -55,16 +55,27 @@ type Node struct {
 	Genesis   Genesis  `yaml:",omitempty"`
 	Event     Event
 	Client    ClientType
+	Timer     map[float32]string `yaml:",omitempty"`
 }
 
 // IsValidator returns true if the node is defined as validator in Features
 func (n *Node) IsValidator() bool {
-	for _, item := range n.Features {
-		if item == "validator" {
-			return true
-		}
+	return n.Client.Type == "validator"
+}
+
+// IsStaticValidator returns true if the node is defined as validator in Features
+func (n *Node) IsStaticValidator(s *Scenario) bool {
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
 	}
-	return false
+
+	end := s.Duration
+	if n.End != nil {
+		end = *n.End
+	}
+
+	return n.IsValidator() && start == float32(0) && end == s.Duration
 }
 
 // IsCheater returns true if the node is defined as cheater in Features
