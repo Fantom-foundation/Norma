@@ -28,7 +28,8 @@ import (
 )
 
 func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
-	t.Cleanup(SuppressVerboseLog())
+	t.Log("========= This test purposely logs error, please ignore =========")
+	t.Cleanup("========= Purposely logged error ends =========")
 
 	docker, err := docker.NewClient()
 	if err != nil {
@@ -53,21 +54,5 @@ func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 	}
 	if len(data) == 0 {
 		t.Errorf("fetched empty CPU profile")
-	}
-}
-
-func SuppressVerboseLog() func() {
-	null, _ := os.Open(os.DevNull)
-	sout := os.Stdout
-	serr := os.Stderr
-	os.Stdout = null
-	os.Stderr = null
-	log.SetOutput(null)
-
-	return func() {
-		defer null.Close()
-		os.Stdout = sout
-		os.Stderr = serr
-		log.SetOutput(os.Stderr)
 	}
 }
