@@ -10,6 +10,7 @@ def enableB2 = true
 def enableB3 = true
 def enableB4 = false
 def enableB5 = false
+def enableB5B = true
 def enableC1 = false
 
 
@@ -203,7 +204,7 @@ pipeline {
 			}
 		}
 
-		stage('Test B5 - ValsBlackout') {
+		stage('Test B5 - ValsBlackoutEnd') {
 			when {
 				expression {
 					buildSuccess
@@ -213,6 +214,27 @@ pipeline {
 
 			steps {
 				build/norma run --label b5 -o . release_testing/b5.ValsBlackout.yml
+			}
+			
+			post {
+				success {
+					dir('./norma_data_b5_latest') {
+						archiveArtifacts artifacts: '**'
+					}
+				}
+			}
+		}
+		
+		stage('Test B5B - ValsBlackoutKill') {
+			when {
+				expression {
+					buildSuccess
+					enableB5B
+				}
+			}
+
+			steps {
+				build/norma run --label b5b -o . release_testing/b5b.ValsBlackout.yml
 			}
 			
 			post {
