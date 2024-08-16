@@ -1,0 +1,41 @@
+# Scenario B5: over 2/3 of validators stop then restart after 5 minutes
+# - Set up: start 6 validators, 2 RPC nodes and 2 observers
+# - Test: process transactions for 5 minutes, then stop 3 validators. Restart the validators again after another 5 minutes passed.
+# - Validation: what would happen?
+
+name: B5B.ValsBlackoutKill
+duration: 600 # 15 minute sim: 5 minutes > kill 4 validators > 5 minutes further
+
+nodes:
+  - name: static-validator
+    instances: 2
+    client:
+      type: validator
+  
+  - name: killed-validator
+    instances: 4
+    start: 1
+    timer:
+      300: kill
+    client:
+      type: validator
+  
+  - name: rpc
+    instances: 2
+    client: 
+      type: rpc
+    
+  - name: observer
+    instances: 2
+    client:
+      type: observer
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 599            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
