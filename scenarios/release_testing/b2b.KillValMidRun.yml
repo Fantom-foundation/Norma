@@ -7,7 +7,7 @@ name: B2B.KillValMidRun
 duration: 300 
 
 nodes:
-  - name: genesis-validator
+  - name: static-validator
     instances: 3
     client:
       type: validator
