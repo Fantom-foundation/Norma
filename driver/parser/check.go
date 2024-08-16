@@ -129,40 +129,7 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
-	// reconcile n.Start/n.End with n.Timer
-	start := float32(0)
-	if n.Start != nil {
-		start = *n.Start
-	}
-
-	end := scenario.Duration
-	if n.End != nil {
-		end = *n.End
-	}
-
-	// note that start = end = 0 is short-hand for test
-	// so we will ignore case where start == end
-	if start != end {
-		ev, startAlreadyExist := n.Timer[start]
-		if startAlreadyExist {
-			if ev != "start" {
-				errs = append(errs, fmt.Errorf("node should be starting at %f but mismatched timer event %s is also found", start, ev))
-			}
-		} else {
-			n.Timer[start] = "start"
-		}
-
-		ev, endAlreadyExist := n.Timer[end]
-		if endAlreadyExist {
-			if ev != "end" {
-				errs = append(errs, fmt.Errorf("node should be ending at %f but mismatched timer event %s is also found", end, ev))
-			}
-		} else {
-			n.Timer[end] = "end"
-		}
-	}
-
-	if err := n.isTimerSequenceValid(); err != nil {
+	if err := n.isTimerSequenceValid(scenario); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -209,8 +176,18 @@ func isTimerEventValid(e string) error {
 }
 
 // isTimerSequenceValid returns true if the timer sequence make sense e.g. start only happens if the node is off, end only happens if the node is on, etc.
-func (n *Node) isTimerSequenceValid() error {
-	var now bool = false
+func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
+	var now bool = true // assumed to be started
+
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
+	}
+
+	end := scenario.Duration
+	if n.End != nil {
+		end = *n.End
+	}
 
 	// sort timer sequence
 	timings := make([]float32, 0, len(n.Timer))
@@ -219,11 +196,25 @@ func (n *Node) isTimerSequenceValid() error {
 	}
 	slices.Sort(timings)
 
-	for _, t := range timings {
+	for ix, t := range timings {
+		if t < start {
+			return fmt.Errorf("Node %s has event at time %f < start=%f", n.Name, t, start)
+		}
+
+		if t > end {
+			return fmt.Errorf("Node %s has event at time %f > end=%f", n.Name, t, end)
+		}
+
 		next, err := isTimerSequenceValid(now, n.Timer[t])
 		if err != nil {
-			return fmt.Errorf("At time %f: %v", t, err)
+			return fmt.Errorf("Node %s at time %f: %v", n.Name, t, err)
 		}
+
+		// if event is "kill", then it must be last
+		if n.Timer[t] == "kill" && ix < len(timings)-1 {
+			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
+		}
+
 		now = next
 	}
 
