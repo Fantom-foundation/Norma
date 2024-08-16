@@ -170,7 +170,7 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b2b -o . scenarios/release_testing/b2.KillValMidRun.yml
+				build/norma run --label b2b -o . scenarios/release_testing/b2b.KillValMidRun.yml
 			}
 
 			post {
