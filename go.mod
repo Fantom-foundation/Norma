@@ -80,7 +80,7 @@ require (
 	gotest.tools/v3 v3.4.0 // indirect
 )
 
-replace github.com/Fantom-foundation/go-opera v1.1.3-rc.5 => github.com/Fantom-foundation/Sonic v1.2.1-d
+replace github.com/Fantom-foundation/go-opera v1.1.3-rc.5 => github.com/Fantom-foundation/Sonic@8e5ede0
 
 replace github.com/ethereum/go-ethereum => github.com/Fantom-foundation/go-ethereum-substate v1.1.1-0.20240523185630-b058188a043a
 
