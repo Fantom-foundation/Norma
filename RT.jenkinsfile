@@ -106,9 +106,7 @@ pipeline {
 
 			post {
 				always {
-					script {
-						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
-					}
+					uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 				}
 			}
 
