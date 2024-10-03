@@ -51,7 +51,7 @@ type GasLimits struct {
 // GetMaxBlockGas returns MaxBlockGas
 func (s *Scenario) GetMaxBlockGas() uint64 {
 	if s.GenesisGasLimits.MaxBlockGas != nil {
-		return &s.GenesisGasLimits.MaxBlockGas
+		return *s.GenesisGasLimits.MaxBlockGas
 	}
 
 	return DefaultMaxBlockGas
@@ -60,7 +60,7 @@ func (s *Scenario) GetMaxBlockGas() uint64 {
 // GetMaxEpochGas returns MaxEpochGas
 func (s *Scenario) GetMaxEpochGas() uint64 {
 	if s.GenesisGasLimits.MaxEpochGas != nil {
-		return &s.GenesisGasLimits.MaxEpochGas
+		return *s.GenesisGasLimits.MaxEpochGas
 	}
 
 	return DefaultMaxEpochGas
