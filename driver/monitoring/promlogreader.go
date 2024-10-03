@@ -92,7 +92,7 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 					res = append(res, val)
 				}
 			} else {
-				errs = append(errs, fmt.Errorf("unecpected line starting with, %s -> %s", currentName, tokens))
+				errs = append(errs, fmt.Errorf("unexpected line starting with, %s -> %s", currentName, tokens))
 			}
 
 		}
@@ -109,6 +109,13 @@ var (
 // into the PrometheusLogValue.
 func fillValue(tokens []string, dest *PrometheusLogValue) error {
 	var valueStr string
+
+	// ignore chain_info, since chain_info is of the following type:
+	// - chain_info {} 1 // {} results in error when parsing to quantileReg
+	if isChainInfo(tokens) {
+		return nil
+	}
+
 	// the format of the array is either:
 	// - metric_name metric_value
 	// - metric_name quantile_value metric_value
@@ -121,12 +128,18 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 
 	value, err := strconv.ParseFloat(valueStr, 64)
 	if err != nil {
-		return nil
-		// try to ignore this one error to see if it works
-		//return fmt.Errorf("cannot parse value from: %s; %s; %w", valueStr, tokens, err)
+		return fmt.Errorf("cannot parse value from: %s; %s; %w", valueStr, tokens, err)
 	}
 
 	dest.value = value
 
 	return nil
+}
+
+// isChainInfo checks if value is of the "chain_info" type
+func isChainInfo(tokens []string) bool {
+	if len(tokens) == 3 && tokens[1] == "chain_info" {
+		return true
+	}
+	return false
 }
