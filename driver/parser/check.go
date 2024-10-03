@@ -41,9 +41,6 @@ func (s *Scenario) Check() error {
 	if s.Duration <= 0 {
 		errs = append(errs, fmt.Errorf("scenario duration must be > 0"))
 	}
-	if s.NumValidators != nil && *s.NumValidators != 0 {
-		errs = append(errs, fmt.Errorf("scenario contains deprecated expression NumValidator"))
-	}
 	if err := s.checkValidatorConstraints(); err != nil {
 		errs = append(errs, err)
 	}
@@ -259,16 +256,15 @@ func (s *Scenario) GetStaticValidatorCount() int {
 }
 
 func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
-	var count int = 0
-	if n.Instances != nil {
-		count = *n.Instances
+	if !n.IsStaticValidator(scenario) {
+		return 0
 	}
 
-	if n.IsStaticValidator(scenario) {
-		return count
+	if n.Instances == nil {
+		return 1 // if unspecified = 1
 	}
 
-	return 0
+	return *n.Instances
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
