@@ -263,9 +263,8 @@ func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
 		return 0
 	}
 
-	// defaults to 1 if unspecified
 	if n.Instances == nil {
-		return 1
+		return DefaultInstance
 	}
 
 	return *n.Instances
