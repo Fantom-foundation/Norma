@@ -86,12 +86,10 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 				nextType = PrometheusMetricType(tokens[3])
 			} else if tokens[0] == currentName {
 				val := PrometheusLogValue{PrometheusLogKey: PrometheusLogKey{Name: currentName}, metricType: nextType}
-				if err := fillValue(tokens, &val); err != nil {
+				if skip, err := fillValue(tokens, &val); err != nil {
 					errs = append(errs, err)
-				} else {
-					if val.value != nil {
-						res = append(res, val)
-					}
+				} else if !skip {
+					res = append(res, val)
 				}
 			} else {
 				errs = append(errs, fmt.Errorf("unexpected line starting with, %s -> %s", currentName, tokens))
@@ -109,10 +107,12 @@ var (
 
 // fillValue analyses input tokens and stores values of quantile and the metrics value
 // into the PrometheusLogValue.
-func fillValue(tokens []string, dest *PrometheusLogValue) error {
-
-	if isBlacklistedValue(tokens) {
-		return nil // without setting dest.value
+// fillValue returns 1. bool indiciating if the log value should be skipped,
+//  2. error indicating that log value failed
+func fillValue(tokens []string, dest *PrometheusLogValue) (bool, error) {
+	var skip bool = isBlacklistedValue(tokens)
+	if skip {
+		return true, nil // without setting dest.value
 	}
 
 	var valueStr string
@@ -128,12 +128,12 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 
 	value, err := strconv.ParseFloat(valueStr, 64)
 	if err != nil {
-		return fmt.Errorf("cannot parse value from: %s", valueStr)
+		return false, fmt.Errorf("cannot parse value from: %s", valueStr)
 	}
 
 	dest.value = value
 
-	return nil
+	return false, nil
 }
 
 // isBlacklistedValue returns if token is blacklisted or not
