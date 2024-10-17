@@ -137,6 +137,7 @@ func fillValue(tokens []string, dest *PrometheusLogValue) (bool, error) {
 }
 
 // isBlacklistedValue returns if token is blacklisted or not
+// A token is blacklisted if it causes fillValue to fail
 func isBlacklistedValue(tokens []string) bool {
 	// chain_info {chain_id="4003"} 1
 	if len(tokens) == 3 && tokens[0] == "chain_info" {

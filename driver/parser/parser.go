@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	DefaultInstance    = 1
+	DefaultInstance = 1
+	// MaxBlockGas, MaxEpochGas defaults borrowed from example-genesis.json
 	DefaultMaxBlockGas = 20_500_000_000
 	DefaultMaxEpochGas = 1_500_000_000_000
 )
