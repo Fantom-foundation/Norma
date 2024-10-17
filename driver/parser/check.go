@@ -41,9 +41,6 @@ func (s *Scenario) Check() error {
 	if s.Duration <= 0 {
 		errs = append(errs, fmt.Errorf("scenario duration must be > 0"))
 	}
-	if s.NumValidators != nil && *s.NumValidators != 0 {
-		errs = append(errs, fmt.Errorf("scenario contains deprecated expression NumValidator"))
-	}
 	if err := s.checkValidatorConstraints(); err != nil {
 		errs = append(errs, err)
 	}
