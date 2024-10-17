@@ -177,13 +177,16 @@ func run(ctx *cli.Context) (err error) {
 		NumberOfValidators:    scenario.GetStaticValidatorCount(),
 		StateDbImplementation: db,
 		VmImplementation:      vm,
+		MaxBlockGas:           scenario.GetMaxBlockGas(),
+		MaxEpochGas:           scenario.GetMaxEpochGas(),
 	}
 
 	fmt.Printf("Creating network with %d static validator(s) using the `%v` DB and `%v` VM implementation ...\n",
 		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
 	)
-	netConfig.MaxBlockGas = scenario.GenesisGasLimits.MaxBlockGas
-	netConfig.MaxEpochGas = scenario.GenesisGasLimits.MaxEpochGas
+	fmt.Printf("Network max block gas: %d\n", scenario.GetMaxBlockGas())
+	fmt.Printf("Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
+
 	net, err := local.NewLocalNetwork(&netConfig)
 	if err != nil {
 		return err
