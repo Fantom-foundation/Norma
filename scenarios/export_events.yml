@@ -1,0 +1,22 @@
+# The name of the scenario
+name: Event Export From Single Validator Network
+
+# The duration of the scenario's runtime, in seconds.
+duration: 10
+
+nodes:
+  - name: validator
+    client:
+      type: validator
+    event:
+      export:
+        path: event_export_test.gz
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1          # start time
+    end: 9            # termination time
+    rate:
+      constant: 200    # Tx/s
