@@ -89,10 +89,12 @@ func ParsePrometheusLogReader(reader io.Reader) ([]PrometheusLogValue, error) {
 				if err := fillValue(tokens, &val); err != nil {
 					errs = append(errs, err)
 				} else {
-					res = append(res, val)
+					if val.value != nil {
+						res = append(res, val)
+					}
 				}
 			} else {
-				errs = append(errs, fmt.Errorf("unecpected line starting with, %s -> %s", currentName, tokens))
+				errs = append(errs, fmt.Errorf("unexpected line starting with, %s -> %s", currentName, tokens))
 			}
 
 		}
@@ -108,6 +110,11 @@ var (
 // fillValue analyses input tokens and stores values of quantile and the metrics value
 // into the PrometheusLogValue.
 func fillValue(tokens []string, dest *PrometheusLogValue) error {
+
+	if isBlacklistedValue(tokens) {
+		return nil // without setting dest.value
+	}
+
 	var valueStr string
 	// the format of the array is either:
 	// - metric_name metric_value
@@ -127,4 +134,14 @@ func fillValue(tokens []string, dest *PrometheusLogValue) error {
 	dest.value = value
 
 	return nil
+}
+
+// isBlacklistedValue returns if token is blacklisted or not
+func isBlacklistedValue(tokens []string) bool {
+	// chain_info {chain_id="4003"} 1
+	if len(tokens) == 3 && tokens[0] == "chain_info" {
+		return true
+	}
+
+	return false
 }
