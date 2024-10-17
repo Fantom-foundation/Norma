@@ -123,8 +123,8 @@ func TestLogsIntegrationGetRealMetric(t *testing.T) {
 	})
 
 	for _, metricKeys := range []monitoring.PrometheusLogKey{
-		monitoring.NewPrometheusKey("chain_execution", monitoring.Quantile05),
-		monitoring.NewPrometheusNameKey("chain_execution_count")} {
+		monitoring.NewPrometheusKey("chain_execution_nonresetting", monitoring.Quantile05),
+		monitoring.NewPrometheusNameKey("chain_execution_nonresetting_count")} {
 
 		// wait for the metric to arrive for some time
 		source := NewPromLogSource(monitor, metricKeys)
