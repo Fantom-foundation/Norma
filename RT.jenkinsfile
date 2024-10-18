@@ -86,10 +86,8 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_a1_latest') {
-						archiveArtifacts artifacts: '**'
-					}
+				always {
+					uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 				}
 			}
 		}
@@ -107,10 +105,8 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_a2_latest') {
-						archiveArtifacts artifacts: '**'
-					}
+				always {
+					uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 				}
 			}
 
@@ -131,8 +127,7 @@ pipeline {
 			post {
 				always {
 					script {
-						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
-						uploadArtifacts(artifacts)
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -153,8 +148,7 @@ pipeline {
 			post {
 				always {
 					script {
-						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
-						uploadArtifacts(artifacts)
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -175,8 +169,7 @@ pipeline {
 			post {
 				always {
 					script {
-						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
-						uploadArtifacts(artifacts)
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -195,9 +188,9 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_b4_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -218,8 +211,7 @@ pipeline {
 			post {
 				always {
 					script {
-						def artifacts = ["*.yml", "*.csv", "*.log", "*.html"]
-						uploadArtifacts(artifacts)
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -238,13 +230,12 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_c1_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
-
 		}
 	}
 }
