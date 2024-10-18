@@ -6,6 +6,7 @@ name: Small Network new Validator
 # The duration of the scenario's runtime, in seconds.
 duration: 200
 
+# Lower maximum gas limit to increase epoch rate
 genesis_gas_limit:
   max_block_gas: 20500000
   max_epoch_gas: 20500000
