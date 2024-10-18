@@ -29,6 +29,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -75,8 +77,9 @@ type ContainerConfig struct {
 	ShutdownTimeout *time.Duration
 	PortForwarding  map[network.Port]network.Port // Container Port => Host Port
 	Environment     map[string]string
-	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
-	Network         *Network // Docker network to join, nil to join bridge network
+	Entrypoint      []string          // Entrypoint to run when starting the container. Optional.
+	Network         *Network          // Docker network to join, nil to join bridge network
+	Mounts          map[string]string // localname:/path/in/docker
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -107,6 +110,20 @@ func Purge() error {
 	for _, c := range containers {
 		// remove the container
 		err = cli.cli.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{Force: true})
+		if err != nil {
+			return err
+		}
+	}
+
+	// get all volumes created by norma
+	volumes, err := cli.listVolumes()
+	if err != nil {
+		return err
+	}
+
+	// remove all volumes
+	for _, v := range volumes {
+		err := cli.cli.VolumeRemove(context.Background(), v.ClusterVolume.Info.VolumeID, true)
 		if err != nil {
 			return err
 		}
@@ -152,17 +169,34 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
-	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
-		Image:      config.ImageName,
-		Tty:        false,
-		Env:        envVars,
-		Entrypoint: config.Entrypoint,
-		Labels: map[string]string{
-			objectsLabel: "true",
+	//mount volume
+	mounts := []mount.Mount{}
+	for localName, pathInDocker := range config.Mounts {
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeVolume,
+			Source: localName,
+			Target: pathInDocker,
+		})
+	}
+
+	resp, err := c.cli.ContainerCreate(
+		context.Background(),
+		&container.Config{
+			Image:      config.ImageName,
+			Tty:        false,
+			Env:        envVars,
+			Entrypoint: config.Entrypoint,
+			Labels: map[string]string{
+				objectsLabel: "true",
+			},
 		},
-	}, &container.HostConfig{
-		PortBindings: portMapping,
-	}, nil, nil, "")
+		&container.HostConfig{
+			PortBindings: portMapping,
+			Mounts:       mounts,
+		},
+		nil, nil, "",
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +241,22 @@ func (c *Client) CreateBridgeNetwork() (*Network, error) {
 		name:   name,
 		client: c,
 	}, nil
+}
+
+// CreateVolume creates a DockerVolume
+func (c *Client) CreateVolume(name string) (*volume.Volume, error) {
+
+	vol, err := c.cli.VolumeCreate(context.Background(), volume.CreateOptions{
+		Name: name,
+		Labels: map[string]string{
+			fmt.Sprintf("%s", objectsLabel): "true",
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &vol, nil
 }
 
 // Hostname returns the hostname of the Container. In this case it is the ID of the
@@ -379,6 +429,7 @@ func (n *Network) Cleanup() error {
 			}
 		}
 	}
+
 	n.cleaned = true
 	// remove the network
 	return n.client.cli.NetworkRemove(context.Background(), n.id)
@@ -394,6 +445,17 @@ func (c *Client) listNetworks() ([]types.NetworkResource, error) {
 // listContainers returns a list of all containers on the Docker host filtered by label.
 func (c *Client) listContainers() ([]types.Container, error) {
 	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+}
+
+// listVolumes returns a list of all volumes
+func (c *Client) listVolumes() ([]*volume.Volume, error) {
+	resp, err := c.cli.VolumeList(context.Background(), volume.ListOptions{
+		Filters: filters.NewArgs(getObjectsLabelFilter()),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Volumes, nil
 }
 
 // getObjectsLabelFilter returns a filter for the objects label.
