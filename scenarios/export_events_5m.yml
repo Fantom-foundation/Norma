@@ -1,0 +1,30 @@
+name: Event Export Simulation
+duration: 30 # 5 simulation minutes = ~7 wallclock minutes = ~20 epoch simulated
+
+genesis_gas_limit: 
+  max_block_gas: 38750000
+  max_epoch_gas: 187500000
+
+# Norma requires 2 additional validators to function by default
+nodes:
+  - name: validator
+    instances: 2
+    client:
+      type: validator   
+    # this binds node datadir to ~/data/norma/<node-name> for the run duration
+    event:
+      # this exports as <monitoring output path>/events/<node-name>-events.gz
+      export: events.gz 
+  - name: observer
+    mount: ~/data/norma
+    instances: 3
+
+applications:
+  - name: load
+    instances: 2
+    type: ERC20
+    start: 1          
+    end: 29         
+    users: 50
+    rate:
+      constant: 200   # Tx/s
