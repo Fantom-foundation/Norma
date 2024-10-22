@@ -58,10 +58,10 @@ generate-mocks: # requires installed mockgen
 	go generate ./...
 
 norma: pull-prometheus-image normatool build-sonic-docker-image
-	go build -ldflags=-checklinkname=0 -o $(BUILD_DIR)/norma ./driver/norma
+	go build -o $(BUILD_DIR)/norma ./driver/norma
 
 normatool: 
-	go build -ldflags=-checklinkname=0 -o $(BUILD_DIR)/normatool ./driver/normatool
+	go build -o $(BUILD_DIR)/normatool ./driver/normatool
 
 test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-sonic-docker-image
 	go test ./... -v
