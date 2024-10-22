@@ -37,7 +37,7 @@ import (
 // Run executes the given scenario on the given network using the provided clock
 // as a time source. Execution will fail (fast) if the scenario is not valid (see
 // Scenario's Check() function).
-func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
+func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string) error {
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario) error {
 
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
-		scheduleNodeEvents(&node, queue, network, endTime)
+		scheduleNodeEvents(&node, queue, network, endTime, outputDir)
 	}
 	for _, app := range scenario.Applications {
 		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
@@ -183,7 +183,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
 // Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
-func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time) {
+func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string) {
 	instances := 1
 	if node.Instances != nil {
 		instances = *node.Instances
@@ -373,7 +373,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			fmt.Sprintf("[%s] Export Event", name),
 			func() ([]event, error) {
 				if nodeExportEvent != "" && nodeMount != "" {
-					path := fmt.Sprintf("%s_%s", name, nodeExportEvent)
+					path := filepath.Join(outputDir, fmt.Sprintf("%s_%s", name, nodeExportEvent))
 					f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 					if err != nil {
 						return nil, err

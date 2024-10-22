@@ -251,7 +251,7 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Running '%s' ...\n", path)
 	logger := startProgressLogger(monitor)
 	defer logger.shutdown()
-	err = executor.Run(clock, net, &scenario)
+	err = executor.Run(clock, net, &scenario, outputDir)
 	if err != nil {
 		return err
 	}
