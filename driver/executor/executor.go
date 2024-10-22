@@ -17,14 +17,20 @@
 package executor
 
 import (
+	"compress/gzip"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/parser"
+	"github.com/Fantom-foundation/go-opera/cmd/sonictool/chain"
+	"github.com/Fantom-foundation/lachesis-base/inter/idx"
 	pq "github.com/jupp0r/go-priority-queue"
 )
 
@@ -176,6 +182,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // scheduleNodeEvents schedules a number of events covering the life-cycle of a class of
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
+// Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
 func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time) {
 	instances := 1
 	if node.Instances != nil {
@@ -189,30 +196,88 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	if node.End != nil {
 		endTime = Seconds(*node.End)
 	}
+	nodeImportEvent := ""
+	if node.Event.Import != nil {
+		nodeImportEvent = *node.Event.Import
+	}
+	nodeExportEvent := ""
+	if node.Event.Export != nil {
+		nodeExportEvent = *node.Event.Export
+	}
+	nodeImportGenesis := ""
+	if node.Genesis.Import != nil {
+		nodeImportGenesis = *node.Genesis.Import
+	}
+	nodeExportGenesis := ""
+	if node.Genesis.Export != nil {
+		nodeExportGenesis = *node.Genesis.Export
+	}
+	nodeMount := ""
+	if node.Mount != nil {
+		nodeMount = *node.Mount
+	}
 
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
 
-		// add initial start
-		queue.add(toSingleEvent(startTime, fmt.Sprintf("Creating node %s", name), func() error {
-			newNode, err := net.CreateNode(&driver.NodeConfig{
-				Name:      name,
-				Validator: node.IsValidator(),
-				Cheater:   node.IsCheater(),
-			})
-			*instance = newNode
-			return err
-		}))
+		// 1. Queue Creation of Node
+		// create node -> import genesis if any -> import event if any
+		var importEvent event = toSingleEvent(
+			startTime,
+			fmt.Sprintf("[%s] Check Import Event", name),
+			func() error {
+				if nodeImportEvent != "" {
+					fmt.Sprintf("NOT IMPLEMENTED ! [%s] Importing event from %s\n", name, nodeImportEvent)
+				}
+				return nil
+			},
+		)
 
-		// handle timer
+		var importGenesis event = toEvent(
+			startTime,
+			fmt.Sprintf("[%s] Check Import Genesis", name),
+			func() ([]event, error) {
+				if nodeImportGenesis != "" {
+					fmt.Sprintf("NOT IMPLEMENTED ! [%s] Importing genesis from %s\n", name, nodeImportGenesis)
+				}
+				return []event{importEvent}, nil
+			},
+		)
+
+		var nodeCreate event = toEvent(
+			startTime,
+			fmt.Sprintf("[%s] Creating node", name),
+			func() ([]event, error) {
+				var mount *string = nil
+				if nodeMount != "" {
+					path := filepath.Join(nodeMount, name)
+					mount = &path
+					fmt.Println("mounting to", path)
+				}
+
+				newNode, err := net.CreateNode(&driver.NodeConfig{
+					Name:      name,
+					Validator: node.IsValidator(),
+					Cheater:   node.IsCheater(),
+					Mount:     mount,
+				})
+
+				*instance = newNode
+				return []event{importGenesis}, err
+			},
+		)
+
+		queue.add(nodeCreate)
+
+		// 2. Queue Timer SimEvents
 		if &node.Timer != nil {
 			for timing, evt := range node.Timer {
 				switch evt {
 				case "start":
 					queue.add(toSingleEvent(
 						Seconds(timing),
-						fmt.Sprintf("Starting node %s", name),
+						fmt.Sprintf("[%s] Starting node", name),
 						func() error {
 							_, err := net.StartNode(*instance)
 							return err
@@ -221,7 +286,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				case "end":
 					queue.add(toSingleEvent(
 						Seconds(timing),
-						fmt.Sprintf("Ending node %s", name),
+						fmt.Sprintf("[%s] Ending node", name),
 						func() error {
 							if instance == nil {
 								return nil
@@ -238,7 +303,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				case "kill":
 					queue.add(toSingleEvent(
 						Seconds(timing),
-						fmt.Sprintf("SigKill to node %s", name),
+						fmt.Sprintf("[%s] Killing node", name),
 						func() error {
 							return net.KillNode(*instance)
 						},
@@ -246,7 +311,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				case "restart":
 					queue.add(toEvent(
 						Seconds(timing),
-						fmt.Sprintf("Restart - ending node %s", name),
+						fmt.Sprintf("[%s] Restarting node, ending", name),
 						func() ([]event, error) {
 							if instance == nil {
 								return []event{}, nil
@@ -260,7 +325,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 							return []event{
 								toSingleEvent(
 									Seconds(timing)+30, // 30 seconds grace period
-									fmt.Sprintf("Restart - starting node %s", name),
+									fmt.Sprintf("[%s] Restarting node, starting", name),
 									func() error {
 										_, err := net.StartNode(*instance)
 										return err
@@ -273,63 +338,83 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			}
 		}
 
-		// handle genesis
-		if &node.Genesis != nil {
-			if node.Genesis.Import != "" {
-				queue.add(toSingleEvent(
-					Seconds(*node.Start),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing genesis from %s.", name, node.Genesis.Import),
-					func() error {
-						return nil
-					},
-				))
-			}
-			if node.Genesis.Export != "" {
-				queue.add(toSingleEvent(
-					Seconds(*node.End),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting genesis to %s.", name, node.Genesis.Export),
-					func() error {
-						return nil
-					},
-				))
-			}
-		}
+		// 3. Queue Removal of Node
+		// stop node -> export event if any -> export genesis if any -> remove node
+		var nodeRemove event = toSingleEvent(
+			endTime,
+			fmt.Sprintf("[%s] Removing node", name),
+			func() error {
+				if instance == nil {
+					return nil
+				}
+				if err := (*instance).Stop(); err != nil {
+					return err
+				}
 
-		// handle event
-		if &node.Event != nil {
-			if node.Event.Import != nil {
-				queue.add(toSingleEvent(
-					Seconds(*node.Event.Import.Start),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is importing event from %s.", name, node.Event.Import.Path),
-					func() error {
-						return nil
-					},
-				))
-			}
-			if node.Event.Export != nil {
-				queue.add(toSingleEvent(
-					Seconds(*node.Event.Export.Start),
-					fmt.Sprintf("[NOT IMPLEMENTED] node %s is exporting event to %s.", name, node.Event.Export.Path),
-					func() error {
-						return nil
-					},
-				))
-			}
-		}
-
-		// handle final end
-		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping node %s", name), func() error {
-			if instance == nil {
 				return nil
-			}
-			if err := net.RemoveNode(*instance); err != nil {
-				return err
-			}
-			if err := (*instance).Stop(); err != nil {
-				return err
-			}
-			return (*instance).Cleanup()
-		}))
+			},
+		)
+
+		// export genesis if any
+		var exportGenesis event = toEvent(
+			endTime,
+			fmt.Sprintf("[%s] Export Genesis", name),
+			func() ([]event, error) {
+				if nodeExportGenesis != "" {
+					fmt.Printf("Not Implemented ! [%s] Exporting genesis to %s\n", name, nodeExportGenesis)
+				}
+				return []event{nodeRemove}, nil
+			},
+		)
+
+		// export event if any
+		var exportEvent event = toEvent(
+			endTime,
+			fmt.Sprintf("[%s] Export Event", name),
+			func() ([]event, error) {
+				if nodeExportEvent != "" && nodeMount != "" {
+					path := fmt.Sprintf("%s_%s", node.Name, nodeExportEvent)
+					f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+					if err != nil {
+						return nil, err
+					}
+					defer f.Close()
+
+					var writer io.Writer = f
+					if strings.HasSuffix(path, ".gz") {
+						writer = gzip.NewWriter(writer)
+						defer writer.(*gzip.Writer).Close()
+					}
+
+					fmt.Printf("[%s] Exporting events from %s to %s\n", name, nodeMount, path)
+					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(0))
+					if err != nil {
+						return nil, fmt.Errorf("export events error: %w\n", err)
+					}
+				}
+				return []event{exportGenesis}, nil
+			},
+		)
+
+		// stop node
+		var stopNode event = toEvent(
+			endTime,
+			fmt.Sprintf("[%s] Stop Node", name),
+			func() ([]event, error) {
+				if instance == nil {
+					return nil, nil
+				}
+				if err := net.RemoveNode(*instance); err != nil {
+					return nil, err
+				}
+				if err := (*instance).Cleanup(); err != nil {
+					return nil, err
+				}
+				return []event{exportEvent}, nil
+			},
+		)
+
+		queue.add(stopNode)
 	}
 }
 
