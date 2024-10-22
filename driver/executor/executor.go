@@ -373,12 +373,14 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			fmt.Sprintf("[%s] Export Event", name),
 			func() ([]event, error) {
 				if nodeExportEvent != "" && nodeMount != "" {
-					path := fmt.Sprintf("%s_%s", node.Name, nodeExportEvent)
+					path := fmt.Sprintf("%s_%s", name, nodeExportEvent)
 					f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 					if err != nil {
 						return nil, err
 					}
 					defer f.Close()
+
+					datadir := filepath.Join(nodeMount, name)
 
 					var writer io.Writer = f
 					if strings.HasSuffix(path, ".gz") {
@@ -386,7 +388,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 						defer writer.(*gzip.Writer).Close()
 					}
 
-					fmt.Printf("[%s] Exporting events from %s to %s\n", name, nodeMount, path)
+					fmt.Printf("[%s] Exporting events from %s to %s\n", name, datadir, path)
 					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(0))
 					if err != nil {
 						return nil, fmt.Errorf("export events error: %w\n", err)
