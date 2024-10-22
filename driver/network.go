@@ -100,6 +100,7 @@ type NodeConfig struct {
 	Name      string
 	Validator bool
 	Cheater   bool
+	Mount     *string // mount node datadir to string if not nil
 	// TODO: add other parameters as needed
 	//  - features to include on the node
 	//  - state DB configuration
