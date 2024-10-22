@@ -216,10 +216,19 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	if node.Mount != nil {
 		nodeMount = *node.Mount
 	}
+	if nodeMount == "tmp" { // shorthand to bundle this into outputdir
+		nodeMount = outputDir
+	}
 
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
+
+		// if mounted, create datadir
+		if nodeMount != "" {
+			path := filepath.Join(nodeMount, name)
+			os.MkdirAll(path, os.ModePerm)
+		}
 
 		// 1. Queue Creation of Node
 		// create node -> import genesis if any -> import event if any

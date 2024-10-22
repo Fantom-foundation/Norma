@@ -10,11 +10,9 @@ nodes:
     instances: 2
     client:
       type: validator   
-    # this binds node datadir to ~/data/norma/<node-name> for the run duration
-    mount: /home/rapol/data/norma
+    mount: tmp # this binds node datadir to /tmp/#####/<node-name>
     event:
-      # this exports as <monitoring output path>/events/<node-name>-events.gz
-      export: events.gz 
+      export: events.gz # /tmp/####/<node-name>-events.gz
   - name: observer
 
 applications:
@@ -22,7 +20,7 @@ applications:
     instances: 2
     type: ERC20
     start: 1          
-    end: 299       
+    end: 299      
     users: 50
     rate:
       constant: 200   # Tx/s
