@@ -25,10 +25,10 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/parser"
 )
 
-// TestCheckScenarious iterates through all scenarios in this directory
+// TestCheckScenarios iterates through all scenarios in this directory
 // and its sub-directories and checks whether the contained YAML files
 // define valid scenarios.
-func TestCheckScenarious(t *testing.T) {
+func TestCheckScenarios(t *testing.T) {
 	files, err := listAll()
 	if err != nil {
 		t.Fatalf("failed to get list of all scenario files: %v", err)
