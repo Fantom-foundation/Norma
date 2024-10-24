@@ -356,10 +356,9 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				if instance == nil {
 					return nil
 				}
-				if err := (*instance).Stop(); err != nil {
+				if err := (*instance).Cleanup(); err != nil {
 					return err
 				}
-
 				return nil
 			},
 		)
@@ -418,7 +417,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				if err := net.RemoveNode(*instance); err != nil {
 					return nil, err
 				}
-				if err := (*instance).Cleanup(); err != nil {
+				if err := (*instance).Stop(); err != nil {
 					return nil, err
 				}
 				return []event{exportEvent}, nil
