@@ -51,7 +51,7 @@ func TestCheckScenarios(t *testing.T) {
 	}
 }
 
-// TestRunScenarios iterate through all scenarios "release_testing" subdirectory
+// TestRunScenarios iterate through all scenarios "unit_testing" subdirectory
 // and execute each scenarios to completion.
 var pathToUnitTesting string = "./unit_testing"
 
