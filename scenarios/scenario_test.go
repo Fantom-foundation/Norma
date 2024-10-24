@@ -28,30 +28,60 @@ import (
 // TestCheckScenarios iterates through all scenarios in this directory
 // and its sub-directories and checks whether the contained YAML files
 // define valid scenarios.
+var pathToScenarios string = "."
+
 func TestCheckScenarios(t *testing.T) {
-	files, err := listAll()
+	files, err := listAll(pathToScenarios)
 	if err != nil {
-		t.Fatalf("failed to get list of all scenario files: %v", err)
+		t.Fatalf("failed to get list of all scenario files: %w", err)
 	}
 	if len(files) == 0 {
 		t.Fatalf("failed to locate any scenario files!")
 	}
 	for _, file := range files {
 		t.Run(file, func(t *testing.T) {
-			scenaro, err := parser.ParseFile(file)
+			scenario, err := parser.ParseFile(file)
 			if err != nil {
-				t.Fatalf("failed to parse file: %v", err)
+				t.Fatalf("failed to parse file: %w", err)
 			}
-			if err = scenaro.Check(); err != nil {
-				t.Fatalf("scenaro check failed: %v", err)
+			if err = scenario.Check(); err != nil {
+				t.Fatalf("scenario check failed: %w", err)
 			}
 		})
 	}
 }
 
-func listAll() ([]string, error) {
+// TestRunScenarios iterate through all scenarios "release_testing" subdirectory
+// and execute each scenarios to completion.
+var pathToUnitTesting string = "./unit_testing"
+
+func TestRunScenarios(t *testing.T) {
+	files, err := listAll(pathToUnitTesting)
+	if err != nil {
+		t.Fatalf("failed to get list of all scenario files: %w", err)
+	}
+	if len(files) == 0 {
+		t.Fatalf("failed to locate any scenario files!")
+	}
+	for _, file := range files {
+		t.Run(file, func(t *testing.T) {
+			scenario, err := parser.ParseFile(file)
+			if err != nil {
+				t.Fatalf("failed to parse file: %w", err)
+			}
+			if err = scenario.Check(); err != nil {
+				t.Fatalf("scenario check failed: %w", err)
+			}
+			if err = scenario.Run(); err != nil {
+				t.Fatalf("scenario run failed; %w", err)
+			}
+		})
+	}
+}
+
+func listAll(root string) ([]string, error) {
 	files := []string{}
-	err := filepath.Walk(".",
+	err := filepath.Walk(root,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
