@@ -74,13 +74,14 @@ func (s *Scenario) GetMaxEpochGas() uint64 {
 type Node struct {
 	Name      string
 	Features  []string
-	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
-	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
-	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
-	Genesis   Genesis  `yaml:",omitempty"`
-	Event     Event
-	Client    ClientType
+	Instances *int               `yaml:",omitempty"` // nil is interpreted as 1
+	Start     *float32           `yaml:",omitempty"` // nil is interpreted as 0
+	End       *float32           `yaml:",omitempty"` // nil is interpreted as end-of-scenario
+	Genesis   Genesis            `yaml:",omitempty"`
+	Event     Event              `yaml:",omitempty"`
+	Client    ClientType         `yaml:",omitempty"`
 	Timer     map[float32]string `yaml:",omitempty"`
+	Mount     *string            `yaml:",omitempty"`
 }
 
 // IsValidator returns true if the node is defined as validator in Features
@@ -118,8 +119,8 @@ func (n *Node) IsCheater() bool {
 // genesis file at the provided time.
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
-	Import string
-	Export string
+	Import *string `yaml:",omitempty"`
+	Export *string `yaml:",omitempty"`
 }
 
 // ClientType is an optional configuration for Node.
@@ -131,17 +132,11 @@ type ClientType struct {
 }
 
 // Event is an optional configuration for a node.
-// EventImport will stop the client, import events and restart the client.
-// EventExport will stop the client, export events and restart the client.
+// Event.Import will stop the client, import events and restart the client.
+// Event.Export will stop the client, export events and restart the client.
 type Event struct {
-	Import *EventTarget
-	Export *EventTarget
-}
-
-// EventTarget is the configuration to specify the target event destination and the timing of the import/export.
-type EventTarget struct {
-	Start *float32
-	Path  string
+	Import *string `yaml:",omitempty"`
+	Export *string `yaml:",omitempty"`
 }
 
 // Application is a load generator in the simulated network. Each application defines

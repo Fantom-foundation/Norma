@@ -216,6 +216,7 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 
 	return n.createNode(&node.OperaNodeConfig{
 		Label:            config.Name,
+		Mount:            config.Mount,
 		NetworkConfig:    &n.config,
 		VmImplementation: n.config.VmImplementation,
 		ValidatorId:      &newValId,

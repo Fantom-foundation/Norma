@@ -98,18 +98,14 @@ func (n *Node) Check(scenario *Scenario) error {
 		n.Timer = make(map[float32]string, 10)
 	}
 
-	// Event import/export, Genesis import/export are being refactored.
-	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
-	// TODO: Remove this comment once refactoring is completed and
-	// Event import/export Genesis import/export check is in place.
-	if n.Genesis.Import != "" {
-		if err := isGenesisFile(n.Genesis.Import, true); err != nil {
+	if n.Genesis.Import != nil {
+		if err := isGenesisFile(*n.Genesis.Import, true); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	if n.Genesis.Export != "" {
-		if err := isGenesisFile(n.Genesis.Export, false); err != nil {
+	if n.Genesis.Export != nil {
+		if err := isGenesisFile(*n.Genesis.Export, false); err != nil {
 			errs = append(errs, err)
 		}
 	}

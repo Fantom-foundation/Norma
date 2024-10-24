@@ -77,6 +77,8 @@ type OperaNode struct {
 type OperaNodeConfig struct {
 	// The label to be used to name this node. The label should not be empty.
 	Label string
+	// mount datadir to host if set.
+	Mount *string
 	// The ID of the validator, nil if the node should not be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
@@ -126,6 +128,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VM_IMPL":          config.VmImplementation,
 			},
 			Network: dn,
+			Mount:   config.Mount,
 		})
 	})
 	if err != nil {

@@ -167,12 +167,8 @@ nodes:
     start: 5
     end: 7.5
     event:
-      import: 
-        start: 5
-        path: /path/to/events
-      export:
-        start: 7.5
-        path: /path/to/events
+      import: /path/to/events
+      export: /path/to/events
 
 applications:
   - name: lottery
