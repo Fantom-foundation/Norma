@@ -4,23 +4,26 @@ genesis_gas_limit:
   max_block_gas: 38750000
   max_epoch_gas: 187500000
 
-# Norma requires 2 additional validators to function by default
+# Norma requires 2 additional validators to function by default in fakenet setting
+# Total amount of nodes in this scenarios = 5 (2 validators + 1 observer +2 = 5)
 nodes: 
   - name: validator
-    instances: 2
     client:
       type: validator   
-    mount: tmp # this binds node datadir to /tmp/#####/<node-name>
+    mount: tmp
     event:
-      export: events.gz # /tmp/####/<node-name>-events.gz
+      export: events.gz
+  - name: additional-validator
+    client:
+      type: validator
   - name: observer
 
 applications:
   - name: load
     instances: 2
-    type: ERC20
+    type: counter
     start: 1          
-    end: 299      
+    end: 299
     users: 50
     rate:
       constant: 200   # Tx/s
