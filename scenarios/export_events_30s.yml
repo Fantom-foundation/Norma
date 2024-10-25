@@ -1,5 +1,5 @@
 name: Event Export Simulation
-duration: 20 # 20s simulation time
+duration: 30 # 30s simulation time
 genesis_gas_limit: 
   max_block_gas: 38750000
   max_epoch_gas: 187500000
@@ -8,6 +8,7 @@ genesis_gas_limit:
 # Total amount of nodes in this scenarios = 5 (1 validators + 1 observer +2 = 4)
 nodes: 
   - name: validator
+    instances: 2
     client:
       type: validator   
     mount: tmp
@@ -20,7 +21,7 @@ applications:
     instances: 2
     type: ERC20
     start: 1          
-    end: 19
+    end: 29
     users: 10
     rate:
       constant: 200   # Tx/s
