@@ -12,8 +12,8 @@ nodes:
     client:
       type: validator   
     mount: tmp
-      #event:
-      #export: events.gz
+    event:
+      export: events.gz
   - name: observer
 
 applications:
