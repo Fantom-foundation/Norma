@@ -397,7 +397,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 					}
 
 					fmt.Printf("[%s] Exporting events from %s to %s\n", name, datadir, path)
-					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(0))
+					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(20))
 					if err != nil {
 						return nil, fmt.Errorf("export events error: %w\n", err)
 					}
