@@ -469,7 +469,7 @@ func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Import: importFile}},
+			{Genesis: Genesis{ImportInitial: importFile}},
 		},
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file does not exist") {
@@ -481,7 +481,7 @@ func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Import: importFile}},
+			{Genesis: Genesis{ImportInitial: importFile}},
 		},
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path is not a genesis file") {
@@ -498,7 +498,7 @@ func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Export: exportFile}},
+			{Genesis: Genesis{ExportFinal: exportFile}},
 		},
 	}
 
