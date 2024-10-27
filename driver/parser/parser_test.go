@@ -212,7 +212,7 @@ nodes:
     start: 5
     end: 7.5
     genesis:
-      import: /path/to/genesis
+      importinitial: /path/to/genesis
 
 applications:
   - name: lottery
@@ -243,7 +243,7 @@ func TestParseWithGenesisImportWorks(t *testing.T) {
 	}
 }
 
-// withGenesisImport extends the small scenario with genesis option.
+// withGenesisExport extends the small scenario with genesis option.
 var withGenesisExport = `
 name: Small Test With Genesis
 num_validators: 5
@@ -256,7 +256,7 @@ nodes:
     start: 5
     end: 7.5
     genesis:
-      export: /path/to/genesis
+      exportfinal: /path/to/genesis
 
 applications:
   - name: lottery
