@@ -431,7 +431,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 						return nil, fmt.Errorf("failed to export events; failed to convert epoch to int; %w\n", err)
 					}
 
-					fmt.Printf("[%s] Exporting events up to epoch %d to path %s\n", name, epoch, path)
+					fmt.Printf("[%s] Exporting events up to epoch %d to path %s\n", name, epoch, pathToOutput)
 					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(epoch))
 					if err != nil {
 						return nil, fmt.Errorf("failed to export events; %w\n", err)
