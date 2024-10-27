@@ -8,6 +8,7 @@ genesis_gas_limit:
 # Total amount of nodes in this scenarios = 5 (1 validators + 1 observer +2 = 4)
 nodes: 
   - name: validator
+    instances: 2
     client:
       type: validator   
     mount: tmp
