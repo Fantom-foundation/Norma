@@ -17,7 +17,7 @@ echo "genesis validator count=${VALIDATORS_COUNT}"
 # Initialize datadir
 mkdir /datadir /genesis
 ./sonictool --datadir ${datadir} genesis json --experimental genesis.json
-cp genesis.json /genesis
+cp genesis.json /genesis/genesis.init.json
 
 ##
 ## if $VALIDATOR_ID is set, it is a validator
