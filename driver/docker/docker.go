@@ -78,7 +78,8 @@ type ContainerConfig struct {
 	Environment     map[string]string
 	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
 	Network         *Network // Docker network to join, nil to join bridge network
-	Mount           *string  // mount client datadir to this path on host
+	MountDatadir    *string  // mount client datadir to this path on host
+	MountGenesis    *string  // mount client genesis to this path on host
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -155,11 +156,18 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}
 
 	mountConfig := []mount.Mount{}
-	if config.Mount != nil {
+	if config.MountDatadir != nil {
 		mountConfig = append(mountConfig, mount.Mount{
 			Type:   mount.TypeBind,
-			Source: *config.Mount,
+			Source: *config.MountDatadir,
 			Target: "/datadir",
+		})
+	}
+	if config.MountGenesis != nil {
+		mountConfig = append(mountConfig, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: *config.MountGenesis,
+			Target: "/genesis",
 		})
 	}
 

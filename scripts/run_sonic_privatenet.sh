@@ -15,8 +15,9 @@ echo "genesis validator count=${VALIDATORS_COUNT}"
 ./set_genesis.sh genesis.json 100 ${VALIDATORS_COUNT} ${MAX_BLOCK_GAS} ${MAX_EPOCH_GAS}
 
 # Initialize datadir
-mkdir /datadir
+mkdir /datadir /genesis
 ./sonictool --datadir ${datadir} genesis json --experimental genesis.json
+cp genesis.json /genesis
 
 ##
 ## if $VALIDATOR_ID is set, it is a validator
