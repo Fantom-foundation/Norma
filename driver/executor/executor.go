@@ -421,13 +421,9 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 						return nil, fmt.Errorf("failed to export events; epochTracker == nil")
 					}
 
-					if id == nil {
-						return nil, fmt.Errorf("failed to export events; id == nil")
-					}
-
 					ep, exists := epochTracker[monitoring.Node(name)]
 					if !exists {
-						return nil, fmt.Errorf("failed to export events; failed to track %d in epochTracker %v\n", name, epochTracker)
+						return nil, fmt.Errorf("failed to export events; failed to track %s in epochTracker %v\n", name, epochTracker)
 					}
 
 					epoch, err := strconv.ParseInt(ep, 10, 32)
