@@ -8,7 +8,6 @@ genesis_gas_limit:
 # Total amount of nodes in this scenarios = 5 (1 validators + 1 observer +2 = 4)
 nodes: 
   - name: validator
-    instances: 2
     client:
       type: validator   
     mount: tmp
@@ -21,7 +20,7 @@ applications:
     instances: 2
     type: ERC20
     start: 1          
-    end: 299
+    end: 249
     users: 10
     rate:
-      constant: 200   # Tx/s
+      constant: 100   # Tx/s
