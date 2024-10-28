@@ -21,6 +21,6 @@ applications:
     type: ERC20
     start: 1          
     end: 249
-    users: 10
+    users: 5
     rate:
-      constant: 100   # Tx/s
+      constant: 50   # Tx/s
