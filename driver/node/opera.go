@@ -120,12 +120,14 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 			ShutdownTimeout: &shutdownTimeout,
 			PortForwarding:  portForwarding,
 			Environment: map[string]string{
-				"VALIDATOR_ID":     validatorId,
-				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
-				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
-				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
-				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
-				"VM_IMPL":          config.VmImplementation,
+				"NODE_LABEL":                config.Label,
+				"VALIDATOR_ID":              validatorId,
+				"TOTAL_VALIDATOR_COUNT":     fmt.Sprintf("%d", config.NetworkConfig.TotalNumberOfValidators),
+				"MANDATORY_VALIDATOR_COUNT": fmt.Sprintf("%d", config.NetworkConfig.MandatoryNumberOfValidators),
+				"MAX_BLOCK_GAS":             fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
+				"MAX_EPOCH_GAS":             fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
+				"STATE_DB_IMPL":             config.NetworkConfig.StateDbImplementation,
+				"VM_IMPL":                   config.VmImplementation,
 			},
 			Network: dn,
 			Mount:   config.Mount,
@@ -205,6 +207,9 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 }
 
 func (n *OperaNode) Stop() error {
+	if err := n.Interrupt(); err != nil {
+		return fmt.Errorf("failed to interrupt node %w", err)
+	}
 	return n.host.Stop()
 }
 
@@ -254,4 +259,9 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 // Kill sends a SigKill singal to node.
 func (n *OperaNode) Kill() error {
 	return n.container.SendSignal(docker.SigKill)
+}
+
+// Interrupt sends a SigInt singal to node.
+func (n *OperaNode) Interrupt() error {
+	return n.container.SendSignal(docker.SigInt)
 }

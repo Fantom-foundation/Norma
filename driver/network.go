@@ -73,8 +73,10 @@ type Network interface {
 // NetworkConfig is a collection of network parameters to be used by factories
 // creating network instances.
 type NetworkConfig struct {
-	// NumberOfValidators is the (static) number of validators in the network.
-	NumberOfValidators int
+	// TotalNumberOfValidators is the total number of validators that appear in the scenario, including the additional mandatory ones.
+	TotalNumberOfValidators int
+	// NumberOfMandatoryValidators is minimum number of validators required for the network to function.
+	MandatoryNumberOfValidators int
 	// MaxBlockGas is the maximum gas limit for a block in the network.
 	MaxBlockGas uint64
 	// MaxEpochGas is the maximum gas limit for an epoch in the network.

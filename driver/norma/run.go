@@ -173,21 +173,25 @@ func run(ctx *cli.Context) (err error) {
 	clock := executor.NewWallTimeClock()
 
 	// Startup network.
-	netConfig := driver.NetworkConfig{
-		NumberOfValidators:    scenario.GetStaticValidatorCount(),
-		StateDbImplementation: db,
-		VmImplementation:      vm,
-		MaxBlockGas:           scenario.GetMaxBlockGas(),
-		MaxEpochGas:           scenario.GetMaxEpochGas(),
-	}
+	static, dynamic := scenario.GetStaticDynamicValidatorCount()
+	mandatory := scenario.GetMandatoryValidatorCount()
 
-	fmt.Printf("Creating network with %d static validator(s) using the `%v` DB and `%v` VM implementation ...\n",
-		netConfig.NumberOfValidators, netConfig.StateDbImplementation, netConfig.VmImplementation,
-	)
-	fmt.Printf("Network max block gas: %d\n", scenario.GetMaxBlockGas())
-	fmt.Printf("Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
+	fmt.Printf("Creating network with: \n")
+	fmt.Printf("    Total number of validators: %d\n", static+dynamic+mandatory)
+	fmt.Printf("    Mandatory number of static validator: %d\n", mandatory)
+	fmt.Printf("    DB Implementation: `%v`\n", db)
+	fmt.Printf("    VM implementation: `%v`\n", vm)
+	fmt.Printf("    Network max block gas: %d\n", scenario.GetMaxBlockGas())
+	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
 
-	net, err := local.NewLocalNetwork(&netConfig)
+	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
+		TotalNumberOfValidators:     static + dynamic + mandatory,
+		MandatoryNumberOfValidators: mandatory,
+		StateDbImplementation:       db,
+		VmImplementation:            vm,
+		MaxBlockGas:                 scenario.GetMaxBlockGas(),
+		MaxEpochGas:                 scenario.GetMaxEpochGas(),
+	})
 	if err != nil {
 		return err
 	}

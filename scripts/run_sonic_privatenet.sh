@@ -1,4 +1,7 @@
 #!/bin/bash
+
+echo "I am ${NODE_LABEL}"
+
 # Get the local node's IP.
 list=`hostname -I`
 array=($list)
@@ -7,12 +10,13 @@ echo "Sonic is going to export its services on ${external_ip}"
 
 datadir="/datadir"
 echo "val id=${VALIDATOR_ID}"
-echo "genesis validator count=${VALIDATORS_COUNT}"
+echo "total validator count=${TOTAL_VALIDATOR_COUNT}"
+echo "mandatory validator count=${MANDATORY_VALIDATOR_COUNT}"
 
 # Call set genesis script - add balance to all possible validators
 # VALIDATOR_COUNT defines genesis validator count
 # TODO change 100 funded validator addresses to specific number
-./set_genesis.sh genesis.json 100 ${VALIDATORS_COUNT} ${MAX_BLOCK_GAS} ${MAX_EPOCH_GAS}
+./set_genesis.sh genesis.json ${TOTAL_VALIDATOR_COUNT} ${MANDATORY_VALIDATOR_COUNT} ${MAX_BLOCK_GAS} ${MAX_EPOCH_GAS}
 
 # Initialize datadir
 mkdir /datadir
@@ -58,6 +62,8 @@ else
 #  5 seconds in golang time 5*10^9 nanoseconds
   echo DoublesignProtection = 5000000000 >> config.toml
 fi
+
+trap "echo SIGINT; exit" SIGINT
 
 # Start sonic as part of a fake net with RPC service.
 ./sonicd \

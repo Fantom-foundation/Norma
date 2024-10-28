@@ -40,14 +40,18 @@ ENV STATE_DB_IMPL="geth"
 ENV VM_IMPL="geth"
 ENV LD_LIBRARY_PATH=./
 
-EXPOSE 5050
-EXPOSE 6060
-EXPOSE 18545
-EXPOSE 18546
+EXPOSE 5050 6060 18545 18546
 
 COPY genesis/example-genesis.json ./genesis.json
 COPY scripts/run_sonic_privatenet.sh ./run_sonic.sh
 COPY scripts/set_genesis.sh ./set_genesis.sh
 COPY build/normatool ./normatool
 
-CMD ["/bin/bash", "run_sonic.sh"]
+# Add https://github.com/krallin/tini
+ENV TINI_VERSION=v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+# -g forwards SIGINT to child processes and terminates client gracefully
+ENTRYPOINT ["/tini", "-g", "--"]
+CMD ["/bin/bash", "/run_sonic.sh"]

@@ -41,6 +41,7 @@ const objectsLabel = "norma"
 type Signal string
 
 // SigHup is the SIGHUP signal.
+var SigInt Signal = "SIGINT"
 var SigHup Signal = "SIGHUP"
 var SigKill Signal = "SIGKILL"
 
