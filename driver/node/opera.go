@@ -210,7 +210,7 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 
 func (n *OperaNode) Stop() error {
 	// SigInt repeatedly up to 9 times
-	if err := network.Retry(9, 1*time.Second, func() error {
+	if err := network.Retry(9, 5*time.Second, func() error {
 		if err := n.Interrupt(); err == nil {
 			return fmt.Errorf("failed to interrupt node %w", err)
 		} else {
