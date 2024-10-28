@@ -266,14 +266,16 @@ func (s *Scenario) GetStaticDynamicValidatorCount() (int, int) {
 // 1 if there is no validator in node list
 // 2 otherwise
 func (s *Scenario) GetMandatoryValidatorCount() int {
-	if len(s.Nodes) == 0 {
-		return 0
-	}
+	/*
+		if len(s.Nodes) == 0 {
+			return 0
+		}
 
-	static, dynamic := s.GetStaticDynamicValidatorCount()
-	if static+dynamic == 0 {
-		return 1
-	}
+		static, dynamic := s.GetStaticDynamicValidatorCount()
+		if static+dynamic == 0 {
+			return 1
+		}
+	*/
 
 	return 2
 }
