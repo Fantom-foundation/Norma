@@ -127,7 +127,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 			nodeConfig := node.OperaNodeConfig{
 				ValidatorId:      &validatorId,
 				NetworkConfig:    config,
-				Label:            fmt.Sprintf("_validator-%d", validatorId),
+				Label:            fmt.Sprintf("_validator-%d", i),
 				VmImplementation: config.VmImplementation,
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)

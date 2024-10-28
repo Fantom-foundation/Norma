@@ -209,10 +209,18 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 }
 
 func (n *OperaNode) Stop() error {
-	if err := n.Interrupt(); err != nil {
-		return fmt.Errorf("failed to interrupt node %w", err)
+	// SigInt repeatedly up to 9 times
+	if err := network.Retry(9, 1*time.Second, func() error {
+		if err := n.Interrupt(); err == nil {
+			return fmt.Errorf("failed to interrupt node %w", err)
+		} else {
+			return nil
+		}
+	}); err == nil {
+		return n.host.Stop()
 	}
-	return n.host.Stop()
+
+	return fmt.Errorf("failed to stop node")
 }
 
 func (n *OperaNode) Cleanup() error {
