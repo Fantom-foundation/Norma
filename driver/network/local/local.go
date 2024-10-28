@@ -116,13 +116,12 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	net.RegisterListener(net.rpcWorkerPool)
 
 	// Start all validators.
-	net.validators = make([]*node.OperaNode, config.NumberOfValidators)
-	errs := make([]error, config.NumberOfValidators)
+	net.validators = make([]*node.OperaNode, config.MandatoryNumberOfValidators)
+	errs := make([]error, config.MandatoryNumberOfValidators)
 	var wg sync.WaitGroup
-	for i := 0; i < config.NumberOfValidators; i++ {
+	for i := 0; i < config.MandatoryNumberOfValidators; i++ {
 		wg.Add(1)
-		i := i
-		go func() {
+		go func(i int) {
 			defer wg.Done()
 			validatorId := i + 1
 			nodeConfig := node.OperaNodeConfig{
@@ -132,7 +131,7 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 				VmImplementation: config.VmImplementation,
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
-		}()
+		}(i)
 	}
 	wg.Wait()
 

@@ -121,7 +121,7 @@ func startPrometheus(t *testing.T, net *local.LocalNetwork) *Prometheus {
 
 // createLocalNetwork creates a docker network and returns it.
 func createLocalNetwork(t *testing.T) *local.LocalNetwork {
-	config := driver.NetworkConfig{NumberOfValidators: 1}
+	config := driver.NetworkConfig{MandatoryNumberOfValidators: 1}
 	net, err := local.NewLocalNetwork(&config)
 	if err != nil {
 		t.Fatalf("error: %v", err)

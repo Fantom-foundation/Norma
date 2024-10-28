@@ -240,27 +240,42 @@ func isTimerSequenceValid(on bool, event string) (bool, error) {
 	return false, fmt.Errorf("event not recognized: %s", event)
 }
 
-// GetStaticValidatorCount returns the number of validator that begins at time 0
-// and last the entire duration.
+// GetStaticDynamicValidatorCount returns the number of static and dynamic validator.
 // Static Validator = Validator that lasts the entire duration of the run.
-func (s *Scenario) GetStaticValidatorCount() int {
-	var count int = 0
-	for _, n := range s.Nodes {
-		count += n.GetStaticValidatorCount(s)
+func (s *Scenario) GetStaticDynamicValidatorCount() (int, int) {
+	static, dynamic := 0, 0
+	for _, node := range s.Nodes {
+		if node.IsValidator() {
+			instances := 1
+			if node.Instances != nil {
+				instances = *node.Instances
+			}
+
+			if node.IsStaticValidator(s) {
+				static += instances
+			} else {
+				dynamic += instances
+			}
+		}
 	}
-	return count
+	return static, dynamic
 }
 
-func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
-	if !n.IsStaticValidator(scenario) {
+// GetMandatoryValidatorCount returns
+// 0 if there is no node
+// 1 if there is no validator in node list
+// 2 otherwise
+func (s *Scenario) GetMandatoryValidatorCount() int {
+	if len(s.Nodes) == 0 {
 		return 0
 	}
 
-	if n.Instances == nil {
-		return DefaultInstance
+	static, dynamic := s.GetStaticDynamicValidatorCount()
+	if static+dynamic == 0 {
+		return 1
 	}
 
-	return *n.Instances
+	return 2
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
@@ -454,7 +469,7 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 func (s *Scenario) checkValidatorConstraints() error {
 
 	// count static validators within the node
-	gvCount := s.GetStaticValidatorCount()
+	gvCount, dynamicValidatorCount := s.GetStaticDynamicValidatorCount()
 	if s.NumValidators == nil {
 		s.NumValidators = &gvCount
 	}
@@ -466,17 +481,6 @@ func (s *Scenario) checkValidatorConstraints() error {
 	}
 
 	// check if there are 2 genesis validators if there is dynamic validator
-	var dynamicValidatorCount int = 0
-	for _, node := range s.Nodes {
-		if node.IsValidator() && !node.IsStaticValidator(s) {
-			instances := 1
-			if node.Instances != nil {
-				instances = *node.Instances
-			}
-			dynamicValidatorCount += instances
-		}
-	}
-
 	if dynamicValidatorCount > 0 && gvCount < 2 {
 		return fmt.Errorf("Dynamic Validator count = %d; Number of static validators should have been at least 2: %d < 2", dynamicValidatorCount, *s.NumValidators)
 	}

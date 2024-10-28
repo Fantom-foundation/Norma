@@ -198,6 +198,11 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	if node.End != nil {
 		endTime = Seconds(*node.End)
 	}
+	nodeIsValidator := false
+	if node.Client.Type == "validator" {
+		nodeIsValidator = true
+	}
+	nodeIsCheater := false
 	nodeImportEvent := ""
 	if node.Event.Import != nil {
 		nodeImportEvent = *node.Event.Import
@@ -289,13 +294,13 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 
 				newNode, err := net.CreateNode(&driver.NodeConfig{
 					Name:         name,
-					Validator:    node.IsValidator(),
-					Cheater:      node.IsCheater(),
+					Validator:    nodeIsValidator,
+					Cheater:      nodeIsCheater,
 					MountDatadir: mountGenesis,
 					MountGenesis: mountDatadir,
 				})
-
 				*instance = newNode
+
 				return []event{importGenesis}, err
 			},
 		)
