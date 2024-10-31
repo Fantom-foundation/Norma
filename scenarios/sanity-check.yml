@@ -1,0 +1,23 @@
+# This scenario similuates a minimal network comprising only a single validator
+# running one application generating a small number of transactions.
+
+# The name of the scenario
+name: Sanity Check for Main
+
+# The duration of the scenario's runtime, in seconds.
+duration: 60
+
+# 2 static validators, nothing else.
+# Currently hard-coded to always add 2 static scenarios. 
+# This is the initial assumption when switching to privatenet(testnet).
+# This is to be changed.
+nodes:
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 10          # start time
+    end: 50            # termination time
+    rate:
+      constant: 200    # Tx/s
