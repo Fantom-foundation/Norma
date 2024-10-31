@@ -88,7 +88,9 @@ func TestLogsAddedToSeries(t *testing.T) {
 
 func TestLogsIntegrationGetRealMetric(t *testing.T) {
 	t.Log("========= This test purposely logs error, please ignore =========")
-	t.Cleanup("========= Purposely logged error ends =========")
+	t.Cleanup(func() {
+		t.Log("========= Purposely logged error ends =========")
+	})
 
 	t.Parallel()
 	ctrl := gomock.NewController(t)

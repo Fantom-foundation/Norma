@@ -17,8 +17,6 @@
 package nodemon
 
 import (
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -29,7 +27,9 @@ import (
 
 func TestCanCollectCpuProfileDateFromOperaNode(t *testing.T) {
 	t.Log("========= This test purposely logs error, please ignore =========")
-	t.Cleanup("========= Purposely logged error ends =========")
+	t.Cleanup(func() {
+		t.Log("========= Purposely logged error ends =========")
+	})
 
 	docker, err := docker.NewClient()
 	if err != nil {
