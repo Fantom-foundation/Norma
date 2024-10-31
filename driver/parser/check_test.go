@@ -170,7 +170,7 @@ func TestWaveCheck_NonPositivePeriodeIsDetected(t *testing.T) {
 	}
 	wave.Period = -1
 	if err := wave.Check(); err == nil {
-		t.Errorf("neagtive period length should not be allowed")
+		t.Errorf("negative period length should not be allowed")
 	}
 }
 
@@ -379,7 +379,7 @@ func TestScenario_NegativeDurationIsDetected(t *testing.T) {
 	scenario := Scenario{Name: "Test"}
 	scenario.Duration = -10
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "scenario duration must be > 0") {
-		t.Errorf("neagative duration was not detected")
+		t.Errorf("negative duration was not detected")
 	}
 }
 
@@ -388,7 +388,7 @@ func TestScenario_NegativeNumberOfValidatorsIsDetected(t *testing.T) {
 	scenario.NumValidators = new(int)
 	*scenario.NumValidators = -5
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "invalid number of validators: -5 <= 0") {
-		t.Errorf("neagative number of validators was not detected")
+		t.Errorf("negative number of validators was not detected")
 	}
 }
 
@@ -462,22 +462,26 @@ func TestScenario_CheatIssuesAreDetected(t *testing.T) {
 }
 
 func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
+	importFile := new(string)
+	*importFile = "/does/not/exist.g"
+
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Import: "/does/not/exist.g"}},
+			{Genesis: Genesis{ImportInitial: importFile}},
 		},
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file does not exist") {
 		t.Errorf("genesis does not exist but issue was not detected")
 	}
 
+	*importFile = "/does/not/exist.notg"
 	scenario = Scenario{
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Import: "/does/exist.notg"}},
+			{Genesis: Genesis{ImportInitial: importFile}},
 		},
 	}
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path is not a genesis file") {
@@ -486,13 +490,15 @@ func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
 }
 
 func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
-	f, _ := os.Create("file_exists.g")
+	exportFile := new(string)
+	*exportFile = "file_exists.g"
+	f, _ := os.Create(*exportFile)
 
 	scenario := Scenario{
 		Name:     "Test",
 		Duration: 60,
 		Nodes: []Node{
-			{Genesis: Genesis{Export: "file_exists.g"}},
+			{Genesis: Genesis{ExportFinal: exportFile}},
 		},
 	}
 

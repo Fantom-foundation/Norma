@@ -69,14 +69,18 @@ const operaDockerImageName = "sonic"
 // OperaNode implements the driver's Node interface by running a go-opera
 // client on a generic host.
 type OperaNode struct {
-	host  network.Host
-	label string
+	host      network.Host
+	container *docker.Container
+	label     string
 }
 
 type OperaNodeConfig struct {
 	// The label to be used to name this node. The label should not be empty.
 	Label string
-	// The ID of the validator, nil if the node should node be a validator.
+	// mount datadir, genesis to host if set.
+	MountDatadir *string
+	MountGenesis *string
+	// The ID of the validator, nil if the node should not be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
@@ -124,15 +128,18 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
 				"VM_IMPL":          config.VmImplementation,
 			},
-			Network: dn,
+			Network:      dn,
+			MountDatadir: config.MountDatadir,
+			MountGenesis: config.MountGenesis,
 		})
 	})
 	if err != nil {
 		return nil, err
 	}
 	node := &OperaNode{
-		host:  host,
-		label: config.Label,
+		host:      host,
+		container: host,
+		label:     config.Label,
 	}
 
 	// Wait until the OperaNode inside the Container is ready.
@@ -244,4 +251,9 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 	return network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
 		return rpcClient.Call(nil, "admin_removePeer", id)
 	})
+}
+
+// Kill sends a SigKill singal to node.
+func (n *OperaNode) Kill() error {
+	return n.container.SendSignal(docker.SigKill)
 }

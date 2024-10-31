@@ -29,6 +29,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -77,6 +78,8 @@ type ContainerConfig struct {
 	Environment     map[string]string
 	Entrypoint      []string // Entrypoint to run when starting the container. Optional.
 	Network         *Network // Docker network to join, nil to join bridge network
+	MountDatadir    *string  // mount client datadir to this path on host
+	MountGenesis    *string  // mount client genesis to this path on host
 }
 
 // NewClient creates a new client facilitating the creation of Docker
@@ -152,6 +155,22 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
+	mountConfig := []mount.Mount{}
+	if config.MountDatadir != nil {
+		mountConfig = append(mountConfig, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: *config.MountDatadir,
+			Target: "/datadir",
+		})
+	}
+	if config.MountGenesis != nil {
+		mountConfig = append(mountConfig, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: *config.MountGenesis,
+			Target: "/genesis",
+		})
+	}
+
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
 		Image:      config.ImageName,
 		Tty:        false,
@@ -162,6 +181,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		},
 	}, &container.HostConfig{
 		PortBindings: portMapping,
+		Mounts:       mountConfig,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err

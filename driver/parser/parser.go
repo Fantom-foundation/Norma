@@ -24,6 +24,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	DefaultInstance = 1
+	// MaxBlockGas, MaxEpochGas defaults borrowed from example-genesis.json
+	DefaultMaxBlockGas = 20_500_000_000
+	DefaultMaxEpochGas = 1_500_000_000_000
+)
+
 // Scenario is the root element of a scenario description. It defines basic
 // scenario properties and lists a set of nodes and transaction source.
 type Scenario struct {
@@ -38,8 +45,26 @@ type Scenario struct {
 
 // GasLimits is a configuration group for gas limit rules
 type GasLimits struct {
-	MaxBlockGas uint64 `yaml:"max_block_gas,omitempty"`
-	MaxEpochGas uint64 `yaml:"max_epoch_gas,omitempty"`
+	MaxBlockGas *uint64 `yaml:"max_block_gas,omitempty"`
+	MaxEpochGas *uint64 `yaml:"max_epoch_gas,omitempty"`
+}
+
+// GetMaxBlockGas returns MaxBlockGas
+func (s *Scenario) GetMaxBlockGas() uint64 {
+	if s.GenesisGasLimits.MaxBlockGas != nil {
+		return *s.GenesisGasLimits.MaxBlockGas
+	}
+
+	return DefaultMaxBlockGas
+}
+
+// GetMaxEpochGas returns MaxEpochGas
+func (s *Scenario) GetMaxEpochGas() uint64 {
+	if s.GenesisGasLimits.MaxEpochGas != nil {
+		return *s.GenesisGasLimits.MaxEpochGas
+	}
+
+	return DefaultMaxEpochGas
 }
 
 // Node is a configuration for a group of nodes with similar properties.
@@ -49,22 +74,34 @@ type GasLimits struct {
 type Node struct {
 	Name      string
 	Features  []string
-	Instances *int     `yaml:",omitempty"` // nil is interpreted as 1
-	Start     *float32 `yaml:",omitempty"` // nil is interpreted as 0
-	End       *float32 `yaml:",omitempty"` // nil is interpreted as end-of-scenario
-	Genesis   Genesis  `yaml:",omitempty"`
-	Event     Event
-	Client    ClientType
+	Instances *int               `yaml:",omitempty"` // nil is interpreted as 1
+	Start     *float32           `yaml:",omitempty"` // nil is interpreted as 0
+	End       *float32           `yaml:",omitempty"` // nil is interpreted as end-of-scenario
+	Genesis   Genesis            `yaml:",omitempty"`
+	Event     Event              `yaml:",omitempty"`
+	Client    ClientType         `yaml:",omitempty"`
+	Timer     map[float32]string `yaml:",omitempty"`
+	Mount     *string            `yaml:",omitempty"`
 }
 
 // IsValidator returns true if the node is defined as validator in Features
 func (n *Node) IsValidator() bool {
-	for _, item := range n.Features {
-		if item == "validator" {
-			return true
-		}
+	return n.Client.Type == "validator"
+}
+
+// IsStaticValidator returns true if the node is defined as validator in Features
+func (n *Node) IsStaticValidator(s *Scenario) bool {
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
 	}
-	return false
+
+	end := s.Duration
+	if n.End != nil {
+		end = *n.End
+	}
+
+	return n.IsValidator() && start == float32(0) && end == s.Duration
 }
 
 // IsCheater returns true if the node is defined as cheater in Features
@@ -82,8 +119,9 @@ func (n *Node) IsCheater() bool {
 // genesis file at the provided time.
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
-	Import string
-	Export string
+	ImportInitial *string `yaml:",omitempty"`
+	ExportInitial *string `yaml:",omitempty"`
+	ExportFinal   *string `yaml:",omitempty"`
 }
 
 // ClientType is an optional configuration for Node.
@@ -95,17 +133,11 @@ type ClientType struct {
 }
 
 // Event is an optional configuration for a node.
-// EventImport will stop the client, import events and restart the client.
-// EventExport will stop the client, export events and restart the client.
+// Event.Import will stop the client, import events and restart the client.
+// Event.Export will stop the client, export events and restart the client.
 type Event struct {
-	Import *EventTarget
-	Export *EventTarget
-}
-
-// EventTarget is the configuration to specify the target event destination and the timing of the import/export.
-type EventTarget struct {
-	Start *float32
-	Path  string
+	Import *string `yaml:",omitempty"`
+	Export *string `yaml:",omitempty"`
 }
 
 // Application is a load generator in the simulated network. Each application defines

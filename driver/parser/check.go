@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/Fantom-foundation/Norma/load/app"
@@ -40,8 +41,7 @@ func (s *Scenario) Check() error {
 	if s.Duration <= 0 {
 		errs = append(errs, fmt.Errorf("scenario duration must be > 0"))
 	}
-
-	if err := s.checkValidatorConstrains(); err != nil {
+	if err := s.checkValidatorConstraints(); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -91,19 +91,21 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.Instances != nil && *n.Instances < 0 {
 		errs = append(errs, fmt.Errorf("number of instances must be >= 0, is %d", *n.Instances))
 	}
+	if n.Client.Type == "" {
+		n.Client.Type = "observer"
+	}
+	if n.Timer == nil {
+		n.Timer = make(map[float32]string, 10)
+	}
 
-	// Event import/export, Genesis import/export are being refactored.
-	// The check "checkTimeNodeAlive" is now obsolete and thus removed.
-	// TODO: Remove this comment once refactoring is completed and
-	// Event import/export Genesis import/export check is in place.
-	if n.Genesis.Import != "" {
-		if err := isGenesisFile(n.Genesis.Import, true); err != nil {
+	if n.Genesis.ImportInitial != nil {
+		if err := isGenesisFile(*n.Genesis.ImportInitial, true); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	if n.Genesis.Export != "" {
-		if err := isGenesisFile(n.Genesis.Export, false); err != nil {
+	if n.Genesis.ExportFinal != nil {
+		if err := isGenesisFile(*n.Genesis.ExportFinal, false); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -112,7 +114,153 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
+	if err := n.isTypeValid(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := n.isTimerEventValid(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := n.isTimerSequenceValid(scenario); err != nil {
+		errs = append(errs, err)
+	}
+
 	return errors.Join(errs...)
+}
+
+// isTypeValid returns true if the node has valid type, false otherwise
+func (n *Node) isTypeValid() error {
+	return isTypeValid(n.Client.Type)
+}
+
+func isTypeValid(t string) error {
+	switch t {
+	case
+		"validator",
+		"rpc",
+		"observer":
+		return nil
+	}
+	return fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", t)
+}
+
+// isTimerEventValid returns true if the timer event has valid type, false otherwise
+func (n *Node) isTimerEventValid() error {
+	errs := []error{}
+	for _, event := range n.Timer {
+		if err := isTimerEventValid(event); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func isTimerEventValid(e string) error {
+	switch e {
+	case
+		"start",
+		"end",
+		"kill",
+		"restart":
+		return nil
+	}
+	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e)
+}
+
+// isTimerSequenceValid returns true if the timer sequence make sense e.g. start only happens if the node is off, end only happens if the node is on, etc.
+func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
+	var now bool = true // assumed to be started
+
+	start := float32(0)
+	if n.Start != nil {
+		start = *n.Start
+	}
+
+	end := scenario.Duration
+	if n.End != nil {
+		end = *n.End
+	}
+
+	// sort timer sequence
+	timings := make([]float32, 0, len(n.Timer))
+	for t := range n.Timer {
+		timings = append(timings, t)
+	}
+	slices.Sort(timings)
+
+	for ix, t := range timings {
+		if t < start {
+			return fmt.Errorf("Node %s has event at time %f < start=%f", n.Name, t, start)
+		}
+
+		if t > end {
+			return fmt.Errorf("Node %s has event at time %f > end=%f", n.Name, t, end)
+		}
+
+		next, err := isTimerSequenceValid(now, n.Timer[t])
+		if err != nil {
+			return fmt.Errorf("Node %s at time %f: %v", n.Name, t, err)
+		}
+
+		// if event is "kill", then it must be last
+		if n.Timer[t] == "kill" && ix < len(timings)-1 {
+			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
+		}
+
+		now = next
+	}
+
+	return nil
+}
+
+func isTimerSequenceValid(on bool, event string) (bool, error) {
+	switch event {
+	case "start":
+		if on {
+			return false, fmt.Errorf("asked to start, already on")
+		}
+		return true, nil
+	case "end":
+		if !on {
+			return false, fmt.Errorf("asked to end, already off")
+		}
+		return false, nil
+	case "kill":
+		if !on {
+			return false, fmt.Errorf("asked to kill, already off")
+		}
+		return false, nil
+	case "restart":
+		if !on {
+			return false, fmt.Errorf("asked to restart, already off")
+		}
+		return true, nil
+	}
+	return false, fmt.Errorf("event not recognized: %s", event)
+}
+
+// GetStaticValidatorCount returns the number of validator that begins at time 0
+// and last the entire duration.
+// Static Validator = Validator that lasts the entire duration of the run.
+func (s *Scenario) GetStaticValidatorCount() int {
+	var count int = 0
+	for _, n := range s.Nodes {
+		count += n.GetStaticValidatorCount(s)
+	}
+	return count
+}
+
+func (n *Node) GetStaticValidatorCount(scenario *Scenario) int {
+	if !n.IsStaticValidator(scenario) {
+		return 0
+	}
+
+	if n.Instances == nil {
+		return DefaultInstance
+	}
+
+	return *n.Instances
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
@@ -298,31 +446,39 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 	return errors.Join(errs...)
 }
 
-// checkValidatorConstrains makes sure that there is correct number of validators
+// checkValidatorConstraints makes sure that there is correct number of validators.
 // if during whole run there are just genesis validators, then one validator is enough
 // if there is creation of new validators trough sfc, then at all times there has to be at least two validators validating at every time
 // note during run validator won't be immediately registered for epoch, because it only happens during epoch seal,
 // therefore this check is not sufficient on its own
-func (s *Scenario) checkValidatorConstrains() error {
-	// check genesis validators
-	if s.NumValidators != nil && *s.NumValidators <= 0 {
+func (s *Scenario) checkValidatorConstraints() error {
+
+	// count static validators within the node
+	gvCount := s.GetStaticValidatorCount()
+	if s.NumValidators == nil {
+		s.NumValidators = &gvCount
+	}
+
+	// This must be check here for test to pass
+	// _must_ allow case where validator count = 0
+	if *s.NumValidators < 0 {
 		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
 	}
 
-	dynamicVals := make([]Node, 0)
-	// check dynamically created validators
+	// check if there are 2 genesis validators if there is dynamic validator
+	var dynamicValidatorCount int = 0
 	for _, node := range s.Nodes {
-		if node.IsValidator() {
-			dynamicVals = append(dynamicVals, node)
+		if node.IsValidator() && !node.IsStaticValidator(s) {
+			instances := 1
+			if node.Instances != nil {
+				instances = *node.Instances
+			}
+			dynamicValidatorCount += instances
 		}
 	}
 
-	if len(dynamicVals) == 0 {
-		return nil
-	}
-
-	if *s.NumValidators < 2 {
-		return fmt.Errorf("invalid number of genesis validators for sfc createValidator scenario: %d < 2", *s.NumValidators)
+	if dynamicValidatorCount > 0 && gvCount < 2 {
+		return fmt.Errorf("Dynamic Validator count = %d; Number of static validators should have been at least 2: %d < 2", dynamicValidatorCount, *s.NumValidators)
 	}
 
 	// TODO add check for dynamic validators to have always at least two running at any time

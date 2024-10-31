@@ -157,6 +157,20 @@ func (mr *MockNodeMockRecorder) IsRunning() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockNode)(nil).IsRunning))
 }
 
+// Kill mocks base method.
+func (m *MockNode) Kill() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Kill")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Kill indicates an expected call of Kill.
+func (mr *MockNodeMockRecorder) Kill() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kill", reflect.TypeOf((*MockNode)(nil).Kill))
+}
+
 // MetricsPort mocks base method.
 func (m *MockNode) MetricsPort() int {
 	m.ctrl.T.Helper()

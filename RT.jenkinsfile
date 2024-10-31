@@ -1,13 +1,15 @@
+@Library('shared-library') _
+
 // Norma CI test norma using "make test"
 
 def buildSuccess = false
 def enableA1 = false
 def enableA2 = false
-def enableB1 = false
-def enableB2 = false
-def enableB3 = false
+def enableB1 = true
+def enableB2 = true
+def enableB3 = true
 def enableB4 = false
-def enableB5 = false
+def enableB5 = true
 def enableC1 = false
 
 
@@ -84,10 +86,8 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_a1_latest') {
-						archiveArtifacts artifacts: '**'
-					}
+				always {
+					uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 				}
 			}
 		}
@@ -105,10 +105,8 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_a2_latest') {
-						archiveArtifacts artifacts: '**'
-					}
+				always {
+					uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 				}
 			}
 
@@ -123,19 +121,19 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b1 -o . release_testing/b1.NewValMidRun.yml
+				build/norma run --label b1 -o . scenarios/release_testing/b1.NewValMidRun.yml
 			}
 
 			post {
-				success {
-					dir('./norma_data_b1_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
 		}
 
-		stage('Test B2 - KillValMidRun') {
+		stage('Test B2 - EndValMidRun') {
 			when {
 				expression {
 					buildSuccess
@@ -144,13 +142,13 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b2 -o . release_testing/b2.KillValMidRun.yml
+				build/norma run --label b2 -o . scenarios/release_testing/b2.KillValMidRun.yml
 			}
 
 			post {
-				success {
-					dir('./norma_data_b2_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -165,13 +163,13 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b3 -o . release_testing/b3.RestartValMidRun.yml
+				build/norma run --label b3 -o . scenarios/release_testing/b3.RestartValMidRun.yml
 			}
 
 			post {
-				success {
-					dir('./norma_data_b3_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -190,9 +188,9 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_b4_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -207,13 +205,13 @@ pipeline {
 			}
 
 			steps {
-				build/norma run --label b5 -o . release_testing/b5.ValsBlackout.yml
+				build/norma run --label b5 -o . scenarios/release_testing/b5.ValsBlackout.yml
 			}
 			
 			post {
-				success {
-					dir('./norma_data_b5_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
@@ -232,13 +230,12 @@ pipeline {
 			}
 
 			post {
-				success {
-					dir('./norma_data_c1_latest') {
-						archiveArtifacts artifacts: '**'
+				always {
+					script {
+						uploadArtifacts(["*.yml", "*.csv", "*.log", "*.html"])
 					}
 				}
 			}
-
 		}
 	}
 }

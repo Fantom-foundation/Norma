@@ -1,0 +1,39 @@
+# Scenario B2: a validator leaves the network.
+# - Set up: start 4 sonic validators, 2 RPC nodes and 2 observers.
+# - Test: process transactions for 5 minutes, then then stop a validator and remove it from the validator list.
+# - Validation: check list of validator and validate final state of nodes
+
+name: B2.EndValMidRun
+duration: 300
+
+nodes:
+  - name: static-validator
+    instances: 3
+    client:
+      type: validator
+
+  - name: leaving-validator
+    end: 100
+    client:
+      type: validator
+  
+  - name: rpc
+    instances: 2
+    client: 
+      type: rpc
+    
+  - name: observer
+    instances: 2
+    client:
+      type: observer
+    
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 1           # start time
+    end: 299            # termination time
+    users: 20           # number of users / accounts generating txs
+    rate:
+      constant: 100     # Tx/s
