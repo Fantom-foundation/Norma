@@ -24,10 +24,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/Fantom-foundation/go-opera/cmd/sonictool/chain"
 	"github.com/Fantom-foundation/lachesis-base/inter/idx"
@@ -37,7 +39,7 @@ import (
 // Run executes the given scenario on the given network using the provided clock
 // as a time source. Execution will fail (fast) if the scenario is not valid (see
 // Scenario's Check() function).
-func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string) error {
+func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string, epochTracker map[monitoring.Node]string) error {
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputD
 
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
-		scheduleNodeEvents(&node, queue, network, endTime, outputDir)
+		scheduleNodeEvents(&node, queue, network, endTime, outputDir, epochTracker)
 	}
 	for _, app := range scenario.Applications {
 		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
@@ -183,7 +185,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
 // Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
-func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string) {
+func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string, epochTracker map[monitoring.Node]string) {
 	instances := 1
 	if node.Instances != nil {
 		instances = *node.Instances
@@ -388,18 +390,30 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 					}
 					defer f.Close()
 
-					datadir := filepath.Join(nodeMount, name)
-
 					var writer io.Writer = f
 					if strings.HasSuffix(path, ".gz") {
 						writer = gzip.NewWriter(writer)
 						defer writer.(*gzip.Writer).Close()
 					}
 
-					fmt.Printf("[%s] Exporting events from %s to %s\n", name, datadir, path)
-					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(0))
+					if epochTracker == nil {
+						return nil, fmt.Errorf("failed to export events; epochTracker == nil")
+					}
+
+					ep, exists := epochTracker[monitoring.Node(name)]
+					if !exists {
+						return nil, fmt.Errorf("failed to export events; failed to track %s in epochTracker %v\n", name, epochTracker)
+					}
+
+					epoch, err := strconv.ParseInt(ep, 10, 32)
 					if err != nil {
-						return nil, fmt.Errorf("export events error: %w\n", err)
+						return nil, fmt.Errorf("failed to export events; failed to convert epoch to int; %w\n", err)
+					}
+
+					fmt.Printf("[%s] Exporting events up to epoch %d to path %s\n", name, epoch, path)
+					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(epoch))
+					if err != nil {
+						return nil, fmt.Errorf("failed to export events; %w\n", err)
 					}
 				}
 				return []event{exportGenesis}, nil
