@@ -207,18 +207,7 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 }
 
 func (n *OperaNode) Stop() error {
-	// SigInt repeatedly up to 9 times
-	if err := network.Retry(9, 5*time.Second, func() error {
-		if err := n.Interrupt(); err == nil {
-			return fmt.Errorf("failed to interrupt node %w", err)
-		} else {
-			return nil
-		}
-	}); err == nil {
-		return n.host.Stop()
-	}
-
-	return fmt.Errorf("failed to stop node")
+	return n.host.Stop()
 }
 
 func (n *OperaNode) Cleanup() error {
@@ -267,9 +256,4 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 // Kill sends a SigKill singal to node.
 func (n *OperaNode) Kill() error {
 	return n.container.SendSignal(docker.SigKill)
-}
-
-// Interrupt sends a SigInt singal to node.
-func (n *OperaNode) Interrupt() error {
-	return n.container.SendSignal(docker.SigInt)
 }

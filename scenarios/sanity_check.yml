@@ -1,7 +1,6 @@
-# This scenario similuates a minimal network comprising only a single validator
-# running one application generating a small number of transactions.
-
-# The name of the scenario
+# This scenario simnulates a minimal network required after changes to privatenet(testnet).
+# There is no node in the nodelist, and 2 static validators should be added by norma controller.
+# This is to be used as a sanity check, and expanded to other scenarios.
 name: Sanity Check for Main
 
 # The duration of the scenario's runtime, in seconds.
@@ -20,4 +19,4 @@ applications:
     start: 10          # start time
     end: 50            # termination time
     rate:
-      constant: 200    # Tx/s
+      constant: 20    # Tx/s
