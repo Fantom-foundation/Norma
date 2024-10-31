@@ -119,8 +119,9 @@ func (n *Node) IsCheater() bool {
 // genesis file at the provided time.
 // GenesisExport will stop the client, export the genesis file and restart the client.
 type Genesis struct {
-	Import *string `yaml:",omitempty"`
-	Export *string `yaml:",omitempty"`
+	ImportInitial *string `yaml:",omitempty"`
+	ExportInitial *string `yaml:",omitempty"`
+	ExportFinal   *string `yaml:",omitempty"`
 }
 
 // ClientType is an optional configuration for Node.
