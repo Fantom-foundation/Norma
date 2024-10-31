@@ -24,10 +24,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/Fantom-foundation/go-opera/cmd/sonictool/chain"
 	"github.com/Fantom-foundation/lachesis-base/inter/idx"
@@ -37,7 +39,7 @@ import (
 // Run executes the given scenario on the given network using the provided clock
 // as a time source. Execution will fail (fast) if the scenario is not valid (see
 // Scenario's Check() function).
-func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string) error {
+func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string, epochTracker map[monitoring.Node]string) error {
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputD
 
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
-		scheduleNodeEvents(&node, queue, network, endTime, outputDir)
+		scheduleNodeEvents(&node, queue, network, endTime, outputDir, epochTracker)
 	}
 	for _, app := range scenario.Applications {
 		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
@@ -183,7 +185,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
 // Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
-func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string) {
+func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string, epochTracker map[monitoring.Node]string) {
 	instances := 1
 	if node.Instances != nil {
 		instances = *node.Instances
@@ -209,30 +211,47 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	if node.Event.Export != nil {
 		nodeExportEvent = *node.Event.Export
 	}
-	nodeImportGenesis := ""
-	if node.Genesis.Import != nil {
-		nodeImportGenesis = *node.Genesis.Import
+	nodeImportInitialGenesis := ""
+	if node.Genesis.ImportInitial != nil {
+		nodeImportInitialGenesis = *node.Genesis.ImportInitial
 	}
-	nodeExportGenesis := ""
-	if node.Genesis.Export != nil {
-		nodeExportGenesis = *node.Genesis.Export
+	// export by default at <output>/genesis
+	nodeExportInitialGenesis := filepath.Join(outputDir, "genesis")
+	if node.Genesis.ExportInitial != nil {
+		nodeExportInitialGenesis = *node.Genesis.ExportInitial
+	}
+	nodeExportFinalGenesis := ""
+	if node.Genesis.ExportFinal != nil {
+		nodeExportFinalGenesis = *node.Genesis.ExportFinal
 	}
 	nodeMount := ""
 	if node.Mount != nil {
-		nodeMount = *node.Mount
-	}
-	if nodeMount == "tmp" { // shorthand to bundle this into outputdir
-		nodeMount = outputDir
+		if *node.Mount == "tmp" { // shorthand to bundle this into outputdir
+			nodeMount = outputDir
+		} else {
+			nodeMount = *node.Mount
+		}
 	}
 
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", node.Name, i)
 		var instance = new(driver.Node)
 
-		// if mounted, create datadir
+		// make sure all mount points are created
+		var pathToDatadir string = ""
 		if nodeMount != "" {
-			path := filepath.Join(nodeMount, name)
-			os.MkdirAll(path, os.ModePerm)
+			pathToDatadir = filepath.Join(nodeMount, name)
+		}
+
+		var pathToGenesis string = ""
+		if nodeExportInitialGenesis != "" {
+			pathToDatadir = filepath.Join(nodeExportInitialGenesis, name)
+		}
+
+		for _, path := range []string{pathToDatadir, pathToGenesis} {
+			if path != "" {
+				os.MkdirAll(path, os.ModePerm)
+			}
 		}
 
 		// 1. Queue Creation of Node
@@ -252,8 +271,8 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			startTime,
 			fmt.Sprintf("[%s] Check Import Genesis", name),
 			func() ([]event, error) {
-				if nodeImportGenesis != "" {
-					fmt.Sprintf("NOT IMPLEMENTED ! [%s] Importing genesis from %s\n", name, nodeImportGenesis)
+				if nodeImportInitialGenesis != "" {
+					fmt.Sprintf("NOT IMPLEMENTED ! [%s] Importing genesis from %s\n", name, nodeImportInitialGenesis)
 				}
 				return []event{importEvent}, nil
 			},
@@ -263,18 +282,22 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			startTime,
 			fmt.Sprintf("[%s] Creating node", name),
 			func() ([]event, error) {
-				var mount *string = nil
-				if nodeMount != "" {
-					path := filepath.Join(nodeMount, name)
-					mount = &path
-					fmt.Println("mounting to", path)
+				var mountGenesis *string = nil
+				if pathToGenesis != "" {
+					mountGenesis = &pathToGenesis
+				}
+
+				var mountDatadir *string = nil
+				if pathToDatadir != "" {
+					mountDatadir = &pathToDatadir
 				}
 
 				newNode, err := net.CreateNode(&driver.NodeConfig{
-					Name:      name,
-					Validator: nodeIsValidator,
-					Cheater:   nodeIsCheater,
-					Mount:     mount,
+					Name:         name,
+					Validator:    node.IsValidator(),
+					Cheater:      node.IsCheater(),
+					MountDatadir: mountGenesis,
+					MountGenesis: mountDatadir,
 				})
 				*instance = newNode
 
@@ -369,12 +392,12 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		)
 
 		// export genesis if any
-		var exportGenesis event = toEvent(
+		var exportFinalGenesis event = toEvent(
 			endTime,
 			fmt.Sprintf("[%s] Export Genesis", name),
 			func() ([]event, error) {
-				if nodeExportGenesis != "" {
-					fmt.Printf("Not Implemented ! [%s] Exporting genesis to %s\n", name, nodeExportGenesis)
+				if nodeExportFinalGenesis != "" {
+					fmt.Printf("Not Implemented ! [%s] Exporting genesis to %s\n", name, nodeExportFinalGenesis)
 				}
 				return []event{nodeRemove}, nil
 			},
@@ -385,29 +408,42 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 			endTime,
 			fmt.Sprintf("[%s] Export Event", name),
 			func() ([]event, error) {
-				if nodeExportEvent != "" && nodeMount != "" {
-					path := filepath.Join(outputDir, fmt.Sprintf("%s_%s", name, nodeExportEvent))
-					f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+				if nodeExportEvent != "" && pathToDatadir != "" {
+					pathToOutput := filepath.Join(nodeMount, fmt.Sprintf("%s_%s", name, nodeExportEvent))
+					f, err := os.OpenFile(pathToOutput, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 					if err != nil {
 						return nil, err
 					}
 					defer f.Close()
 
-					datadir := filepath.Join(nodeMount, name)
-
 					var writer io.Writer = f
-					if strings.HasSuffix(path, ".gz") {
+					if strings.HasSuffix(pathToOutput, ".gz") {
 						writer = gzip.NewWriter(writer)
 						defer writer.(*gzip.Writer).Close()
 					}
+          
+					if epochTracker == nil {
+						return nil, fmt.Errorf("failed to export events; epochTracker == nil")
+					}
 
-					fmt.Printf("[%s] Exporting events from %s to %s\n", name, datadir, path)
-					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(0))
+					ep, exists := epochTracker[monitoring.Node(name)]
+					if !exists {
+						return nil, fmt.Errorf("failed to export events; failed to track %s in epochTracker %v\n", name, epochTracker)
+					}
+
+					epoch, err := strconv.ParseInt(ep, 10, 32)
 					if err != nil {
-						return nil, fmt.Errorf("export events error: %w\n", err)
+						return nil, fmt.Errorf("failed to export events; failed to convert epoch to int; %w\n", err)
+					}
+
+					fmt.Printf("[%s] Exporting events up to epoch %d to path %s\n", name, epoch, path)
+					err = chain.ExportEvents(writer, nodeMount, idx.Epoch(1), idx.Epoch(epoch))
+
+					if err != nil {
+						return nil, fmt.Errorf("failed to export events; %w\n", err)
 					}
 				}
-				return []event{exportGenesis}, nil
+				return []event{exportFinalGenesis}, nil
 			},
 		)
 

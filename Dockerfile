@@ -22,6 +22,11 @@ COPY client/ ./
 # Build sonic with caching
 RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
 
+# Build norma itself
+WORKDIR /norma
+COPY . ./
+RUN --mount=type=cache,target=/root/.cache/go-build make normatool
+
 # This results in an image that contains the sonic binary
 #
 # The container can be run by typing:
@@ -34,7 +39,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build make sonicd sonictool
 # > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t sonic
 #
 FROM debian:bookworm
-COPY --from=client-build /client/build/sonicd /client/build/sonictool .
+COPY --from=client-build /client/build/sonicd /client/build/sonictool ./
+COPY --from=client-build /norma/build/normatool ./
 
 ENV STATE_DB_IMPL="geth"
 ENV VM_IMPL="geth"
@@ -45,7 +51,6 @@ EXPOSE 5050 6060 18545 18546
 COPY genesis/example-genesis.json ./genesis.json
 COPY scripts/run_sonic_privatenet.sh ./run_sonic.sh
 COPY scripts/set_genesis.sh ./set_genesis.sh
-COPY build/normatool ./normatool
 
 # Add https://github.com/krallin/tini
 ENV TINI_VERSION=v0.19.0

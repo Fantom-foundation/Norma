@@ -98,14 +98,14 @@ func (n *Node) Check(scenario *Scenario) error {
 		n.Timer = make(map[float32]string, 10)
 	}
 
-	if n.Genesis.Import != nil {
-		if err := isGenesisFile(*n.Genesis.Import, true); err != nil {
+	if n.Genesis.ImportInitial != nil {
+		if err := isGenesisFile(*n.Genesis.ImportInitial, true); err != nil {
 			errs = append(errs, err)
 		}
 	}
 
-	if n.Genesis.Export != nil {
-		if err := isGenesisFile(*n.Genesis.Export, false); err != nil {
+	if n.Genesis.ExportFinal != nil {
+		if err := isGenesisFile(*n.Genesis.ExportFinal, false); err != nil {
 			errs = append(errs, err)
 		}
 	}

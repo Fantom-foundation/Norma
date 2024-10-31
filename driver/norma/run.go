@@ -255,7 +255,7 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Running '%s' ...\n", path)
 	logger := startProgressLogger(monitor)
 	defer logger.shutdown()
-	err = executor.Run(clock, net, &scenario, outputDir)
+	err = executor.Run(clock, net, &scenario, outputDir, logger.epochTracker)
 	if err != nil {
 		return err
 	}
@@ -276,12 +276,14 @@ func run(ctx *cli.Context) (err error) {
 }
 
 type progressLogger struct {
-	monitor *monitoring.Monitor
-	stop    chan<- bool
-	done    <-chan bool
+	monitor      *monitoring.Monitor
+	epochTracker map[monitoring.Node]string
+	stop         chan<- bool
+	done         <-chan bool
 }
 
 func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
+	epochTracker := map[monitoring.Node]string{}
 	stop := make(chan bool)
 	done := make(chan bool)
 
@@ -293,13 +295,14 @@ func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
 			case <-stop:
 				return
 			case <-ticker.C:
-				logState(monitor)
+				logState(monitor, epochTracker)
 			}
 		}
 	}()
 
 	return &progressLogger{
 		monitor,
+		epochTracker,
 		stop,
 		done,
 	}
@@ -310,9 +313,9 @@ func (l *progressLogger) shutdown() {
 	<-l.done
 }
 
-func logState(monitor *monitoring.Monitor) {
+func logState(monitor *monitoring.Monitor, epochTracker map[monitoring.Node]string) {
 	numNodes := getNumNodes(monitor)
-	blockStatuses := getBlockStatuses(monitor)
+	blockStatuses := getBlockStatuses(monitor, epochTracker)
 	txPers := getTxPerSec(monitor)
 	txs := getNumTxs(monitor)
 	gas := getGasUsed(monitor)
@@ -333,7 +336,7 @@ func getNumTxs(monitor *monitoring.Monitor) string {
 
 func getTxPerSec(monitor *monitoring.Monitor) []string {
 	metric := nodemon.TransactionsThroughput
-	return getLastValAllSubjects[monitoring.BlockNumber, float32](monitor, metric)
+	return getLastValAllSubjects[monitoring.BlockNumber, float32](monitor, metric, nil)
 }
 
 func getGasUsed(monitor *monitoring.Monitor) string {
@@ -341,24 +344,29 @@ func getGasUsed(monitor *monitoring.Monitor) string {
 	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
 }
 
-func getBlockStatuses(monitor *monitoring.Monitor) []string {
+func getBlockStatuses(monitor *monitoring.Monitor, epochTracker map[monitoring.Node]string) []string {
 	metric := nodemon.NodeBlockStatus
-	return getLastValAllSubjects[monitoring.Time, monitoring.BlockStatus, monitoring.Series[monitoring.Time, monitoring.BlockStatus]](monitor, metric)
+	return getLastValAllSubjects[monitoring.Time, monitoring.BlockStatus, monitoring.Series[monitoring.Time, monitoring.BlockStatus]](monitor, metric, epochTracker)
 }
 
 func getBlockProcessingTimes(monitor *monitoring.Monitor) []string {
 	metric := nodemon.BlockEventAndTxsProcessingTime
-	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.Series[monitoring.BlockNumber, time.Duration]](monitor, metric)
+	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.Series[monitoring.BlockNumber, time.Duration]](monitor, metric, nil)
 }
 
-func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, T]](monitor *monitoring.Monitor, metric monitoring.Metric[monitoring.Node, X]) []string {
+func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, T]](monitor *monitoring.Monitor, metric monitoring.Metric[monitoring.Node, X], epochTracker map[monitoring.Node]string) []string {
 	nodes := monitoring.GetSubjects(monitor, metric)
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i] < nodes[j] })
 
 	res := make([]string, 0, len(nodes))
 	for _, node := range nodes {
 		data, exists := monitoring.GetData(monitor, node, metric)
-		res = append(res, getLastValAsString[K, T](exists, data))
+		var d string = getLastValAsString[K, T](exists, data)
+		res = append(res, d)
+
+		if epochTracker != nil {
+			epochTracker[node] = strings.Split(d, "/")[0]
+		}
 	}
 	return res
 }
