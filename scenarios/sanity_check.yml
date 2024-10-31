@@ -8,9 +8,9 @@ name: Sanity Check for Main
 duration: 60
 
 # 2 static validators, nothing else.
-# Currently hard-coded to always add 2 static scenarios. 
-# This is the initial assumption when switching to privatenet(testnet).
-# This is to be changed.
+# Currently hard-coded to always add 2 static validators. 
+# This was the initial assumption when switching to privatenet(testnet).
+# Most likely, will be changed
 nodes:
 
 # In the network there is a single application producing constant load.
