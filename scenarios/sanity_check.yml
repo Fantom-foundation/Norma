@@ -1,4 +1,4 @@
-# This scenario simnulates a minimal network required after changes to privatenet(testnet).
+# This scenario simulates a minimal network required after changes to privatenet(testnet).
 # There is no node in the nodelist, and 2 static validators should be added by norma controller.
 # This is to be used as a sanity check, and expanded to other scenarios.
 name: Sanity Check for Main
