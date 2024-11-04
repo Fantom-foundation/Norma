@@ -146,20 +146,15 @@ func run(ctx *cli.Context) (err error) {
 	clock := executor.NewWallTimeClock()
 
 	// Startup network.
-	static, dynamic := scenario.GetStaticDynamicValidatorCount()
-	mandatory := scenario.GetMandatoryValidatorCount()
-
 	fmt.Printf("Creating network with: \n")
-	fmt.Printf("    Total number of validators: %d\n", static+dynamic+mandatory)
-	fmt.Printf("    Mandatory number of static validator: %d\n", mandatory)
 	fmt.Printf("    Network max block gas: %d\n", scenario.GetMaxBlockGas())
 	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
 
 	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
-		TotalNumberOfValidators: static + dynamic + mandatory,
-		NumberOfValidators:      mandatory,
-		MaxBlockGas:             scenario.GetMaxBlockGas(),
-		MaxEpochGas:             scenario.GetMaxEpochGas(),
+		NumberOfValidators:    scenario.GetNumValidators(),
+
+		MaxBlockGas:           scenario.GetMaxBlockGas(),
+		MaxEpochGas:           scenario.GetMaxEpochGas(),
 	})
 	if err != nil {
 		return err

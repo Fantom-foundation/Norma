@@ -6,16 +6,15 @@ name: Small Network new Validator
 # The duration of the scenario's runtime, in seconds.
 duration: 200
 
+# The number of validator nodes in the network.
+num_validators: 2
+
 genesis_gas_limit:
   max_block_gas: 20500000
   max_epoch_gas: 20500000
 
 # The network scenario to exercise.
 nodes:
-  - name: validator
-    instances: 2
-    client:
-      type: validator
   # We include 3 additional validator node one by one with 1 minute gaps.
   - name: A
     instances: 1

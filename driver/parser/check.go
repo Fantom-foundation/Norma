@@ -240,48 +240,6 @@ func isTimerSequenceValid(on bool, event string) (bool, error) {
 	return false, fmt.Errorf("event not recognized: %s", event)
 }
 
-// GetStaticDynamicValidatorCount returns the number of static and dynamic validator.
-// Static Validator = Validator that lasts the entire duration of the run.
-func (s *Scenario) GetStaticDynamicValidatorCount() (int, int) {
-	static, dynamic := 0, 0
-	for _, node := range s.Nodes {
-		if node.IsValidator() {
-			instances := 1
-			if node.Instances != nil {
-				instances = *node.Instances
-			}
-
-			if node.IsStaticValidator(s) {
-				static += instances
-			} else {
-				dynamic += instances
-			}
-		}
-	}
-	return static, dynamic
-}
-
-// GetMandatoryValidatorCount returns
-// 0 if there is no node
-// 1 if there is no validator in node list
-// 2 otherwise
-// DISABLED to enable sanity check
-func (s *Scenario) GetMandatoryValidatorCount() int {
-	return 2
-	/*
-		if len(s.Nodes) == 0 {
-			return 0
-		}
-
-		static, dynamic := s.GetStaticDynamicValidatorCount()
-		if static+dynamic == 0 {
-			return 1
-		}
-
-		return 2
-	*/
-}
-
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
 func isGenesisFile(path string, isImport bool) error {
 	errs := []error{}
@@ -466,29 +424,10 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 }
 
 // checkValidatorConstraints makes sure that there is correct number of validators.
-// if during whole run there are just genesis validators, then one validator is enough
-// if there is creation of new validators trough sfc, then at all times there has to be at least two validators validating at every time
-// note during run validator won't be immediately registered for epoch, because it only happens during epoch seal,
-// therefore this check is not sufficient on its own
 func (s *Scenario) checkValidatorConstraints() error {
-
-	// count static validators within the node
-	gvCount, dynamicValidatorCount := s.GetStaticDynamicValidatorCount()
-	if s.NumValidators == nil {
-		s.NumValidators = &gvCount
-	}
-
-	// This must be check here for test to pass
-	// _must_ allow case where validator count = 0
-	if *s.NumValidators < 0 {
+	if s.NumValidators != nil && *s.NumValidators < 0 {
 		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
 	}
 
-	if dynamicValidatorCount > 0 && gvCount < 2 {
-		return fmt.Errorf("Dynamic Validator count = %d; Number of static validators should have been at least 2: %d < 2", dynamicValidatorCount, *s.NumValidators)
-	}
-
-	// TODO add check for dynamic validators to have always at least two running at any time
-	// needs to be implemented before enabling to shut down genesis validators
 	return nil
 }

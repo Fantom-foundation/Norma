@@ -67,6 +67,13 @@ func (s *Scenario) GetMaxEpochGas() uint64 {
 	return DefaultMaxEpochGas
 }
 
+func (s *Scenario) GetNumValidators() int {
+	if s.NumValidators != nil {
+		return *s.NumValidators
+	}
+	return 1
+}
+
 // Node is a configuration for a group of nodes with similar properties.
 // Each node has a name, a set of features (e.g. 'validator', 'archve'),
 // and a start and end time. Furthermore, nodes may be instantiated multiple

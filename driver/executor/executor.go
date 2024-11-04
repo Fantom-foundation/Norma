@@ -307,74 +307,6 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 
 		queue.add(nodeCreate)
 
-		// 2. Queue Timer SimEvents
-		if &node.Timer != nil {
-			for timing, evt := range node.Timer {
-				switch evt {
-				case "start":
-					queue.add(toSingleEvent(
-						Seconds(timing),
-						fmt.Sprintf("[%s] Starting node", name),
-						func() error {
-							_, err := net.StartNode(*instance)
-							return err
-						},
-					))
-				case "end":
-					queue.add(toSingleEvent(
-						Seconds(timing),
-						fmt.Sprintf("[%s] Ending node", name),
-						func() error {
-							if instance == nil {
-								return nil
-							}
-							if err := net.RemoveNode(*instance); err != nil {
-								return err
-							}
-							if err := (*instance).Stop(); err != nil {
-								return err
-							}
-							return nil
-						},
-					))
-				case "kill":
-					queue.add(toSingleEvent(
-						Seconds(timing),
-						fmt.Sprintf("[%s] Killing node", name),
-						func() error {
-							return net.KillNode(*instance)
-						},
-					))
-				case "restart":
-					queue.add(toEvent(
-						Seconds(timing),
-						fmt.Sprintf("[%s] Restarting node, ending", name),
-						func() ([]event, error) {
-							if instance == nil {
-								return []event{}, nil
-							}
-							if err := net.RemoveNode(*instance); err != nil {
-								return []event{}, err
-							}
-							if err := (*instance).Stop(); err != nil {
-								return []event{}, err
-							}
-							return []event{
-								toSingleEvent(
-									Seconds(timing)+30, // 30 seconds grace period
-									fmt.Sprintf("[%s] Restarting node, starting", name),
-									func() error {
-										_, err := net.StartNode(*instance)
-										return err
-									},
-								),
-							}, nil
-						},
-					))
-				}
-			}
-		}
-
 		// 3. Queue Removal of Node
 		// stop node -> export event if any -> export genesis if any -> remove node
 		var nodeRemove event = toSingleEvent(
@@ -492,30 +424,21 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 
 	for i := 0; i < instances; i++ {
 		name := fmt.Sprintf("%s-%d", source.Name, i)
-		// TODO add deployment time of contract to config
-		queue.add(toSingleEvent(Seconds(5), fmt.Sprintf("deploying contract app %s", name), func() error {
-			return startApplication(net, source, name, users, startTime, endTime, queue)
-		}))
-	}
-	return nil
-}
-
-// startApplication creates and starts a new application on the network.
-func startApplication(net driver.Network, source *parser.Application, name string, users int, startTime, endTime Time, queue *eventQueue) error {
-	if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
-		Name:  name,
-		Type:  source.Type,
-		Rate:  &source.Rate,
-		Users: users,
-	}); err == nil { // schedule application only when it could be created
+		newApp, err := net.CreateApplication(&driver.ApplicationConfig{
+			Name:  name,
+			Type:  source.Type,
+			Rate:  &source.Rate,
+			Users: users,
+		})
+		if err != nil {
+			return err
+		}
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {
 			return newApp.Start()
 		}))
 		queue.add(toSingleEvent(endTime, fmt.Sprintf("stopping app %s", name), func() error {
 			return newApp.Stop()
 		}))
-	} else {
-		return err
 	}
 	return nil
 }
