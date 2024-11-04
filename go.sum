@@ -46,7 +46,7 @@ github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec h1:1Qb69m
 github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec/go.mod h1:CD8UlnlLDiqb36L110uqiP2iSflVjx9g/3U9hCI4q2U=
 github.com/Fantom-foundation/Carmen/go v0.0.0-20240919111317-5c737f72628f h1:86pdhhkjEuPrtJSZUg1ljHgJlCEFIwz2T9i1NHXaPME=
 github.com/Fantom-foundation/Carmen/go v0.0.0-20240919111317-5c737f72628f/go.mod h1:vNRGm/b21hDlF8kYyKHkXq1s+jLMKpV4jGwXHylXIIg=
-github.com/Fantom-foundation/Sonic v1.2.1-g h1:JXbQ1eJJik3fw6mYa6hvHvBl909E6s7U0F4V7YwixOc=
+github.com/Fantom-foundation/Sonic v1.2.1-g h1:SDU2UYS8udiDfV8gxR1RCKXddLACDHdztMcfpMkxH30=
 github.com/Fantom-foundation/Sonic v1.2.1-g/go.mod h1:XwQkoZ7rgZqr6of+faUMn1PN5Ze6rDtV/mPyDpOlRU4=
 github.com/Fantom-foundation/Substate v0.0.0-20230224090651-4c8c024214f4 h1:AA0BtERxmlf7jvDF4fwIB2k/Lsc7HTRE3QHTZnfcSVA=
 github.com/Fantom-foundation/Substate v0.0.0-20230224090651-4c8c024214f4/go.mod h1:/yIHWCDDJcdKMJYvOLdYOnHt5eUBF9XWnrvrNE+90ik=
