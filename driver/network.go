@@ -81,10 +81,6 @@ type NetworkConfig struct {
 	MaxBlockGas uint64
 	// MaxEpochGas is the maximum gas limit for an epoch in the network.
 	MaxEpochGas uint64
-	// The name of the StateDB implementation to be used by network nodes.
-	StateDbImplementation string
-	// The name of the EVM implementation to be used by network nodes.
-	VmImplementation string
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there
