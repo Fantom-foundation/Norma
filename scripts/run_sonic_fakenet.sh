@@ -17,4 +17,5 @@ mkdir /datadir
     --pprof --pprof.addr 0.0.0.0 \
     --nat=extip:${external_ip} \
     --metrics \
-    --metrics.expensive
+    --metrics.expensive \
+    --datadir.minfreedisk 0

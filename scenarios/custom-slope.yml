@@ -1,0 +1,16 @@
+name: Single Validator Network
+duration: 120
+
+# no node
+nodes:
+
+applications: 
+  - name: load
+    type: counter
+    users: 100
+    start: 20
+    end: 110
+    rate:
+      slope:
+        start: 0
+        increment: 1

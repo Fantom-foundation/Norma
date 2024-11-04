@@ -117,7 +117,7 @@ type ApplicationConfig struct {
 	Type string
 
 	// Rate defines the Tx/s config the source should produce while active.
-	Rate *parser.Rate
+	Rate parser.Rate
 
 	// Users defines the number of users sending transactions to the app.
 	Users int

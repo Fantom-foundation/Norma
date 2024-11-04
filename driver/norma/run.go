@@ -175,6 +175,7 @@ func run(ctx *cli.Context) (err error) {
 	// Startup network.
 	static, dynamic := scenario.GetStaticDynamicValidatorCount()
 	mandatory := scenario.GetMandatoryValidatorCount()
+	mandatory = 6
 
 	fmt.Printf("Creating network with: \n")
 	fmt.Printf("    Total number of validators: %d\n", static+dynamic+mandatory)

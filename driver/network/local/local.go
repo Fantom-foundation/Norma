@@ -337,7 +337,7 @@ const fakeNetworkID = 0xfa3
 type localApplication struct {
 	name       string
 	controller *controller.AppController
-	config     *driver.ApplicationConfig
+	config     driver.ApplicationConfig
 	cancel     context.CancelFunc
 	done       *sync.WaitGroup
 }
@@ -369,7 +369,7 @@ func (a *localApplication) Stop() error {
 }
 
 func (a *localApplication) Config() *driver.ApplicationConfig {
-	return a.config
+	return &a.config
 }
 
 func (a *localApplication) GetNumberOfUsers() int {
@@ -397,7 +397,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)
 	}
 
-	sh, err := shaper.ParseRate(config.Rate)
+	sh, err := shaper.ParseRate(&config.Rate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
@@ -410,7 +410,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	app := &localApplication{
 		name:       config.Name,
 		controller: appController,
-		config:     config,
+		config:     *config,
 		done:       &sync.WaitGroup{},
 	}
 

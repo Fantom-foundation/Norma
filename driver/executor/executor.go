@@ -57,7 +57,7 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputD
 		scheduleNodeEvents(&node, queue, network, endTime, outputDir, epochTracker)
 	}
 	for _, app := range scenario.Applications {
-		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
+		if err := scheduleApplicationEvents(app, queue, network, endTime); err != nil {
 			return err
 		}
 	}
@@ -471,7 +471,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 // scheduleApplicationEvents schedules a number of events covering the life-cycle of a class of
 // applications during the scenario execution. The nature of the scheduled applications is taken from the
 // given application description, and actions are applied to the given network.
-func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, net driver.Network, end Time) error {
+func scheduleApplicationEvents(source parser.Application, queue *eventQueue, net driver.Network, end Time) error {
 	instances := 1
 	if source.Instances != nil {
 		instances = *source.Instances
@@ -500,11 +500,11 @@ func scheduleApplicationEvents(source *parser.Application, queue *eventQueue, ne
 }
 
 // startApplication creates and starts a new application on the network.
-func startApplication(net driver.Network, source *parser.Application, name string, users int, startTime, endTime Time, queue *eventQueue) error {
+func startApplication(net driver.Network, source parser.Application, name string, users int, startTime, endTime Time, queue *eventQueue) error {
 	if newApp, err := net.CreateApplication(&driver.ApplicationConfig{
 		Name:  name,
 		Type:  source.Type,
-		Rate:  &source.Rate,
+		Rate:  source.Rate,
 		Users: users,
 	}); err == nil { // schedule application only when it could be created
 		queue.add(toSingleEvent(startTime, fmt.Sprintf("starting app %s", name), func() error {

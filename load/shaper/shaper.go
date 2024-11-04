@@ -51,6 +51,7 @@ func ParseRate(rate *parser.Rate) (Shaper, error) {
 	}
 
 	if rate.Constant != nil {
+		fmt.Printf("Creating constant shaper with rate: %v\n", *rate.Constant)
 		return NewConstantShaper(float64(*rate.Constant)), nil
 	}
 	if rate.Slope != nil {
