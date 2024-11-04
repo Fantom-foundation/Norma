@@ -84,8 +84,6 @@ type OperaNodeConfig struct {
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
 	NetworkConfig *driver.NetworkConfig
-	// The EVM implementation to be used on this node.
-	VmImplementation string
 	// ValidatorPubkey is nil if not a validator, else used as pubkey for the validator.
 	ValidatorPubkey *string
 }
@@ -125,8 +123,6 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
 				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
-				"STATE_DB_IMPL":    config.NetworkConfig.StateDbImplementation,
-				"VM_IMPL":          config.VmImplementation,
 			},
 			Network:      dn,
 			MountDatadir: config.MountDatadir,

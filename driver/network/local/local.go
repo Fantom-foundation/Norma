@@ -126,10 +126,9 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 			defer wg.Done()
 			validatorId := i + 1
 			nodeConfig := node.OperaNodeConfig{
-				ValidatorId:      &validatorId,
-				NetworkConfig:    config,
-				Label:            fmt.Sprintf("_validator-%d", validatorId),
-				VmImplementation: config.VmImplementation,
+				ValidatorId:   &validatorId,
+				NetworkConfig: config,
+				Label:         fmt.Sprintf("_validator-%d", validatorId),
 			}
 			net.validators[i], errs[i] = net.createNode(&nodeConfig)
 		}()
@@ -204,12 +203,11 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 
 	if config.Cheater {
 		_, err := n.createNode(&node.OperaNodeConfig{
-			Label:            "cheater-" + config.Name,
-			MountDatadir:     config.MountDatadir,
-			MountGenesis:     config.MountGenesis,
-			NetworkConfig:    &n.config,
-			VmImplementation: n.config.VmImplementation,
-			ValidatorId:      &newValId,
+			Label:         "cheater-" + config.Name,
+			MountDatadir:  config.MountDatadir,
+			MountGenesis:  config.MountGenesis,
+			NetworkConfig: &n.config,
+			ValidatorId:   &newValId,
 		})
 		if err != nil {
 			return nil, err
@@ -217,12 +215,11 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 	}
 
 	return n.createNode(&node.OperaNodeConfig{
-		Label:            config.Name,
-		MountDatadir:     config.MountDatadir,
-		MountGenesis:     config.MountGenesis,
-		NetworkConfig:    &n.config,
-		VmImplementation: n.config.VmImplementation,
-		ValidatorId:      &newValId,
+		Label:         config.Name,
+		MountDatadir:  config.MountDatadir,
+		MountGenesis:  config.MountGenesis,
+		NetworkConfig: &n.config,
+		ValidatorId:   &newValId,
 	})
 }
 

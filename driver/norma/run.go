@@ -50,23 +50,16 @@ var runCommand = cli.Command{
 	Name:   "run",
 	Usage:  "runs a scenario",
 	Flags: []cli.Flag{
-		&dbImpl,
 		&evalLabel,
 		&keepPrometheusRunning,
 		&numValidators,
 		&skipChecks,
 		&skipReportRendering,
-		&vmImpl,
 		&outputDirectory,
 	},
 }
 
 var (
-	dbImpl = cli.StringFlag{
-		Name:  "db-impl",
-		Usage: "select the DB implementation to use (geth or carmen)",
-		Value: "carmen",
-	}
 	evalLabel = cli.StringFlag{
 		Name:  "label",
 		Usage: "define a label for to be added to the monitoring data for this run. If empty, a random label is used.",
@@ -95,31 +88,11 @@ var (
 		Name:  "skip-report-rendering",
 		Usage: "disables the rendering of the final summary report",
 	}
-	vmImpl = cli.StringFlag{
-		Name:  "vm-impl",
-		Usage: "select the VM implementation to use (geth, tosca, lfvm, ...)",
-		Value: "tosca",
-	}
 )
 
 func run(ctx *cli.Context) (err error) {
 	if num := ctx.Int(numValidators.Name); num != 0 {
 		fmt.Printf("[DEPRECATED] --num-validator flag has been deprecated along with NumValidator configuration in scenarios.\n --num-validator %d will not have any effect when running the provided scenarios.", num)
-	}
-
-	db := strings.ToLower(ctx.String(dbImpl.Name))
-	if db == "carmen" || db == "go-file" {
-		db = "go-file"
-	} else if db != "geth" {
-		return fmt.Errorf("unknown value for --%v flag: %v", dbImpl.Name, db)
-	}
-
-	vm := strings.ToLower(ctx.String(vmImpl.Name))
-	if vm == "tosca" {
-		vm = "lfvm"
-	}
-	if !isValidVmImpl(vm) {
-		return fmt.Errorf("unknown value for --%v flag: %v", vmImpl.Name, vm)
 	}
 
 	label := ctx.String(evalLabel.Name)
@@ -179,16 +152,12 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Creating network with: \n")
 	fmt.Printf("    Total number of validators: %d\n", static+dynamic+mandatory)
 	fmt.Printf("    Mandatory number of static validator: %d\n", mandatory)
-	fmt.Printf("    DB Implementation: `%v`\n", db)
-	fmt.Printf("    VM implementation: `%v`\n", vm)
 	fmt.Printf("    Network max block gas: %d\n", scenario.GetMaxBlockGas())
 	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
 
 	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
 		TotalNumberOfValidators: static + dynamic + mandatory,
 		NumberOfValidators:      mandatory,
-		StateDbImplementation:   db,
-		VmImplementation:        vm,
 		MaxBlockGas:             scenario.GetMaxBlockGas(),
 		MaxEpochGas:             scenario.GetMaxEpochGas(),
 	})
@@ -380,12 +349,4 @@ func getLastValAsString[K constraints.Ordered, T any](exists bool, series monito
 		return "N/A"
 	}
 	return fmt.Sprintf("%v", point.Value)
-}
-
-func isValidVmImpl(name string) bool {
-	switch strings.ToLower(name) {
-	case "geth", "lfvm", "lfvm-si", "evmzero", "evmone":
-		return true
-	}
-	return false
 }
