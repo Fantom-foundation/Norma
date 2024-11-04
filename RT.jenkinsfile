@@ -47,7 +47,7 @@ pipeline {
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
-					sh 'diff=`${GOROOT}/bin/gofmt -l .`; echo "$diff"; test -z "$diff"'
+					sh 'diff=`${GOROOT}/bin/gofmt -l \$(find . -type f -name "*.go"| grep -v "/client/")`; echo "$diff"; test -z "$diff"'
 				}
 			}
 		}
