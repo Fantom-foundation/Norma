@@ -11,15 +11,10 @@ pipeline {
 
 	environment {
 		GOROOT = '/usr/local/go'
+		DOCKER_API_VERSION = 1.45
 	}
 
 	stages {
-		stage('Export Docker API') {
-			steps {
-				sh 'export DOCKER_API_VERSION=1.45'
-			}
-		}
-
 		stage('Check Norma Format') {
 			steps {
 				catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
