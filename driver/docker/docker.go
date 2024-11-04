@@ -109,7 +109,7 @@ func Purge() error {
 	// remove all containers
 	for _, c := range containers {
 		// remove the container
-		err = cli.cli.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{Force: true})
+		err = cli.cli.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: true})
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}
 
 	if err := network.Retry(network.DefaultRetryAttempts, 1*time.Second, func() error {
-		return c.cli.ContainerStart(context.Background(), resp.ID, types.ContainerStartOptions{})
+		return c.cli.ContainerStart(context.Background(), resp.ID, container.StartOptions{})
 	}); err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (c *Container) Cleanup() error {
 		return err
 	}
 	c.cleaned = true
-	return c.client.cli.ContainerRemove(context.Background(), c.id, types.ContainerRemoveOptions{})
+	return c.client.cli.ContainerRemove(context.Background(), c.id, container.RemoveOptions{})
 }
 
 // GetAddressForService retrieves the Address of a service running in this
@@ -285,7 +285,7 @@ func (c *Container) GetAddressForService(service *network.ServiceDescription) *n
 
 // SaveLogTo fetches the log of the container and saves it to the given directory.
 func (c *Container) SaveLogTo(directory string) error {
-	opt := types.ContainerLogsOptions{
+	opt := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 	}
@@ -311,7 +311,7 @@ func (c *Container) SaveLogTo(directory string) error {
 }
 
 func (c *Container) StreamLog() (io.ReadCloser, error) {
-	opt := types.ContainerLogsOptions{
+	opt := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -413,7 +413,7 @@ func (c *Client) listNetworks() ([]types.NetworkResource, error) {
 
 // listContainers returns a list of all containers on the Docker host filtered by label.
 func (c *Client) listContainers() ([]types.Container, error) {
-	return c.cli.ContainerList(context.Background(), types.ContainerListOptions{})
+	return c.cli.ContainerList(context.Background(), container.ListOptions{})
 }
 
 // getObjectsLabelFilter returns a filter for the objects label.
