@@ -11,6 +11,7 @@ pipeline {
 
 	environment {
 		GOROOT = '/usr/local/go'
+		DOCKER_API_VERSION = 1.45
 	}
 
 	stages {

@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Get the local node's IP.
 list=`hostname -I`
 array=($list)
