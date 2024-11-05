@@ -23,13 +23,16 @@ import (
 	"testing"
 
 	"github.com/Fantom-foundation/Norma/driver/parser"
+	run "github.com/Fantom-foundation/Norma/driver/runner"
 )
 
-// TestCheckScenarious iterates through all scenarios in this directory
+var pathToScenarios string = "."
+
+// TestCheckScenarios iterates through all scenarios in this directory
 // and its sub-directories and checks whether the contained YAML files
 // define valid scenarios.
-func TestCheckScenarious(t *testing.T) {
-	files, err := listAll()
+func TestCheckScenarios(t *testing.T) {
+	files, err := listAll(pathToScenarios)
 	if err != nil {
 		t.Fatalf("failed to get list of all scenario files: %v", err)
 	}
@@ -38,20 +41,54 @@ func TestCheckScenarious(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run(file, func(t *testing.T) {
-			scenaro, err := parser.ParseFile(file)
+			scenario, err := parser.ParseFile(file)
 			if err != nil {
 				t.Fatalf("failed to parse file: %v", err)
 			}
-			if err = scenaro.Check(); err != nil {
-				t.Fatalf("scenaro check failed: %v", err)
+			if err = scenario.Check(); err != nil {
+				t.Fatalf("scenario check failed: %v", err)
 			}
 		})
 	}
 }
 
-func listAll() ([]string, error) {
+// TestRunScenarios iterate through all scenarios "unit_testing" subdirectory
+// and execute each scenarios to completion.
+var pathToUnitTesting string = "./test"
+var TestRunConfig = run.RunConfig{
+	Label:                   "test",
+	OutputDirectory:         nil,
+	SkipReportRendering:     true,
+	SkipCheckNetworkPostRun: true,
+}
+
+func TestRunScenarios(t *testing.T) {
+	files, err := listAll(pathToUnitTesting)
+	if err != nil {
+		t.Fatalf("failed to get list of all scenario files: %v", err)
+	}
+	if len(files) == 0 {
+		t.Fatalf("failed to locate any scenario files!")
+	}
+	for _, file := range files {
+		t.Run(file, func(t *testing.T) {
+			scenario, err := parser.ParseFile(file)
+			if err != nil {
+				t.Fatalf("failed to parse file: %v", err)
+			}
+			if err = scenario.Check(); err != nil {
+				t.Fatalf("scenario check failed: %v", err)
+			}
+			if err = run.RunScenario(&scenario, TestRunConfig); err != nil {
+				t.Fatalf("scenario run failed; %v", err)
+			}
+		})
+	}
+}
+
+func listAll(path string) ([]string, error) {
 	files := []string{}
-	err := filepath.Walk(".",
+	err := filepath.Walk(path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

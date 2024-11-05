@@ -19,28 +19,15 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/checking"
-
-	"github.com/Fantom-foundation/Norma/analysis/report"
-	"github.com/Fantom-foundation/Norma/driver"
-	"github.com/Fantom-foundation/Norma/driver/executor"
-	"github.com/Fantom-foundation/Norma/driver/monitoring"
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/app"
-	netmon "github.com/Fantom-foundation/Norma/driver/monitoring/network"
-	nodemon "github.com/Fantom-foundation/Norma/driver/monitoring/node"
-	prometheusmon "github.com/Fantom-foundation/Norma/driver/monitoring/prometheus"
 	_ "github.com/Fantom-foundation/Norma/driver/monitoring/user"
-	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/driver/parser"
+	"github.com/Fantom-foundation/Norma/driver/runner"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/constraints"
 )
 
 // Run with `go run ./driver/norma run <scenario.yml>`
@@ -112,12 +99,6 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
-	if err := scenario.Check(); err != nil {
-		return err
-	}
-
-	fmt.Printf("Starting evaluation %s\n", label)
-
 	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
 	outputDir, err := os.MkdirTemp(ctx.String(outputDirectory.Name), fmt.Sprintf("norma_data_%s_", label))
 	if err != nil {
@@ -131,8 +112,6 @@ func run(ctx *cli.Context) (err error) {
 	}
 	os.Symlink(outputDir, symlink)
 
-	fmt.Printf("Monitoring data is written to %v\n", outputDir)
-
 	// Copy scenario yml to outputDir as well to provide context
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -143,210 +122,16 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
-	clock := executor.NewWallTimeClock()
-
-	// Startup network.
-	static, dynamic := scenario.GetStaticDynamicValidatorCount()
-	mandatory := scenario.GetMandatoryValidatorCount()
-
-	fmt.Printf("Creating network with: \n")
-	fmt.Printf("    Total number of validators: %d\n", static+dynamic+mandatory)
-	fmt.Printf("    Mandatory number of static validator: %d\n", mandatory)
-	fmt.Printf("    Network max block gas: %d\n", scenario.GetMaxBlockGas())
-	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
-
-	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
-		TotalNumberOfValidators: static + dynamic + mandatory,
-		NumberOfValidators:      mandatory,
-		MaxBlockGas:             scenario.GetMaxBlockGas(),
-		MaxEpochGas:             scenario.GetMaxEpochGas(),
+	err = runner.RunScenario(scenario, runner.RunConfig{
+		Label:                   label,
+		OutputDirectory:         outputDir,
+		SkipReportRendering:     ctx.Bool(skipReportRendering.Name),
+		SkipCheckNetworkPostRun: ctx.Bool(skipChecks.Name),
+		KeepPrometheusRunning:   ctx.Bool(keepPrometheusRunning.Name),
 	})
 	if err != nil {
-		return err
-	}
-	defer func() {
-		fmt.Printf("Shutting down network ...\n")
-		if err := net.Shutdown(); err != nil {
-			fmt.Printf("error during network shutdown:\n%v", err)
-		}
-	}()
-
-	// Initialize monitoring environment.
-	monitor, err := monitoring.NewMonitor(net, monitoring.MonitorConfig{
-		EvaluationLabel: label,
-		OutputDir:       outputDir,
-	})
-	if err != nil {
-		return err
-	}
-	defer func() {
-		fmt.Printf("Shutting down data monitor ...\n")
-		if err := monitor.Shutdown(); err != nil {
-			fmt.Printf("error during monitor shutdown:\n%v\n", err)
-		}
-		fmt.Printf("Monitoring data was written to %v\n", outputDir)
-		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
-
-		if !ctx.Bool(skipReportRendering.Name) {
-			fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
-			if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
-				fmt.Printf("Report generation failed:\n%v\n", err)
-			} else {
-				fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
-			}
-		} else {
-			fmt.Printf("Report rendering skipped (--%s)\n", skipReportRendering.Name)
-			fmt.Printf("To render report run `norma render %s`\n", monitor.GetMeasurementFileName())
-		}
-	}()
-
-	// Install monitoring sensory.
-	if err := monitoring.InstallAllRegisteredSources(monitor); err != nil {
-		return err
-	}
-
-	// Run prometheus.
-	fmt.Printf("Starting Prometheus ...\n")
-	prom, err := prometheusmon.Start(net, net.GetDockerNetwork())
-	if err != nil {
-		fmt.Printf("error starting Prometheus:\n%v", err)
-	}
-	defer func() {
-		if !ctx.Bool(keepPrometheusRunning.Name) && prom != nil {
-			fmt.Printf("Shutting down Prometheus ...\n")
-			if err := prom.Shutdown(); err != nil {
-				fmt.Printf("error during Prometheus shutdown:\n%v", err)
-			}
-		}
-	}()
-
-	// Run scenario.
-	fmt.Printf("Running '%s' ...\n", path)
-	logger := startProgressLogger(monitor)
-	defer logger.shutdown()
-	err = executor.Run(clock, net, &scenario, outputDir, logger.epochTracker)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Execution completed successfully!\n")
-
-	if !ctx.Bool(skipChecks.Name) {
-		fmt.Printf("Checking network consistency ...\n")
-		err = checking.CheckNetworkConsistency(net)
-		if err != nil {
-			return fmt.Errorf("checking the network consistency failed: %v", err)
-		}
-		fmt.Printf("Network checks succeed.\n")
-	} else {
-		fmt.Printf("Network checks skipped (--%s)\n", skipChecks.Name)
+		return fmt.Errorf("failed during scenario run; %w", err)
 	}
 
 	return nil
-}
-
-type progressLogger struct {
-	monitor      *monitoring.Monitor
-	epochTracker map[monitoring.Node]string
-	stop         chan<- bool
-	done         <-chan bool
-}
-
-func startProgressLogger(monitor *monitoring.Monitor) *progressLogger {
-	epochTracker := map[monitoring.Node]string{}
-	stop := make(chan bool)
-	done := make(chan bool)
-
-	go func() {
-		defer close(done)
-		ticker := time.NewTicker(time.Second)
-		for {
-			select {
-			case <-stop:
-				return
-			case <-ticker.C:
-				logState(monitor, epochTracker)
-			}
-		}
-	}()
-
-	return &progressLogger{
-		monitor,
-		epochTracker,
-		stop,
-		done,
-	}
-}
-
-func (l *progressLogger) shutdown() {
-	close(l.stop)
-	<-l.done
-}
-
-func logState(monitor *monitoring.Monitor, epochTracker map[monitoring.Node]string) {
-	numNodes := getNumNodes(monitor)
-	blockStatuses := getBlockStatuses(monitor, epochTracker)
-	txPers := getTxPerSec(monitor)
-	txs := getNumTxs(monitor)
-	gas := getGasUsed(monitor)
-	processingTimes := getBlockProcessingTimes(monitor)
-
-	log.Printf("Nodes: %s, block heights: %v, tx/s: %v, txs: %v, gas: %s, block processing: %v", numNodes, blockStatuses, txPers, txs, gas, processingTimes)
-}
-
-func getNumNodes(monitor *monitoring.Monitor) string {
-	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.NumberOfNodes)
-	return getLastValAsString[monitoring.Time, int](exists, data)
-}
-
-func getNumTxs(monitor *monitoring.Monitor) string {
-	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockNumberOfTransactions)
-	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
-}
-
-func getTxPerSec(monitor *monitoring.Monitor) []string {
-	metric := nodemon.TransactionsThroughput
-	return getLastValAllSubjects[monitoring.BlockNumber, float32](monitor, metric, nil)
-}
-
-func getGasUsed(monitor *monitoring.Monitor) string {
-	data, exists := monitoring.GetData(monitor, monitoring.Network{}, netmon.BlockGasUsed)
-	return getLastValAsString[monitoring.BlockNumber, int](exists, data)
-}
-
-func getBlockStatuses(monitor *monitoring.Monitor, epochTracker map[monitoring.Node]string) []string {
-	metric := nodemon.NodeBlockStatus
-	return getLastValAllSubjects[monitoring.Time, monitoring.BlockStatus, monitoring.Series[monitoring.Time, monitoring.BlockStatus]](monitor, metric, epochTracker)
-}
-
-func getBlockProcessingTimes(monitor *monitoring.Monitor) []string {
-	metric := nodemon.BlockEventAndTxsProcessingTime
-	return getLastValAllSubjects[monitoring.BlockNumber, time.Duration, monitoring.Series[monitoring.BlockNumber, time.Duration]](monitor, metric, nil)
-}
-
-func getLastValAllSubjects[K constraints.Ordered, T any, X monitoring.Series[K, T]](monitor *monitoring.Monitor, metric monitoring.Metric[monitoring.Node, X], epochTracker map[monitoring.Node]string) []string {
-	nodes := monitoring.GetSubjects(monitor, metric)
-	sort.Slice(nodes, func(i, j int) bool { return nodes[i] < nodes[j] })
-
-	res := make([]string, 0, len(nodes))
-	for _, node := range nodes {
-		data, exists := monitoring.GetData(monitor, node, metric)
-		var d string = getLastValAsString[K, T](exists, data)
-		res = append(res, d)
-
-		if epochTracker != nil {
-			epochTracker[node] = strings.Split(d, "/")[0]
-		}
-	}
-	return res
-}
-
-func getLastValAsString[K constraints.Ordered, T any](exists bool, series monitoring.Series[K, T]) string {
-	if !exists || series == nil {
-		return "N/A"
-	}
-	point := series.GetLatest()
-	if point == nil {
-		return "N/A"
-	}
-	return fmt.Sprintf("%v", point.Value)
 }
