@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/Fantom-foundation/Norma/load/app"
@@ -94,9 +93,6 @@ func (n *Node) Check(scenario *Scenario) error {
 	if n.Client.Type == "" {
 		n.Client.Type = "observer"
 	}
-	if n.Timer == nil {
-		n.Timer = make(map[float32]string, 10)
-	}
 
 	if n.Genesis.ImportInitial != nil {
 		if err := isGenesisFile(*n.Genesis.ImportInitial, true); err != nil {
@@ -118,14 +114,6 @@ func (n *Node) Check(scenario *Scenario) error {
 		errs = append(errs, err)
 	}
 
-	if err := n.isTimerEventValid(); err != nil {
-		errs = append(errs, err)
-	}
-
-	if err := n.isTimerSequenceValid(scenario); err != nil {
-		errs = append(errs, err)
-	}
-
 	return errors.Join(errs...)
 }
 
@@ -143,101 +131,6 @@ func isTypeValid(t string) error {
 		return nil
 	}
 	return fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", t)
-}
-
-// isTimerEventValid returns true if the timer event has valid type, false otherwise
-func (n *Node) isTimerEventValid() error {
-	errs := []error{}
-	for _, event := range n.Timer {
-		if err := isTimerEventValid(event); err != nil {
-			errs = append(errs, err)
-		}
-	}
-	return errors.Join(errs...)
-}
-
-func isTimerEventValid(e string) error {
-	switch e {
-	case
-		"start",
-		"end",
-		"kill",
-		"restart":
-		return nil
-	}
-	return fmt.Errorf("timer event of node must be start, end, kill, or restart; was set to %s", e)
-}
-
-// isTimerSequenceValid returns true if the timer sequence make sense e.g. start only happens if the node is off, end only happens if the node is on, etc.
-func (n *Node) isTimerSequenceValid(scenario *Scenario) error {
-	var now bool = true // assumed to be started
-
-	start := float32(0)
-	if n.Start != nil {
-		start = *n.Start
-	}
-
-	end := scenario.Duration
-	if n.End != nil {
-		end = *n.End
-	}
-
-	// sort timer sequence
-	timings := make([]float32, 0, len(n.Timer))
-	for t := range n.Timer {
-		timings = append(timings, t)
-	}
-	slices.Sort(timings)
-
-	for ix, t := range timings {
-		if t < start {
-			return fmt.Errorf("Node %s has event at time %f < start=%f", n.Name, t, start)
-		}
-
-		if t > end {
-			return fmt.Errorf("Node %s has event at time %f > end=%f", n.Name, t, end)
-		}
-
-		next, err := isTimerSequenceValid(now, n.Timer[t])
-		if err != nil {
-			return fmt.Errorf("Node %s at time %f: %v", n.Name, t, err)
-		}
-
-		// if event is "kill", then it must be last
-		if n.Timer[t] == "kill" && ix < len(timings)-1 {
-			return fmt.Errorf("Node %s has kill at time %f but there is more event queued.", n.Name, t)
-		}
-
-		now = next
-	}
-
-	return nil
-}
-
-func isTimerSequenceValid(on bool, event string) (bool, error) {
-	switch event {
-	case "start":
-		if on {
-			return false, fmt.Errorf("asked to start, already on")
-		}
-		return true, nil
-	case "end":
-		if !on {
-			return false, fmt.Errorf("asked to end, already off")
-		}
-		return false, nil
-	case "kill":
-		if !on {
-			return false, fmt.Errorf("asked to kill, already off")
-		}
-		return false, nil
-	case "restart":
-		if !on {
-			return false, fmt.Errorf("asked to restart, already off")
-		}
-		return true, nil
-	}
-	return false, fmt.Errorf("event not recognized: %s", event)
 }
 
 // isGenesisFile checks if a file exist at a given path and that it is a ".g" extension

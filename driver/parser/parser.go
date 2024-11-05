@@ -81,14 +81,13 @@ func (s *Scenario) GetNumValidators() int {
 type Node struct {
 	Name      string
 	Features  []string
-	Instances *int               `yaml:",omitempty"` // nil is interpreted as 1
-	Start     *float32           `yaml:",omitempty"` // nil is interpreted as 0
-	End       *float32           `yaml:",omitempty"` // nil is interpreted as end-of-scenario
-	Genesis   Genesis            `yaml:",omitempty"`
-	Event     Event              `yaml:",omitempty"`
-	Client    ClientType         `yaml:",omitempty"`
-	Timer     map[float32]string `yaml:",omitempty"`
-	Mount     *string            `yaml:",omitempty"`
+	Instances *int       `yaml:",omitempty"` // nil is interpreted as 1
+	Start     *float32   `yaml:",omitempty"` // nil is interpreted as 0
+	End       *float32   `yaml:",omitempty"` // nil is interpreted as end-of-scenario
+	Genesis   Genesis    `yaml:",omitempty"`
+	Event     Event      `yaml:",omitempty"`
+	Client    ClientType `yaml:",omitempty"`
+	Mount     *string    `yaml:",omitempty"`
 }
 
 // IsValidator returns true if the node is defined as validator in Features
