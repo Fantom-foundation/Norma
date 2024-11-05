@@ -426,7 +426,7 @@ func checkTimeInterval(start, end *float32, duration float32) error {
 // checkValidatorConstraints makes sure that there is correct number of validators.
 func (s *Scenario) checkValidatorConstraints() error {
 	if s.NumValidators != nil && *s.NumValidators < 1 {
-		return fmt.Errorf("invalid number of validators: %d <= 0", *s.NumValidators)
+		return fmt.Errorf("invalid number of validators: %d < 1", *s.NumValidators)
 	}
 
 	return nil

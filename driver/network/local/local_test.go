@@ -310,7 +310,7 @@ func TestLocalNetwork_CanRemoveNode(t *testing.T) {
 
 func TestLocalNetwork_Num_Validators_Started(t *testing.T) {
 	t.Parallel()
-	for i := 0; i < 3; i++ {
+	for i := 1; i < 3; i++ {
 		i := i
 		t.Run(fmt.Sprintf("num_validators=%d", i), func(t *testing.T) {
 			t.Parallel()
