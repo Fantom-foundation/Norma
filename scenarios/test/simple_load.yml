@@ -1,0 +1,31 @@
+name: Simple Load Test
+duration: 120
+
+# The number of static validators present from begin to end
+num_static_validators: 4    # default: 1
+
+# Run three different applications consecutively producing different load
+applications: 
+  - name: loadA
+    type: counter
+    users: 100
+    start: 20
+    end: 50
+    rate:
+      constant: 20
+
+  - name: loadB
+    type: counter
+    users: 100
+    start: 50
+    end: 80
+    rate:
+      constant: 1
+
+  - name: loadC
+    type: counter
+    users: 100
+    start: 80
+    end: 110
+    rate:
+      constant: 100
