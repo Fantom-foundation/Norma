@@ -122,9 +122,9 @@ func run(ctx *cli.Context) (err error) {
 		return err
 	}
 
-	err = runner.RunScenario(scenario, runner.RunConfig{
+	err = runner.RunScenario(&scenario, runner.RunConfig{
 		Label:                   label,
-		OutputDirectory:         outputDir,
+		OutputDirectory:         &outputDir,
 		SkipReportRendering:     ctx.Bool(skipReportRendering.Name),
 		SkipCheckNetworkPostRun: ctx.Bool(skipChecks.Name),
 		KeepPrometheusRunning:   ctx.Bool(keepPrometheusRunning.Name),
