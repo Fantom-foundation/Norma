@@ -23,8 +23,8 @@ require (
 	github.com/DataDog/zstd v1.5.6 // indirect
 	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
-	github.com/Fantom-foundation/Carmen/go v0.0.0-20240919111317-5c737f72628f // indirect
-	github.com/Fantom-foundation/Tosca v0.0.0-20240923133528-44629f84e630 // indirect
+	github.com/Fantom-foundation/Carmen/go v0.0.0-20241023071438-8b3c25fd1ff8 // indirect
+	github.com/Fantom-foundation/Tosca v0.0.0-20241028082205-7b33705a4675 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -137,6 +137,6 @@ require (
 
 replace github.com/Fantom-foundation/go-opera => ./client
 
-replace github.com/ethereum/go-ethereum => github.com/Fantom-foundation/go-ethereum-sonic v0.0.0-20241010144554-28e21b08ad3b
+replace github.com/ethereum/go-ethereum => github.com/Fantom-foundation/go-ethereum-sonic v0.0.0-20241022121122-7063a6b506bd
 
-replace github.com/Fantom-foundation/lachesis-base => github.com/Fantom-foundation/lachesis-base-sonic v0.0.0-20240823114058-cda038e6d40b
+replace github.com/Fantom-foundation/lachesis-base => github.com/Fantom-foundation/lachesis-base-sonic v0.0.0-20241018103023-632a59c242f5
