@@ -39,7 +39,7 @@ import (
 // Run executes the given scenario on the given network using the provided clock
 // as a time source. Execution will fail (fast) if the scenario is not valid (see
 // Scenario's Check() function).
-func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir *string, epochTracker map[monitoring.Node]string) error {
+func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string, epochTracker map[monitoring.Node]string) error {
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
 // Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
-func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir *string, epochTracker map[monitoring.Node]string) {
+func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string, epochTracker map[monitoring.Node]string) {
 	instances := 1
 	if node.Instances != nil {
 		instances = *node.Instances
@@ -217,8 +217,8 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 	}
 	// export by default at <output>/genesis
 	nodeExportInitialGenesis := ""
-	if outputDir != nil {
-		nodeExportInitialGenesis = filepath.Join(*outputDir, "genesis")
+	if outputDir != "" {
+		nodeExportInitialGenesis = filepath.Join(outputDir, "genesis")
 	}
 	if node.Genesis.ExportInitial != nil {
 		nodeExportInitialGenesis = *node.Genesis.ExportInitial
@@ -228,9 +228,9 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 		nodeExportFinalGenesis = *node.Genesis.ExportFinal
 	}
 	nodeMount := ""
-	if node.Mount != nil && outputDir != nil {
+	if node.Mount != nil && outputDir != "" {
 		if *node.Mount == "tmp" { // shorthand to bundle this into outputdir
-			nodeMount = *outputDir
+			nodeMount = outputDir
 		} else {
 			nodeMount = *node.Mount
 		}
