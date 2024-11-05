@@ -151,10 +151,9 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
 
 	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
-		NumberOfValidators:    scenario.GetNumValidators(),
-
-		MaxBlockGas:           scenario.GetMaxBlockGas(),
-		MaxEpochGas:           scenario.GetMaxEpochGas(),
+		NumberOfValidators: scenario.GetNumValidators(),
+		MaxBlockGas:        scenario.GetMaxBlockGas(),
+		MaxEpochGas:        scenario.GetMaxEpochGas(),
 	})
 	if err != nil {
 		return err
