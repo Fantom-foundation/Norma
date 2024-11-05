@@ -34,14 +34,8 @@ type Network interface {
 	// nodes to the network as needed.
 	CreateNode(config *NodeConfig) (Node, error)
 
-	// StartNode starts a node that has already been created.
-	StartNode(Node) (Node, error)
-
 	// RemoveNode ends the client gracefully and removes node from the network
 	RemoveNode(Node) error
-
-	// KillNode disgracefully removes node from the network
-	KillNode(Node) error
 
 	// CreateApplication creates a new application in this network, ready to
 	// produce load as defined by its configuration.
@@ -75,8 +69,6 @@ type Network interface {
 type NetworkConfig struct {
 	// NumberOfValidators is the (static) number of validators in the network.
 	NumberOfValidators int
-	// TotalNumberOfValidators is the total number of validators that appear in the scenario, including the additional mandatory ones.
-	TotalNumberOfValidators int
 	// MaxBlockGas is the maximum gas limit for a block in the network.
 	MaxBlockGas uint64
 	// MaxEpochGas is the maximum gas limit for an epoch in the network.

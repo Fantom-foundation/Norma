@@ -307,3 +307,27 @@ func TestLocalNetwork_CanRemoveNode(t *testing.T) {
 		})
 	}
 }
+
+func TestLocalNetwork_Num_Validators_Started(t *testing.T) {
+	t.Parallel()
+	for i := 1; i < 3; i++ {
+		i := i
+		t.Run(fmt.Sprintf("num_validators=%d", i), func(t *testing.T) {
+			t.Parallel()
+			config := driver.NetworkConfig{NumberOfValidators: i}
+			net, err := NewLocalNetwork(&config)
+			if err != nil {
+				t.Fatalf("failed to create new local network: %v", err)
+			}
+			t.Cleanup(func() {
+				if err := net.Shutdown(); err != nil {
+					t.Fatalf("failed to shut down network: %v", err)
+				}
+			})
+
+			if got, want := len(net.GetActiveNodes()), config.NumberOfValidators; got != want {
+				t.Errorf("invalid number of active nodes, got %d, want %d", got, want)
+			}
+		})
+	}
+}
