@@ -49,15 +49,11 @@ func RunScenario(scenario *parser.Scenario, config RunConfig) error {
 	fmt.Printf("Starting evaluation %s\n", config.Label)
 	fmt.Printf("Monitoring data is written to %v\n", outdir)
 
-	static, dynamic := scenario.GetStaticDynamicValidatorCount()
-	mandatory := scenario.GetMandatoryValidatorCount()
-
 	// start network
 	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
-		TotalNumberOfValidators: static + dynamic + mandatory,
-		NumberOfValidators:      mandatory,
-		MaxBlockGas:             scenario.GetMaxBlockGas(),
-		MaxEpochGas:             scenario.GetMaxEpochGas(),
+		NumberOfValidators: scenario.GetNumValidators(),
+		MaxBlockGas:        scenario.GetMaxBlockGas(),
+		MaxEpochGas:        scenario.GetMaxEpochGas(),
 	})
 	if err != nil {
 		return err
