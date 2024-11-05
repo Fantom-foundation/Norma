@@ -126,7 +126,7 @@ func RunScenario(scenario *parser.Scenario, config RunConfig) error {
 	defer logger.shutdown()
 
 	clock := executor.NewWallTimeClock()
-	err = executor.Run(clock, net, scenario, &outdir, logger.epochTracker)
+	err = executor.Run(clock, net, scenario, outdir, logger.epochTracker)
 	if err != nil {
 		return err
 	}
