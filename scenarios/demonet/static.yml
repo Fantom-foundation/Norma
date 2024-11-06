@@ -4,12 +4,10 @@
 
 name: Demonet
 duration: 120
+num_validators: 8
+
 # Besides the 8 validators, there are 2 additional RPC nodes.
 nodes:
-  - name: validator
-    instances: 8
-    client:
-      type: validator
   - name: RPC
     instances: 2
 
