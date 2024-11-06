@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with Norma. If not, see <http://www.gnu.org/licenses/>.
 
-package controller
+package controller_test
 
 import (
 	"context"
@@ -29,6 +29,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/Fantom-foundation/Norma/load/controller"
 	"github.com/Fantom-foundation/Norma/load/shaper"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/mock/gomock"
@@ -49,24 +50,43 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			user := app.NewMockUser(ctrl)
 			transaction := types.Transaction{}
 
+			treasure, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			check := NewRateCheck(float64(rate))
 			var count atomic.Int32
 			net.EXPECT().DialRandomRpc().AnyTimes().Return(rpcClient, nil)
-			net.EXPECT().SendTransaction(gomock.Any()).AnyTimes().Do(func(x any) {
+			net.EXPECT().SendTransaction(gomock.Any()).AnyTimes().Do(func(any) {
 				check.NewEvent()
 				count.Add(1)
 			})
 
+			rpcClient.EXPECT().ChainID(gomock.Any()).Return(big.NewInt(0), nil).AnyTimes()
+			rpcClient.EXPECT().NonceAt(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(uint64(0), nil)
+			rpcClient.EXPECT().EstimateGas(gomock.Any(), gomock.Any()).AnyTimes().Return(uint64(100), nil)
+			rpcClient.EXPECT().SendTransaction(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+			rpcClient.EXPECT().TransactionReceipt(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Receipt{
+				Status: types.ReceiptStatusSuccessful,
+			}, nil)
 			rpcClient.EXPECT().Close().AnyTimes().Return()
 
-			application.EXPECT().CreateUser(gomock.Any()).AnyTimes().Return(user, nil)
-			application.EXPECT().WaitUntilApplicationIsDeployed(gomock.Any()).Return(nil)
+			users := make([]app.User, 100)
+			for i := range users {
+				users[i] = user
+			}
+			application.EXPECT().CreateUsers(gomock.Any(), 100).AnyTimes().Return(users, nil)
 
 			rpcClient.EXPECT().SuggestGasPrice(gomock.Any()).AnyTimes().Return(big.NewInt(0), nil)
 			user.EXPECT().GenerateTx(gomock.Any()).AnyTimes().Return(&transaction, nil)
 
 			shaper := shaper.NewConstantShaper(float64(rate))
-			controller, err := NewAppController(application, shaper, 100, rpcClient, net)
+			appContext, err := app.NewContext(rpcClient, treasure)
+			if err != nil {
+				t.Fatalf("failed to create app context: %v", err)
+			}
+			controller, err := controller.NewAppController(application, shaper, 100, appContext, net)
 			if err != nil {
 				t.Fatalf("failed to create app controller: %v", err)
 			}

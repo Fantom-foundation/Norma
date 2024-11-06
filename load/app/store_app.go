@@ -17,6 +17,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"sync/atomic"
@@ -25,7 +26,6 @@ import (
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -33,33 +33,21 @@ import (
 // NewStoreApplication deploys a Store contract to the chain.
 // The Store contract is a simple contract managing a user-private key/value store.
 // It is intended to produce state-heavy transactions.
-func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
+func NewStoreApplication(ctxt AppContext, feederId, appId uint32) (Application, error) {
+
+	client := ctxt.GetClient()
+	chainId, err := client.ChainID(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get chain ID; %v", err)
 	}
 
-	// Deploy the Store contract to be used by tx generators
-	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
-	}
-	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-	contractAddress, _, _, err := contract.DeployStore(txOpts, rpcClient)
+	// Deploy the Store contract to be used by this application.
+	_, receipt, err := DeployContract(ctxt, contract.DeployStore)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy Store contract; %v", err)
 	}
 
-	accountFactory, err := NewAccountFactory(primaryAccount.chainID, feederId, appId)
-	if err != nil {
-		return nil, err
-	}
-
-	// deploying too many generators from one account leads to excessive gasPrice growth - we
-	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accountFactory, numUsers, regularGasPrice)
+	accountFactory, err := NewAccountFactory(chainId, feederId, appId)
 	if err != nil {
 		return nil, err
 	}
@@ -70,59 +58,44 @@ func NewStoreApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 		return nil, err
 	}
 
-	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait until the Store contract is deployed; %v", err)
-	}
-
 	return &StoreApplication{
-		abi:              parsedAbi,
-		startingAccounts: startingAccounts,
-		contractAddress:  contractAddress,
-		accountFactory:   accountFactory,
+		abi:             parsedAbi,
+		contractAddress: receipt.ContractAddress,
+		accountFactory:  accountFactory,
 	}, nil
 }
 
 // StoreApplication represents a simple on-chain user-private Key/Value store.
 // A instance represents one deployed Store contract as well as a set of users.
 type StoreApplication struct {
-	abi              *abi.ABI
-	startingAccounts []*Account
-	contractAddress  common.Address
-	accountFactory   *AccountFactory
+	abi             *abi.ABI
+	contractAddress common.Address
+	accountFactory  *AccountFactory
 }
 
-// CreateUser creates a new user for the app.
-func (f *StoreApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
+// CreateUsers creates a list of new users for the app.
+func (f *StoreApplication) CreateUsers(appContext AppContext, numUsers int) ([]User, error) {
 
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
-	if err != nil {
-		return nil, err
+	users := make([]User, numUsers)
+	addresses := make([]common.Address, numUsers)
+	for i := 0; i < numUsers; i++ {
+		// Generate a new account for each worker - avoid account nonces related bottlenecks
+		workerAccount, err := f.accountFactory.CreateAccount(appContext.GetClient())
+		if err != nil {
+			return nil, err
+		}
+		users[i] = &StoreUser{
+			abi:      f.abi,
+			sender:   workerAccount,
+			contract: f.contractAddress,
+		}
+		addresses[i] = workerAccount.address
 	}
 
-	// Generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := f.accountFactory.CreateAccount(rpcClient)
-	if err != nil {
-		return nil, err
-	}
-	startingAccount := f.startingAccounts[workerAccount.id%len(f.startingAccounts)]
-	err = workerAccount.Fund(startingAccount, rpcClient, regularGasPrice, 1000)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fund worker account %d; %v", workerAccount.id, err)
-	}
-
-	gen := &StoreUser{
-		abi:      f.abi,
-		sender:   workerAccount,
-		contract: f.contractAddress,
-	}
-	return gen, nil
-}
-
-func (f *StoreApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
-	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
+	fundsPerUser := big.NewInt(1_000)
+	fundsPerUser = new(big.Int).Mul(fundsPerUser, big.NewInt(1_000_000_000_000_000_000)) // to wei
+	err := appContext.FundAccounts(addresses, fundsPerUser)
+	return users, err
 }
 
 func (f *StoreApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {

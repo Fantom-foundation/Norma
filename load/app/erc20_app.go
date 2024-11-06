@@ -33,21 +33,16 @@ import (
 
 // NewERC20Application deploys a new ERC-20 dapp to the chain.
 // The ERC20 contract is a contract sustaining balances of the token for individual owner addresses.
-func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
-	if err != nil {
-		return nil, err
-	}
+func NewERC20Application(ctxt AppContext, feederId, appId uint32) (Application, error) {
+	rpcClient := ctxt.GetClient()
+	primaryAccount := ctxt.GetTreasure()
 
 	// Deploy the ERC20 contract to be used by generators created using the factory
-	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
+	txOpts, err := ctxt.GetTransactOptions(primaryAccount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
 	}
-	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-	contractAddress, _, _, err := contract.DeployERC20(txOpts, rpcClient, "Testing Token", "TOK")
+	contractAddress, transaction, _, err := contract.DeployERC20(txOpts, rpcClient, "Testing Token", "TOK")
 	if err != nil {
 		return nil, fmt.Errorf("failed to deploy ERC20 contract; %v", err)
 	}
@@ -61,13 +56,6 @@ func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 		return nil, err
 	}
 
-	// deploying too many generators from one account leads to excessive gasPrice growth - we
-	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accountFactory, numUsers, regularGasPrice)
-	if err != nil {
-		return nil, err
-	}
-
 	// parse ABI for generating txs data
 	parsedAbi, err := contract.ERC20MetaData.GetAbi()
 	if err != nil {
@@ -75,17 +63,16 @@ func NewERC20Application(rpcClient rpc.RpcClient, primaryAccount *Account, numUs
 	}
 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
+	_, err = ctxt.GetReceipt(transaction.Hash())
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait until the ERC20 contract is deployed; %v", err)
 	}
 
 	return &ERC20Application{
-		abi:              parsedAbi,
-		startingAccounts: startingAccounts,
-		contractAddress:  contractAddress,
-		recipients:       recipients,
-		accountFactory:   accountFactory,
+		abi:             parsedAbi,
+		contractAddress: contractAddress,
+		recipients:      recipients,
+		accountFactory:  accountFactory,
 	}, nil
 }
 
@@ -103,58 +90,56 @@ func generateRecipientsAddresses() ([]common.Address, error) {
 // ERC20Application represents one application deployed to the network - an ERC-20 contract.
 // Each created app should be used in a single thread only.
 type ERC20Application struct {
-	abi              *abi.ABI
-	startingAccounts []*Account
-	contractAddress  common.Address
-	recipients       []common.Address
-	accountFactory   *AccountFactory
+	abi             *abi.ABI
+	contractAddress common.Address
+	recipients      []common.Address
+	accountFactory  *AccountFactory
 }
 
-// CreateUser creates a new user for the app.
-func (f *ERC20Application) CreateUser(rpcClient rpc.RpcClient) (User, error) {
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
-	if err != nil {
-		return nil, err
+// CreateUsers creates a list of new users for the app.
+func (f *ERC20Application) CreateUsers(appContext AppContext, numUsers int) ([]User, error) {
+
+	// Create a list of users.
+	users := make([]User, numUsers)
+	addresses := make([]common.Address, numUsers)
+	for i := 0; i < numUsers; i++ {
+		// Generate a new account for each worker - avoid account nonces related bottlenecks
+		workerAccount, err := f.accountFactory.CreateAccount(appContext.GetClient())
+		if err != nil {
+			return nil, err
+		}
+		users[i] = &ERC20User{
+			abi:        f.abi,
+			sender:     workerAccount,
+			contract:   f.contractAddress,
+			recipients: f.recipients,
+		}
+		addresses[i] = workerAccount.address
 	}
 
-	// Generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := f.accountFactory.CreateAccount(rpcClient)
+	// Provide native currency to each user.
+	fundsPerUser := big.NewInt(1_000)
+	fundsPerUser = new(big.Int).Mul(fundsPerUser, big.NewInt(1_000_000_000_000_000_000)) // to wei
+	err := appContext.FundAccounts(addresses, fundsPerUser)
 	if err != nil {
-		return nil, err
-	}
-	startingAccount := f.startingAccounts[workerAccount.id%len(f.startingAccounts)]
-	err = workerAccount.Fund(startingAccount, rpcClient, regularGasPrice, 1000)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fund worker account %d; %v", workerAccount.id, err)
+		return nil, fmt.Errorf("failed to fund accounts; %v", err)
 	}
 
-	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
-	erc20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
+	// Provide ERC-20 tokens to each user.
+	erc20Contract, err := contract.NewERC20(f.contractAddress, appContext.GetClient())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
 	}
-	txOpts, err := bind.NewKeyedTransactorWithChainID(startingAccount.privateKey, startingAccount.chainID)
+	receipt, err := appContext.Run(func(opts *bind.TransactOpts) (*types.Transaction, error) {
+		return erc20Contract.MintForAll(opts, addresses, big.NewInt(1_000000000000000000))
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts; %v", err)
+		return nil, fmt.Errorf("failed to mint ERC-20 for all users; %v", err)
 	}
-	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(startingAccount.getNextNonce()))
-	_, err = erc20Contract.Mint(txOpts, workerAccount.address, big.NewInt(1_000000000000000000))
-	if err != nil {
-		return nil, fmt.Errorf("failed to mint ERC-20; %v", err)
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return nil, fmt.Errorf("failed to mint ERC-20 for all users; transaction reverted")
 	}
-
-	return &ERC20User{
-		abi:        f.abi,
-		sender:     workerAccount,
-		contract:   f.contractAddress,
-		recipients: f.recipients,
-	}, nil
-}
-
-func (f *ERC20Application) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
-	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
+	return users, nil
 }
 
 func (f *ERC20Application) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {

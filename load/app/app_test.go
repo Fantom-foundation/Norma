@@ -25,8 +25,8 @@ import (
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -50,64 +50,81 @@ func TestGenerators(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	context, err := app.NewContext(rpcClient, primaryAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	t.Run("Counter", func(t *testing.T) {
-		counterApp, err := app.NewCounterApplication(rpcClient, primaryAccount, 1, 0, 0)
+		counterApp, err := app.NewCounterApplication(context, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testGenerator(t, counterApp, rpcClient)
+		testGenerator(t, counterApp, context)
 	})
 	t.Run("ERC20", func(t *testing.T) {
-		erc20app, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
+		erc20app, err := app.NewERC20Application(context, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testGenerator(t, erc20app, rpcClient)
+		testGenerator(t, erc20app, context)
 	})
 	t.Run("Store", func(t *testing.T) {
-		storeApp, err := app.NewStoreApplication(rpcClient, primaryAccount, 1, 0, 0)
+		storeApp, err := app.NewStoreApplication(context, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testGenerator(t, storeApp, rpcClient)
+		testGenerator(t, storeApp, context)
 	})
 	t.Run("Uniswap", func(t *testing.T) {
-		uniswapApp, err := app.NewUniswapApplication(rpcClient, primaryAccount, 1, 0, 0)
+		uniswapApp, err := app.NewUniswapApplication(context, 0, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testGenerator(t, uniswapApp, rpcClient)
+		testGenerator(t, uniswapApp, context)
 	})
 }
 
-func testGenerator(t *testing.T, app app.Application, rpcClient rpc.RpcClient) {
-	gen, err := app.CreateUser(rpcClient)
+func testGenerator(t *testing.T, app app.Application, ctxt app.AppContext) {
+	users, err := app.CreateUsers(ctxt, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = app.WaitUntilApplicationIsDeployed(rpcClient)
-	if err != nil {
-		t.Fatal(err)
+	if len(users) != 1 {
+		t.Fatalf("unexpected number of users created, wanted 1, got %d", len(users))
 	}
+	user := users[0]
 
+	rpcClient := ctxt.GetClient()
 	numTransactions := 10
-	for i := 0; i < numTransactions; i++ {
+	transactions := []*types.Transaction{}
+	for range numTransactions {
 		price, err := rpcClient.SuggestGasPrice(context.Background())
 		if err != nil {
 			return
 		}
-		tx, err := gen.GenerateTx(price)
+		tx, err := user.GenerateTx(price)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if err := rpcClient.SendTransaction(context.Background(), tx); err != nil {
 			t.Fatal(err)
 		}
+		transactions = append(transactions, tx)
 	}
 
-	time.Sleep(2 * time.Second) // wait for txs in TxPool
+	// wait for the transactions to be processed
+	for _, tx := range transactions {
+		receipt, err := ctxt.GetReceipt(tx.Hash())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			t.Fatalf("transaction failed, receipt status: %v", receipt.Status)
+		}
+	}
 
-	if got, want := gen.GetSentTransactions(), numTransactions; got != uint64(want) {
+	if got, want := user.GetSentTransactions(), numTransactions; got != uint64(want) {
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
 	}
 

@@ -1,7 +1,6 @@
 [
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "string",
         "name": "_name",
@@ -18,8 +17,7 @@
   },
   {
     "anonymous": false,
-    "inputs":
-    [
+    "inputs": [
       {
         "indexed": true,
         "internalType": "address",
@@ -44,8 +42,7 @@
   },
   {
     "anonymous": false,
-    "inputs":
-    [
+    "inputs": [
       {
         "indexed": true,
         "internalType": "address",
@@ -69,8 +66,7 @@
     "type": "event"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
@@ -83,8 +79,7 @@
       }
     ],
     "name": "allowance",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -95,8 +90,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "spender",
@@ -109,8 +103,7 @@
       }
     ],
     "name": "approve",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
@@ -121,8 +114,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "",
@@ -130,8 +122,7 @@
       }
     ],
     "name": "balanceOf",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -144,8 +135,7 @@
   {
     "inputs": [],
     "name": "decimals",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint8",
         "name": "",
@@ -156,8 +146,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "recipient",
@@ -175,10 +164,27 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "recipients",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "mintForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "name",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "string",
         "name": "",
@@ -191,8 +197,7 @@
   {
     "inputs": [],
     "name": "owner",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "address",
         "name": "",
@@ -205,8 +210,7 @@
   {
     "inputs": [],
     "name": "symbol",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "string",
         "name": "",
@@ -219,8 +223,7 @@
   {
     "inputs": [],
     "name": "totalSupply",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -231,8 +234,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "recipient",
@@ -245,8 +247,7 @@
       }
     ],
     "name": "transfer",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
@@ -257,8 +258,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "sender",
@@ -276,8 +276,7 @@
       }
     ],
     "name": "transferFrom",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
@@ -288,8 +287,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "spender",

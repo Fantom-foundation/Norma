@@ -108,6 +108,21 @@ func (mr *MockRpcClientMockRecorder) CallContract(ctx, call, blockNumber any) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallContract", reflect.TypeOf((*MockRpcClient)(nil).CallContract), ctx, call, blockNumber)
 }
 
+// ChainID mocks base method.
+func (m *MockRpcClient) ChainID(ctx context.Context) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChainID", ctx)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ChainID indicates an expected call of ChainID.
+func (mr *MockRpcClientMockRecorder) ChainID(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChainID", reflect.TypeOf((*MockRpcClient)(nil).ChainID), ctx)
+}
+
 // Close mocks base method.
 func (m *MockRpcClient) Close() {
 	m.ctrl.T.Helper()
@@ -151,18 +166,18 @@ func (mr *MockRpcClientMockRecorder) EstimateGas(ctx, call any) *gomock.Call {
 }
 
 // FilterLogs mocks base method.
-func (m *MockRpcClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+func (m *MockRpcClient) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FilterLogs", ctx, query)
+	ret := m.ctrl.Call(m, "FilterLogs", ctx, q)
 	ret0, _ := ret[0].([]types.Log)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FilterLogs indicates an expected call of FilterLogs.
-func (mr *MockRpcClientMockRecorder) FilterLogs(ctx, query any) *gomock.Call {
+func (mr *MockRpcClientMockRecorder) FilterLogs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockRpcClient)(nil).FilterLogs), ctx, query)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockRpcClient)(nil).FilterLogs), ctx, q)
 }
 
 // HeaderByNumber mocks base method.
@@ -240,18 +255,18 @@ func (mr *MockRpcClientMockRecorder) SendTransaction(ctx, tx any) *gomock.Call {
 }
 
 // SubscribeFilterLogs mocks base method.
-func (m *MockRpcClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
+func (m *MockRpcClient) SubscribeFilterLogs(ctx context.Context, q ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubscribeFilterLogs", ctx, query, ch)
+	ret := m.ctrl.Call(m, "SubscribeFilterLogs", ctx, q, ch)
 	ret0, _ := ret[0].(ethereum.Subscription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubscribeFilterLogs indicates an expected call of SubscribeFilterLogs.
-func (mr *MockRpcClientMockRecorder) SubscribeFilterLogs(ctx, query, ch any) *gomock.Call {
+func (mr *MockRpcClientMockRecorder) SubscribeFilterLogs(ctx, q, ch any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeFilterLogs", reflect.TypeOf((*MockRpcClient)(nil).SubscribeFilterLogs), ctx, query, ch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeFilterLogs", reflect.TypeOf((*MockRpcClient)(nil).SubscribeFilterLogs), ctx, q, ch)
 }
 
 // SuggestGasPrice mocks base method.
@@ -282,4 +297,19 @@ func (m *MockRpcClient) SuggestGasTipCap(ctx context.Context) (*big.Int, error) 
 func (mr *MockRpcClientMockRecorder) SuggestGasTipCap(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasTipCap", reflect.TypeOf((*MockRpcClient)(nil).SuggestGasTipCap), ctx)
+}
+
+// TransactionReceipt mocks base method.
+func (m *MockRpcClient) TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionReceipt", ctx, txHash)
+	ret0, _ := ret[0].(*types.Receipt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransactionReceipt indicates an expected call of TransactionReceipt.
+func (mr *MockRpcClientMockRecorder) TransactionReceipt(ctx, txHash any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionReceipt", reflect.TypeOf((*MockRpcClient)(nil).TransactionReceipt), ctx, txHash)
 }

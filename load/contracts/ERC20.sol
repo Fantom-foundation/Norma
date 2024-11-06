@@ -77,4 +77,12 @@ contract ERC20 is IERC20 {
         totalSupply += amount;
         emit Transfer(address(0), recipient, amount);
     }
+
+    function mintForAll(address[] calldata recipients, uint256 amount) external {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            balanceOf[recipients[i]] += amount;
+            emit Transfer(address(0), recipients[i], amount);
+        }
+        totalSupply += amount * recipients.length;
+    }
 }
