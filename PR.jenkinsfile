@@ -39,9 +39,11 @@ pipeline {
 
 		stage('Test All Baseline Scenarios') {
 			steps {
-				def test_scenarios = findFiles(glob: '**/test/*.yml')
-				test_scenarios.each { scenario ->
-					sh 'build/norma run ${scenario}'
+				script {
+					def test_scenarios = findFiles(glob: '**/test/*.yml')
+					test_scenarios.each { scenario ->
+						sh 'build/norma run ${scenario}'
+					}
 				}
 			}
 		}
