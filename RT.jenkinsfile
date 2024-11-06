@@ -78,8 +78,10 @@ pipeline {
 			steps {
 				script {
 					def test_scenarios = findFiles(glob: '**/test/*.yml')
-					test_scenarios.each { scenario ->
-						sh "build/norma run ${scenario.path}"
+					catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+						test_scenarios.each { scenario ->
+							sh "build/norma run ${scenario.path}"
+						}
 					}
 				}
 			}
