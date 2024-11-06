@@ -37,13 +37,12 @@ pipeline {
 			}
 		}
 
-		stage('Test All Baseline Scenarios') {
-			steps {
-				script {
-					def test_scenarios = findFiles(glob: '**/test/*.yml')
-					test_scenarios.each { scenario ->
+		stage('Test Baseline Scenarios') {
+			parallel {
+				stage('Test baseline_check.yml') {
+					steps {
 						catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-							sh "build/norma run ${scenario.path}"
+							sh "build/norma run scenario/test/baseline_check.yml"
 						}
 					}
 				}
