@@ -31,6 +31,7 @@ var (
 	timestampReg      = regexp.MustCompile(`\[\S*\]`)
 	blockReg          = regexp.MustCompile(`index=\d*`)
 	gasReg            = regexp.MustCompile(`gas_used=\S*`)
+	baseFeeReg        = regexp.MustCompile(`base_fee=\d+`)
 	txsReg            = regexp.MustCompile(`txs=\d+`)
 	processingTimeReg = regexp.MustCompile(`t=\S*`)
 )
@@ -81,10 +82,11 @@ func parseTime(str string) (time.Time, error) {
 
 // parseBlock parses block information from the log line. It is expected the log line is well-formed.
 func parseBlock(line string) (block Block, err error) {
-	// example line: "INFO [05-04|09:34:15.537] New block index=3 id=3:1:3d6fb6 gas_used=117,867 txs=1/0 age=343.255ms t=1.579ms
+	// example line: "INFO [05-04|09:34:15.537] New block index=3 id=3:1:3d6fb6 gas_used=117,867 base_fee=123 txs=1/0 age=343.255ms t=1.579ms
 	timestampStr := timestampReg.FindString(line)
 	blockNumberStr := strings.Split(blockReg.FindString(line), "=")[1]
 	gasUsedStr := strings.ReplaceAll(strings.Split(gasReg.FindString(line), "=")[1], ",", "")
+	baseFeeStr := strings.Split(baseFeeReg.FindString(line), "=")[1]
 	txsStr := strings.Split(txsReg.FindString(line), "=")[1]
 	processingTimeStr := strings.Trim(strings.Split(processingTimeReg.FindString(line), "=")[1], "\"")
 
@@ -108,6 +110,11 @@ func parseBlock(line string) (block Block, err error) {
 		return block, err
 	}
 
+	baseFeeUsed, err := strconv.Atoi(baseFeeStr)
+	if err != nil {
+		return block, err
+	}
+
 	processingTime, err := time.ParseDuration(processingTimeStr)
 	if err != nil {
 		return block, err
@@ -119,6 +126,7 @@ func parseBlock(line string) (block Block, err error) {
 		GasUsed:        gasUsed,
 		Time:           timestamp,
 		ProcessingTime: processingTime,
+		GasBaseFee:     baseFeeUsed,
 	}, nil
 }
 
@@ -129,4 +137,5 @@ type Block struct {
 	Txs            int           // number of transactions in block
 	GasUsed        int           // gas used in the block
 	ProcessingTime time.Duration // block processing time
+	GasBaseFee     int           // gas base fee in the block
 }
