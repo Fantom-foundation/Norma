@@ -42,7 +42,7 @@ pipeline {
 				script {
 					def test_scenarios = findFiles(glob: '**/test/*.yml')
 					test_scenarios.each { scenario ->
-						sh 'build/norma run ${scenario}'
+						sh 'build/norma run ${scenario.directory}/${f.name}'
 					}
 				}
 			}
