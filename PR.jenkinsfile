@@ -38,13 +38,9 @@ pipeline {
 		}
 
 		stage('Test Baseline Scenarios') {
-			parallel {
-				stage('Test baseline_check.yml') {
-					steps {
-						catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-							sh "build/norma run scenario/test/baseline_check.yml"
-						}
-					}
+			steps {
+				catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+					sh "build/norma run scenarios/test/baseline_check.yml"
 				}
 			}
 		}
