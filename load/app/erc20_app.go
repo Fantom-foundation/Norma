@@ -40,15 +40,15 @@ func NewERC20Application(ctxt AppContext, feederId, appId uint32) (Application, 
 	// Deploy the ERC20 contract to be used by generators created using the factory
 	txOpts, err := ctxt.GetTransactOptions(primaryAccount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
+		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %w", err)
 	}
 	contractAddress, transaction, _, err := contract.DeployERC20(txOpts, rpcClient, "Testing Token", "TOK")
 	if err != nil {
-		return nil, fmt.Errorf("failed to deploy ERC20 contract; %v", err)
+		return nil, fmt.Errorf("failed to deploy ERC20 contract; %w", err)
 	}
 	recipients, err := generateRecipientsAddresses()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate recipients addresses; %v", err)
+		return nil, fmt.Errorf("failed to generate recipients addresses; %w", err)
 	}
 
 	accountFactory, err := NewAccountFactory(primaryAccount.chainID, feederId, appId)
@@ -65,7 +65,7 @@ func NewERC20Application(ctxt AppContext, feederId, appId uint32) (Application, 
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
 	_, err = ctxt.GetReceipt(transaction.Hash())
 	if err != nil {
-		return nil, fmt.Errorf("failed to wait until the ERC20 contract is deployed; %v", err)
+		return nil, fmt.Errorf("failed to wait until the ERC20 contract is deployed; %w", err)
 	}
 
 	return &ERC20Application{
@@ -122,19 +122,19 @@ func (f *ERC20Application) CreateUsers(appContext AppContext, numUsers int) ([]U
 	fundsPerUser = new(big.Int).Mul(fundsPerUser, big.NewInt(1_000_000_000_000_000_000)) // to wei
 	err := appContext.FundAccounts(addresses, fundsPerUser)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fund accounts; %v", err)
+		return nil, fmt.Errorf("failed to fund accounts; %w", err)
 	}
 
 	// Provide ERC-20 tokens to each user.
 	erc20Contract, err := contract.NewERC20(f.contractAddress, appContext.GetClient())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
+		return nil, fmt.Errorf("failed to get ERC20 contract representation; %w", err)
 	}
 	receipt, err := appContext.Run(func(opts *bind.TransactOpts) (*types.Transaction, error) {
 		return erc20Contract.MintForAll(opts, addresses, big.NewInt(1_000000000000000000))
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to mint ERC-20 for all users; %v", err)
+		return nil, fmt.Errorf("failed to mint ERC-20 for all users; %w", err)
 	}
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return nil, fmt.Errorf("failed to mint ERC-20 for all users; transaction reverted")
@@ -146,7 +146,7 @@ func (f *ERC20Application) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 	// get a representation of the deployed contract
 	ERC20Contract, err := contract.NewERC20(f.contractAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get ERC20 contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get ERC20 contract representation; %w", err)
 	}
 	totalReceived := uint64(0)
 	for _, recipient := range f.recipients {
@@ -176,7 +176,7 @@ func (g *ERC20User) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, er
 	// prepare tx data
 	data, err := g.abi.Pack("transfer", recipient, big.NewInt(1))
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %v", err)
+		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
 	}
 
 	// prepare tx

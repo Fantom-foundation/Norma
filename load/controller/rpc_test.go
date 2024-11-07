@@ -39,17 +39,12 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcClient, err := net.DialRandomRpc()
-	if err != nil {
-		t.Fatal("unable to connect the the rpc")
-	}
-
 	primaryAccount, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	appContext, err := app.NewContext(rpcClient, primaryAccount)
+	appContext, err := app.NewContext(net, primaryAccount)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -48,12 +48,21 @@ type AppContext interface {
 	Close()
 }
 
-func NewContext(rpcClient rpc.RpcClient, treasure *Account) (*appContext, error) {
+type RpcClientFactory interface {
+	DialRandomRpc() (rpc.RpcClient, error)
+}
+
+func NewContext(factory RpcClientFactory, treasury *Account) (*appContext, error) {
+	rpcClient, err := factory.DialRandomRpc()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to network: %w", err)
+	}
+
 	// Install the helper contract used by this contract for its operations.
 	// Create a context to interact with the network.
 	res := &appContext{
 		rpcClient: rpcClient,
-		treasure:  treasure,
+		treasury:  treasury,
 	}
 
 	// Install a helper contract on the network to perform operations.
@@ -71,7 +80,7 @@ func NewContext(rpcClient rpc.RpcClient, treasure *Account) (*appContext, error)
 
 type appContext struct {
 	rpcClient rpc.RpcClient    // < access to the network
-	treasure  *Account         // < the account paying for management tasks
+	treasury  *Account         // < the account paying for management tasks
 	helper    *contract.Helper // < a contract used for on-chain operations
 }
 
@@ -84,7 +93,7 @@ func (c *appContext) GetClient() rpc.RpcClient {
 }
 
 func (c *appContext) GetTreasure() *Account {
-	return c.treasure
+	return c.treasury
 }
 
 // GetTransactOptions provides transaction options to be used to send a transaction
@@ -152,7 +161,7 @@ func (c *appContext) GetReceipt(txHash common.Hash) (*types.Receipt, error) {
 func (c *appContext) Run(
 	operation func(*bind.TransactOpts) (*types.Transaction, error),
 ) (*types.Receipt, error) {
-	txOpts, err := c.GetTransactOptions(c.treasure)
+	txOpts, err := c.GetTransactOptions(c.treasury)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction options: %w", err)
 	}

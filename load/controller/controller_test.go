@@ -81,8 +81,11 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			rpcClient.EXPECT().SuggestGasPrice(gomock.Any()).AnyTimes().Return(big.NewInt(0), nil)
 			user.EXPECT().GenerateTx(gomock.Any()).AnyTimes().Return(&transaction, nil)
 
+			clientFactory := app.NewMockRpcClientFactory(ctrl)
+			clientFactory.EXPECT().DialRandomRpc().AnyTimes().Return(rpcClient, nil)
+
 			shaper := shaper.NewConstantShaper(float64(rate))
-			appContext, err := app.NewContext(rpcClient, treasure)
+			appContext, err := app.NewContext(clientFactory, treasure)
 			if err != nil {
 				t.Fatalf("failed to create app context: %v", err)
 			}

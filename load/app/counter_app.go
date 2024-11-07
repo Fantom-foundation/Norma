@@ -36,13 +36,13 @@ func NewCounterApplication(ctxt AppContext, feederId, appId uint32) (Application
 	client := ctxt.GetClient()
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get chain ID; %v", err)
+		return nil, fmt.Errorf("failed to get chain ID; %w", err)
 	}
 
 	// Deploy the Counter contract to be used by this application.
 	_, receipt, err := DeployContract(ctxt, contract.DeployCounter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deploy Counter contract; %v", err)
+		return nil, fmt.Errorf("failed to deploy Counter contract; %w", err)
 	}
 
 	accountFactory, err := NewAccountFactory(chainId, feederId, appId)
@@ -102,7 +102,7 @@ func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 	// get a representation of the deployed contract
 	counterContract, err := contract.NewCounter(f.contractAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get Counter contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get Counter contract representation; %w", err)
 	}
 	count, err := counterContract.GetCount(nil)
 	if err != nil {
@@ -124,7 +124,7 @@ func (g *CounterUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, 
 	// prepare tx data
 	data, err := g.abi.Pack("incrementCounter")
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %v", err)
+		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
 	}
 
 	// prepare tx

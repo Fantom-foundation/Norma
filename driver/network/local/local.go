@@ -144,17 +144,10 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	}
 
 	// Setup infrastructure for managing applications on the network.
-	connection, err := net.DialRandomRpc()
+	appContext, err := app.NewContext(net, primaryAccount)
 	if err != nil {
 		return nil, errors.Join(
-			fmt.Errorf("failed to connect to RPC to initialize the network; %v", err),
-			net.Shutdown(),
-		)
-	}
-	appContext, err := app.NewContext(connection, primaryAccount) // < takes ownership of connection
-	if err != nil {
-		return nil, errors.Join(
-			fmt.Errorf("failed to create app context; %v", err),
+			fmt.Errorf("failed to create app context; %w", err),
 			net.Shutdown(),
 		)
 	}

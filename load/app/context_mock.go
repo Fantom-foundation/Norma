@@ -157,3 +157,41 @@ func (mr *MockAppContextMockRecorder) Run(operation any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockAppContext)(nil).Run), operation)
 }
+
+// MockRpcClientFactory is a mock of RpcClientFactory interface.
+type MockRpcClientFactory struct {
+	ctrl     *gomock.Controller
+	recorder *MockRpcClientFactoryMockRecorder
+}
+
+// MockRpcClientFactoryMockRecorder is the mock recorder for MockRpcClientFactory.
+type MockRpcClientFactoryMockRecorder struct {
+	mock *MockRpcClientFactory
+}
+
+// NewMockRpcClientFactory creates a new mock instance.
+func NewMockRpcClientFactory(ctrl *gomock.Controller) *MockRpcClientFactory {
+	mock := &MockRpcClientFactory{ctrl: ctrl}
+	mock.recorder = &MockRpcClientFactoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRpcClientFactory) EXPECT() *MockRpcClientFactoryMockRecorder {
+	return m.recorder
+}
+
+// DialRandomRpc mocks base method.
+func (m *MockRpcClientFactory) DialRandomRpc() (rpc.RpcClient, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DialRandomRpc")
+	ret0, _ := ret[0].(rpc.RpcClient)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DialRandomRpc indicates an expected call of DialRandomRpc.
+func (mr *MockRpcClientFactoryMockRecorder) DialRandomRpc() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialRandomRpc", reflect.TypeOf((*MockRpcClientFactory)(nil).DialRandomRpc))
+}

@@ -52,13 +52,13 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 
 	txOpts, err := context.GetTransactOptions(primaryAccount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
+		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %w", err)
 	}
 
 	// Deploy router
 	routerAddress, tx, _, err := contract.DeployUniswapRouter(txOpts, rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deploy UniswapRouter; %v", err)
+		return nil, fmt.Errorf("failed to deploy UniswapRouter; %w", err)
 	}
 	deployments := []*types.Transaction{tx}
 
@@ -69,7 +69,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 		symbol := fmt.Sprintf("TOK%d", i)
 		tokenAddresses[i], tx, tokenContracts[i], err = contract.DeployERC20(txOpts, rpcClient, name, symbol)
 		if err != nil {
-			return nil, fmt.Errorf("failed to deploy ERC-20 token %d; %v", i, err)
+			return nil, fmt.Errorf("failed to deploy ERC-20 token %d; %w", i, err)
 		}
 		deployments = append(deployments, tx)
 	}
@@ -79,7 +79,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 		txOpts.Nonce = new(big.Int).Add(txOpts.Nonce, big.NewInt(1))
 		pairsAddresses[i], tx, pairsContracts[i], err = contract.DeployUniswapV2Pair(txOpts, rpcClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to deploy Uniswap pair; %v", err)
+			return nil, fmt.Errorf("failed to deploy Uniswap pair; %w", err)
 		}
 		deployments = append(deployments, tx)
 	}
@@ -88,7 +88,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 	for i, tx := range deployments {
 		receipt, err := context.GetReceipt(tx.Hash())
 		if err != nil {
-			return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %v", err)
+			return nil, fmt.Errorf("failed to wait until the Uniswap contract is deployed; %w", err)
 		}
 		if receipt.Status != types.ReceiptStatusSuccessful {
 			return nil, fmt.Errorf("failed to deploy Uniswap contract; transaction reverted; step %d", i)
@@ -103,13 +103,13 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 		txOpts.Nonce = new(big.Int).Add(txOpts.Nonce, big.NewInt(1))
 		tx, err = tokenA.Mint(txOpts, pairsAddresses[i], PairLiquidity)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fund Uniswap pair; %v", err)
+			return nil, fmt.Errorf("failed to fund Uniswap pair; %w", err)
 		}
 		configSteps = append(configSteps, tx)
 		txOpts.Nonce = new(big.Int).Add(txOpts.Nonce, big.NewInt(1))
 		tx, err = tokenB.Mint(txOpts, pairsAddresses[i], PairLiquidity)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fund Uniswap pair; %v", err)
+			return nil, fmt.Errorf("failed to fund Uniswap pair; %w", err)
 		}
 		configSteps = append(configSteps, tx)
 
@@ -120,7 +120,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 		txOpts.Nonce = new(big.Int).Add(txOpts.Nonce, big.NewInt(1))
 		tx, err = pairsContracts[i].Initialize(txOpts, tokenAAddress, tokenBAddress)
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize Uniswap pair; %v", err)
+			return nil, fmt.Errorf("failed to initialize Uniswap pair; %w", err)
 		}
 		configSteps = append(configSteps, tx)
 	}
@@ -130,7 +130,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 		txOpts.Nonce = new(big.Int).Add(txOpts.Nonce, big.NewInt(1))
 		tx, err = tokenContracts[i].WhitelistSpender(txOpts, routerAddress)
 		if err != nil {
-			return nil, fmt.Errorf("failed to whitelist Uniswap contract in the ERC-20 token %d; %v", i, err)
+			return nil, fmt.Errorf("failed to whitelist Uniswap contract in the ERC-20 token %d; %w", i, err)
 		}
 		configSteps = append(configSteps, tx)
 	}
@@ -150,7 +150,7 @@ func NewUniswapApplication(context AppContext, feederId, appId uint32) (Applicat
 	for i, tx := range configSteps {
 		receipt, err := context.GetReceipt(tx.Hash())
 		if err != nil {
-			return nil, fmt.Errorf("failed to wait until the Uniswap contracts are configured; %v", err)
+			return nil, fmt.Errorf("failed to wait until the Uniswap contracts are configured; %w", err)
 		}
 		if receipt.Status != types.ReceiptStatusSuccessful {
 			return nil, fmt.Errorf("failed to configure Uniswap contracts; transaction reverted; step %d", i)
@@ -205,25 +205,25 @@ func (f *UniswapApplication) CreateUsers(appContext AppContext, numUsers int) ([
 	fundsPerUser = new(big.Int).Mul(fundsPerUser, big.NewInt(1_000_000_000_000_000_000)) // to wei
 	err := appContext.FundAccounts(addresses, fundsPerUser)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fund accounts; %v", err)
+		return nil, fmt.Errorf("failed to fund accounts; %w", err)
 	}
 
 	// mint ERC-20 tokens for the worker account - tokens to be transferred in the transactions
 	rpcClient := appContext.GetClient()
 	token0Contract, err := contract.NewERC20(f.tokensAddresses[0], rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token representation; %v", err)
+		return nil, fmt.Errorf("failed to get token representation; %w", err)
 	}
 	tokenNContract, err := contract.NewERC20(f.tokensAddresses[TokensInChain-1], rpcClient)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get token representation; %v", err)
+		return nil, fmt.Errorf("failed to get token representation; %w", err)
 	}
 
 	receipt, err := appContext.Run(func(opts *bind.TransactOpts) (*types.Transaction, error) {
 		return token0Contract.MintForAll(opts, addresses, WorkerInitialBalance)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to mint ERC-20; %v", err)
+		return nil, fmt.Errorf("failed to mint ERC-20; %w", err)
 	}
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return nil, fmt.Errorf("failed to mint ERC-20; transaction reverted")
@@ -233,7 +233,7 @@ func (f *UniswapApplication) CreateUsers(appContext AppContext, numUsers int) ([
 		return tokenNContract.MintForAll(opts, addresses, WorkerInitialBalance)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to mint ERC-20; %v", err)
+		return nil, fmt.Errorf("failed to mint ERC-20; %w", err)
 	}
 	if receipt.Status != types.ReceiptStatusSuccessful {
 		return nil, fmt.Errorf("failed to mint ERC-20; transaction reverted")
@@ -246,7 +246,7 @@ func (f *UniswapApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 	// get a representation of the deployed contract
 	routerContract, err := contract.NewUniswapRouter(f.routerAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get UniswapRouter representation; %v", err)
+		return 0, fmt.Errorf("failed to get UniswapRouter representation; %w", err)
 	}
 	count, err := routerContract.GetCount(nil)
 	if err != nil {
@@ -281,7 +281,7 @@ func (g *UniswapUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, 
 		data, err = g.routerAbi.Pack("swapExactTokensForTokens", AmountSwapped, g.tokensAddressesReversed, g.pairsAddressesReversed)
 	}
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %v", err)
+		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
 	}
 
 	// prepare tx

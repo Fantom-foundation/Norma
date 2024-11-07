@@ -38,13 +38,13 @@ func NewStoreApplication(ctxt AppContext, feederId, appId uint32) (Application, 
 	client := ctxt.GetClient()
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get chain ID; %v", err)
+		return nil, fmt.Errorf("failed to get chain ID; %w", err)
 	}
 
 	// Deploy the Store contract to be used by this application.
 	_, receipt, err := DeployContract(ctxt, contract.DeployStore)
 	if err != nil {
-		return nil, fmt.Errorf("failed to deploy Store contract; %v", err)
+		return nil, fmt.Errorf("failed to deploy Store contract; %w", err)
 	}
 
 	accountFactory, err := NewAccountFactory(chainId, feederId, appId)
@@ -102,7 +102,7 @@ func (f *StoreApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 	// get a representation of the deployed contract
 	storeContract, err := contract.NewStore(f.contractAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get Store contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get Store contract representation; %w", err)
 	}
 	count, err := storeContract.GetCount(nil)
 	if err != nil {
@@ -131,7 +131,7 @@ func (g *StoreUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, er
 	to := from + updateSize
 	data, err := g.abi.Pack("fill", big.NewInt(from), big.NewInt(to), big.NewInt(val))
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %v", err)
+		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
 	}
 
 	// prepare tx
