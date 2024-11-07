@@ -39,9 +39,7 @@ pipeline {
 
 		stage('Test Baseline Scenarios') {
 			steps {
-				catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-					sh "build/norma run scenarios/test/baseline_check.yml"
-				}
+				sh "build/norma run scenarios/test/baseline_check.yml"
 			}
 		}
 	}
