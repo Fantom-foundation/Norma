@@ -39,17 +39,17 @@ func TestTrafficGenerating(t *testing.T) {
 	}
 	t.Cleanup(func() { net.Shutdown() })
 
-	rpcClient, err := net.DialRandomRpc()
-	if err != nil {
-		t.Fatal("unable to connect the the rpc")
-	}
-
 	primaryAccount, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	application, err := app.NewERC20Application(rpcClient, primaryAccount, 1, 0, 0)
+	appContext, err := app.NewContext(net, primaryAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	application, err := app.NewERC20Application(appContext, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestTrafficGenerating(t *testing.T) {
 	constantShaper := shaper.NewConstantShaper(30.0) // 30 txs/sec
 
 	numGenerators := 5 // 5 parallel workers
-	app, err := controller.NewAppController(application, constantShaper, numGenerators, nil, net)
+	app, err := controller.NewAppController(application, constantShaper, numGenerators, appContext, net)
 	if err != nil {
 		t.Fatal(err)
 	}

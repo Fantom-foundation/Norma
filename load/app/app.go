@@ -26,11 +26,12 @@ import (
 //go:generate mockgen -source app.go -destination app_mock.go -package app
 
 type Application interface {
-	// CreateUser creates a new user generating transactions for this application.
-	CreateUser(rpcClient rpc.RpcClient) (User, error)
+	// CreateUsers creates a number of users for this application that
+	// can generate transactions for this application.
+	CreateUsers(context AppContext, numUsers int) ([]User, error)
 
-	WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error
-
+	// GetReceivedTransactions returns the total number of transactions
+	// received by this application up to the current point in time.
 	GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error)
 }
 

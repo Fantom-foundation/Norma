@@ -57,19 +57,19 @@ func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
 }
 
-// CreateUser mocks base method.
-func (m *MockApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
+// CreateUsers mocks base method.
+func (m *MockApplication) CreateUsers(context AppContext, numUsers int) ([]User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", rpcClient)
-	ret0, _ := ret[0].(User)
+	ret := m.ctrl.Call(m, "CreateUsers", context, numUsers)
+	ret0, _ := ret[0].([]User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateUser indicates an expected call of CreateUser.
-func (mr *MockApplicationMockRecorder) CreateUser(rpcClient any) *gomock.Call {
+// CreateUsers indicates an expected call of CreateUsers.
+func (mr *MockApplicationMockRecorder) CreateUsers(context, numUsers any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockApplication)(nil).CreateUser), rpcClient)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUsers", reflect.TypeOf((*MockApplication)(nil).CreateUsers), context, numUsers)
 }
 
 // GetReceivedTransactions mocks base method.
@@ -85,20 +85,6 @@ func (m *MockApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint
 func (mr *MockApplicationMockRecorder) GetReceivedTransactions(rpcClient any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReceivedTransactions", reflect.TypeOf((*MockApplication)(nil).GetReceivedTransactions), rpcClient)
-}
-
-// WaitUntilApplicationIsDeployed mocks base method.
-func (m *MockApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WaitUntilApplicationIsDeployed", rpcClient)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WaitUntilApplicationIsDeployed indicates an expected call of WaitUntilApplicationIsDeployed.
-func (mr *MockApplicationMockRecorder) WaitUntilApplicationIsDeployed(rpcClient any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitUntilApplicationIsDeployed", reflect.TypeOf((*MockApplication)(nil).WaitUntilApplicationIsDeployed), rpcClient)
 }
 
 // MockUser is a mock of User interface.
@@ -125,18 +111,18 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 }
 
 // GenerateTx mocks base method.
-func (m *MockUser) GenerateTx(arg0 *big.Int) (*types.Transaction, error) {
+func (m *MockUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateTx", arg0)
+	ret := m.ctrl.Call(m, "GenerateTx", currentGasPrice)
 	ret0, _ := ret[0].(*types.Transaction)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateTx indicates an expected call of GenerateTx.
-func (mr *MockUserMockRecorder) GenerateTx(arg0 any) *gomock.Call {
+func (mr *MockUserMockRecorder) GenerateTx(currentGasPrice any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockUser)(nil).GenerateTx), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockUser)(nil).GenerateTx), currentGasPrice)
 }
 
 // GetSentTransactions mocks base method.

@@ -19,15 +19,13 @@ package app
 import (
 	"fmt"
 	"strings"
-
-	"github.com/Fantom-foundation/Norma/driver/rpc"
 )
 
-type appFactoryFunc func(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error)
+type appFactoryFunc func(context AppContext, feederId, appId uint32) (Application, error)
 
-func NewApplication(appType string, rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
+func NewApplication(appType string, context AppContext, feederId, appId uint32) (Application, error) {
 	if factory := getFactory(appType); factory != nil {
-		return factory(rpcClient, primaryAccount, numUsers, feederId, appId)
+		return factory(context, feederId, appId)
 	}
 	return nil, fmt.Errorf("unknown application type '%s'", appType)
 }

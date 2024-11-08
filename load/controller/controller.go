@@ -42,36 +42,16 @@ type AppController struct {
 	rpcClient   rpc.RpcClient
 }
 
-func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, rpcClient rpc.RpcClient, network driver.Network) (*AppController, error) {
+func NewAppController(application app.Application, shaper shaper.Shaper, numUsers int, context app.AppContext, network driver.Network) (*AppController, error) {
 	trigger := make(chan struct{}, 100)
 
-	if rpcClient == nil {
-		var err error
-		rpcClient, err = network.DialRandomRpc()
-		if err != nil {
-			return nil, fmt.Errorf("failed to dial random RPC; %v", err)
-		}
+	// create users for this application
+	log.Printf("starting initialization of %d users\n", numUsers)
+	users, err := application.CreateUsers(context, numUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create users for app; %v", err)
 	}
-
-	// initialize workers for individual generators
-	users := make([]app.User, 0, numUsers)
-	for i := 0; i < numUsers; i++ {
-		gen, err := application.CreateUser(rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create load app; %s", err)
-		}
-		users = append(users, gen)
-		if i%100 == 0 {
-			log.Printf("initialized %d of %d users ...\n", i+1, numUsers)
-		}
-	}
-
-	// wait until all changes are on the chain
-	log.Printf("waiting until all app generators are deployed...\n")
-	if err := application.WaitUntilApplicationIsDeployed(rpcClient); err != nil {
-		return nil, fmt.Errorf("failed to wait for app on-chain init; %s", err)
-	}
-	log.Printf("the app is deployed\n")
+	log.Printf("completed initialization of %d users\n", numUsers)
 
 	return &AppController{
 		shaper:      shaper,
@@ -79,7 +59,7 @@ func NewAppController(application app.Application, shaper shaper.Shaper, numUser
 		network:     network,
 		trigger:     trigger,
 		users:       users,
-		rpcClient:   rpcClient,
+		rpcClient:   context.GetClient(),
 	}, nil
 }
 

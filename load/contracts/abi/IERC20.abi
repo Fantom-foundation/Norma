@@ -1,8 +1,7 @@
 [
   {
     "anonymous": false,
-    "inputs":
-    [
+    "inputs": [
       {
         "indexed": true,
         "internalType": "address",
@@ -27,8 +26,7 @@
   },
   {
     "anonymous": false,
-    "inputs":
-    [
+    "inputs": [
       {
         "indexed": true,
         "internalType": "address",
@@ -52,8 +50,7 @@
     "type": "event"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "owner",
@@ -66,8 +63,7 @@
       }
     ],
     "name": "allowance",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -78,8 +74,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "spender",
@@ -92,8 +87,7 @@
       }
     ],
     "name": "approve",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
@@ -104,8 +98,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "account",
@@ -113,8 +106,7 @@
       }
     ],
     "name": "balanceOf",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -127,8 +119,7 @@
   {
     "inputs": [],
     "name": "totalSupply",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "uint256",
         "name": "",
@@ -139,8 +130,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "recipient",
@@ -153,8 +143,7 @@
       }
     ],
     "name": "transfer",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
@@ -165,8 +154,7 @@
     "type": "function"
   },
   {
-    "inputs":
-    [
+    "inputs": [
       {
         "internalType": "address",
         "name": "sender",
@@ -184,8 +172,7 @@
       }
     ],
     "name": "transferFrom",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "bool",
         "name": "",
