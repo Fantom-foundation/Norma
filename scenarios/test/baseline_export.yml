@@ -1,7 +1,7 @@
 # This scenario simulates a minimal network including two nodes
 # and a single application producing constant, low-throughput load.
 # This is to be used as a base-line check for Norma's stability.
-name: Baseline Check
+name: Baseline Export Check
 
 # The duration of the scenario's runtime, in seconds.
 duration: 60
