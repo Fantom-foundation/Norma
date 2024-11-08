@@ -88,31 +88,31 @@ func (mr *MockNodeMockRecorder) DialRpc() *gomock.Call {
 }
 
 // ExportEvents mocks base method.
-func (m *MockNode) ExportEvents() error {
+func (m *MockNode) ExportEvents(arg0 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportEvents")
+	ret := m.ctrl.Call(m, "ExportEvents", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ExportEvents indicates an expected call of ExportEvents.
-func (mr *MockNodeMockRecorder) ExportEvents() *gomock.Call {
+func (mr *MockNodeMockRecorder) ExportEvents(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportEvents", reflect.TypeOf((*MockNode)(nil).ExportEvents))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportEvents", reflect.TypeOf((*MockNode)(nil).ExportEvents), arg0)
 }
 
 // ExportGenesis mocks base method.
-func (m *MockNode) ExportGenesis() error {
+func (m *MockNode) ExportGenesis(arg0 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExportGenesis")
+	ret := m.ctrl.Call(m, "ExportGenesis", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ExportGenesis indicates an expected call of ExportGenesis.
-func (mr *MockNodeMockRecorder) ExportGenesis() *gomock.Call {
+func (mr *MockNodeMockRecorder) ExportGenesis(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportGenesis", reflect.TypeOf((*MockNode)(nil).ExportGenesis))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportGenesis", reflect.TypeOf((*MockNode)(nil).ExportGenesis), arg0)
 }
 
 // GetLabel mocks base method.
