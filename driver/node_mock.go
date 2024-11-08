@@ -38,6 +38,7 @@ import (
 type MockNode struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeMockRecorder is the mock recorder for MockNode.
@@ -84,6 +85,34 @@ func (m *MockNode) DialRpc() (rpc.RpcClient, error) {
 func (mr *MockNodeMockRecorder) DialRpc() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialRpc", reflect.TypeOf((*MockNode)(nil).DialRpc))
+}
+
+// ExportEvents mocks base method.
+func (m *MockNode) ExportEvents() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExportEvents")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExportEvents indicates an expected call of ExportEvents.
+func (mr *MockNodeMockRecorder) ExportEvents() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportEvents", reflect.TypeOf((*MockNode)(nil).ExportEvents))
+}
+
+// ExportGenesis mocks base method.
+func (m *MockNode) ExportGenesis() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExportGenesis")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExportGenesis indicates an expected call of ExportGenesis.
+func (mr *MockNodeMockRecorder) ExportGenesis() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExportGenesis", reflect.TypeOf((*MockNode)(nil).ExportGenesis))
 }
 
 // GetLabel mocks base method.
@@ -185,6 +214,18 @@ func (mr *MockNodeMockRecorder) MetricsPort() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MetricsPort", reflect.TypeOf((*MockNode)(nil).MetricsPort))
 }
 
+// RegisterListener mocks base method.
+func (m *MockNode) RegisterListener(arg0 NodeListener) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterListener", arg0)
+}
+
+// RegisterListener indicates an expected call of RegisterListener.
+func (mr *MockNodeMockRecorder) RegisterListener(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterListener", reflect.TypeOf((*MockNode)(nil).RegisterListener), arg0)
+}
+
 // Stop mocks base method.
 func (m *MockNode) Stop() error {
 	m.ctrl.T.Helper()
@@ -212,4 +253,52 @@ func (m *MockNode) StreamLog() (io.ReadCloser, error) {
 func (mr *MockNodeMockRecorder) StreamLog() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamLog", reflect.TypeOf((*MockNode)(nil).StreamLog))
+}
+
+// UnregisterListener mocks base method.
+func (m *MockNode) UnregisterListener(arg0 NodeListener) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UnregisterListener", arg0)
+}
+
+// UnregisterListener indicates an expected call of UnregisterListener.
+func (mr *MockNodeMockRecorder) UnregisterListener(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterListener", reflect.TypeOf((*MockNode)(nil).UnregisterListener), arg0)
+}
+
+// MockNodeListener is a mock of NodeListener interface.
+type MockNodeListener struct {
+	ctrl     *gomock.Controller
+	recorder *MockNodeListenerMockRecorder
+	isgomock struct{}
+}
+
+// MockNodeListenerMockRecorder is the mock recorder for MockNodeListener.
+type MockNodeListenerMockRecorder struct {
+	mock *MockNodeListener
+}
+
+// NewMockNodeListener creates a new mock instance.
+func NewMockNodeListener(ctrl *gomock.Controller) *MockNodeListener {
+	mock := &MockNodeListener{ctrl: ctrl}
+	mock.recorder = &MockNodeListenerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNodeListener) EXPECT() *MockNodeListenerMockRecorder {
+	return m.recorder
+}
+
+// AfterNodeStop mocks base method.
+func (m *MockNodeListener) AfterNodeStop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AfterNodeStop")
+}
+
+// AfterNodeStop indicates an expected call of AfterNodeStop.
+func (mr *MockNodeListenerMockRecorder) AfterNodeStop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AfterNodeStop", reflect.TypeOf((*MockNodeListener)(nil).AfterNodeStop))
 }

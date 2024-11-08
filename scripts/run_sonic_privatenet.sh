@@ -16,9 +16,9 @@ echo "genesis validator count=${VALIDATORS_COUNT}"
 ./set_genesis.sh genesis.json 100 ${VALIDATORS_COUNT} ${MAX_BLOCK_GAS} ${MAX_EPOCH_GAS}
 
 # Initialize datadir
-mkdir /datadir /genesis
+mkdir /datadir /export
 ./sonictool --datadir ${datadir} genesis json --experimental genesis.json
-cp genesis.json /genesis/genesis.init.json
+cp genesis.json /export/init.g.json
 
 ##
 ## if $VALIDATOR_ID is set, it is a validator
@@ -60,6 +60,16 @@ else
 #  5 seconds in golang time 5*10^9 nanoseconds
   echo DoublesignProtection = 5000000000 >> config.toml
 fi
+
+# This trap/handler makes sure this script continues after sonicd is terminated.
+# Without this, the container will shutdown directly after sonicd terminates.
+# To export artifacts, we need to do it in the window between sonicd terminates
+# and container shutdown.
+handler() {
+    echo "Client terminated. Keep running main script for artifact extraction."
+    sleep infinity # norma shutdowns the container after artifact extraction is done.
+}
+trap handler SIGINT
 
 # Start sonic as part of a fake net with RPC service.
 ./sonicd \

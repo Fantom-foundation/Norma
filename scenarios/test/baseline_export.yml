@@ -1,0 +1,25 @@
+# This scenario simulates a minimal network including two nodes
+# and a single application producing constant, low-throughput load.
+# This is to be used as a base-line check for Norma's stability.
+name: Baseline Check
+
+# The duration of the scenario's runtime, in seconds.
+duration: 60
+num_validators: 2
+
+nodes:
+  - name: observer
+    end: 30
+    event:
+      export: out.e
+    genesis:
+      exportfinal: out.g
+
+# In the network there is a single application producing constant load.
+applications:
+  - name: load
+    type: counter
+    start: 10          # start time
+    end: 50            # termination time
+    rate:
+      constant: 20    # Tx/s

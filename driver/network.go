@@ -87,11 +87,10 @@ type NetworkListener interface {
 }
 
 type NodeConfig struct {
-	Name         string
-	Validator    bool
-	Cheater      bool
-	MountDatadir *string // mount node datadir to path if not nil
-	MountGenesis *string // mount node genesis files to path if not nil
+	Name        string
+	Validator   bool
+	Cheater     bool
+	MountExport *string // mount to export artifacts from, if any
 	// TODO: add other parameters as needed
 	//  - features to include on the node
 	//  - state DB configuration

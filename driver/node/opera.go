@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"sync"
 	"time"
 
 	rpcdriver "github.com/Fantom-foundation/Norma/driver/rpc"
@@ -72,14 +73,19 @@ type OperaNode struct {
 	host      network.Host
 	container *docker.Container
 	label     string
+
+	// listeners is the set of registered NodeListeners.
+	listeners map[driver.NodeListener]bool
+
+	// listenerMutex is syncing access to listeners.
+	listenerMutex sync.Mutex
 }
 
 type OperaNodeConfig struct {
 	// The label to be used to name this node. The label should not be empty.
 	Label string
-	// mount datadir, genesis to host if set.
-	MountDatadir *string
-	MountGenesis *string
+	// mount dir for exported artifacts
+	MountExport *string
 	// The ID of the validator, nil if the node should not be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
@@ -124,9 +130,8 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
 				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
 			},
-			Network:      dn,
-			MountDatadir: config.MountDatadir,
-			MountGenesis: config.MountGenesis,
+			Network:     dn,
+			MountExport: config.MountExport,
 		})
 	})
 	if err != nil {
@@ -136,6 +141,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		host:      host,
 		container: host,
 		label:     config.Label,
+		listeners: make(map[driver.NodeListener]bool, 5),
 	}
 
 	// Wait until the OperaNode inside the Container is ready.
@@ -203,6 +209,22 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 }
 
 func (n *OperaNode) Stop() error {
+	// Send ctrl+c to signal client termination
+	n.Interrupt()
+
+	// Wait until client terminate
+	// if not enough, artifacts will be corrupted after export
+	time.Sleep(3 * time.Second)
+
+	// Signal to listeners that client is terminated.
+	// All listener calls is expected to be blocking.
+	n.listenerMutex.Lock()
+	for listener := range n.listeners {
+		listener.AfterNodeStop()
+	}
+	n.listenerMutex.Unlock()
+
+	// After all blocking calls are done, stop the container
 	return n.host.Stop()
 }
 
@@ -252,4 +274,71 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 // Kill sends a SigKill singal to node.
 func (n *OperaNode) Kill() error {
 	return n.container.SendSignal(docker.SigKill)
+}
+
+// Interrupt sends a SigInt signal to node.
+func (n *OperaNode) Interrupt() error {
+	return n.container.SendSignal(docker.SigInt)
+}
+
+func (n *OperaNode) RegisterListener(listener driver.NodeListener) {
+	n.listenerMutex.Lock()
+	n.listeners[listener] = true
+	n.listenerMutex.Unlock()
+}
+
+func (n *OperaNode) UnregisterListener(listener driver.NodeListener) {
+	n.listenerMutex.Lock()
+	delete(n.listeners, listener)
+	n.listenerMutex.Unlock()
+}
+
+// eventExport triggers node.ExportEvents as a NodeListener
+type eventExport struct {
+	node    driver.Node
+	outfile string
+}
+
+func (e *eventExport) AfterNodeStop() {
+	e.node.ExportEvents(e.outfile)
+}
+
+func NewEventExport(node driver.Node, outfile string) *eventExport {
+	return &eventExport{node: node, outfile: outfile}
+}
+
+func (n *OperaNode) ExportEvents(outfile string) error {
+	_, err := n.container.Exec([]string{
+		"sh", "-c",
+		fmt.Sprintf("./sonictool --datadir /datadir events export /export/%s", outfile),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to export events; %w", err)
+	}
+	return nil
+}
+
+// genesisExport triggers node.ExportGenesis as a NodeListener
+type genesisExport struct {
+	node    driver.Node
+	outfile string
+}
+
+func (g *genesisExport) AfterNodeStop() {
+	g.node.ExportGenesis(g.outfile)
+}
+
+func NewGenesisExport(node driver.Node, outfile string) *genesisExport {
+	return &genesisExport{node: node, outfile: outfile}
+}
+
+func (n *OperaNode) ExportGenesis(outfile string) error {
+	_, err := n.container.Exec([]string{
+		"sh", "-c",
+		fmt.Sprintf("/sonictool --datadir /datadir genesis export /export/%s", outfile),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to export genesis; %w", err)
+	}
+	return nil
 }

@@ -204,8 +204,7 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 	if config.Cheater {
 		_, err := n.createNode(&node.OperaNodeConfig{
 			Label:         "cheater-" + config.Name,
-			MountDatadir:  config.MountDatadir,
-			MountGenesis:  config.MountGenesis,
+			MountExport:   config.MountExport,
 			NetworkConfig: &n.config,
 			ValidatorId:   &newValId,
 		})
@@ -216,8 +215,7 @@ func (n *LocalNetwork) CreateNode(config *driver.NodeConfig) (driver.Node, error
 
 	return n.createNode(&node.OperaNodeConfig{
 		Label:         config.Name,
-		MountDatadir:  config.MountDatadir,
-		MountGenesis:  config.MountGenesis,
+		MountExport:   config.MountExport,
 		NetworkConfig: &n.config,
 		ValidatorId:   &newValId,
 	})

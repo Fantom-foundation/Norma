@@ -20,13 +20,18 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/docker"
+	"go.uber.org/mock/gomock"
 )
 
 func TestImplements(t *testing.T) {
@@ -58,6 +63,39 @@ func TestOperaNode_StartAndStop(t *testing.T) {
 		_ = node.Cleanup()
 	})
 	if err = node.host.Stop(); err != nil {
+		t.Errorf("failed to stop Opera node: %v", err)
+	}
+}
+
+func TestOperaNode_NotifiesListenersAfterNodeStop(t *testing.T) {
+	docker, err := docker.NewClient()
+	if err != nil {
+		t.Fatalf("failed to create a docker client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = docker.Close()
+	})
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
+		Label:         "test",
+		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
+	})
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
+	if err != nil {
+		t.Fatalf("failed to create an Opera node on Docker: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
+	ctrl := gomock.NewController(t)
+	listener := driver.NewMockNodeListener(ctrl)
+	listener.EXPECT().AfterNodeStop().Times(1)
+	node.RegisterListener(listener)
+
+	if err = node.Stop(); err != nil {
 		t.Errorf("failed to stop Opera node: %v", err)
 	}
 }
@@ -180,5 +218,55 @@ func TestOperaNode_MetricsExposed(t *testing.T) {
 
 	if !apiWorks {
 		t.Errorf("monitoring API has not been available")
+	}
+}
+
+func TestOperaNode_ExportArtifacts(t *testing.T) {
+	docker, err := docker.NewClient()
+	if err != nil {
+		t.Fatalf("failed to create a docker client: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = docker.Close()
+	})
+
+	tmpdir := t.TempDir()
+	node, err := StartOperaDockerNode(docker, nil, &OperaNodeConfig{
+		Label:         "test",
+		MountExport:   &tmpdir,
+		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
+	})
+	t.Cleanup(func() {
+		_ = node.Cleanup()
+	})
+
+	node.RegisterListener(NewEventExport(node, "out.e"))
+	node.RegisterListener(NewGenesisExport(node, "out.g"))
+
+	if err = node.Stop(); err != nil {
+		t.Fatalf("failed to stop Opera node: %v", err)
+	}
+
+	files, err := ioutil.ReadDir(tmpdir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		fmt.Println(file.Name(), file.IsDir())
+	}
+
+	// check if the artifact files are exported
+	for _, outfile := range []string{
+		filepath.Join(tmpdir, "out.e"),
+		filepath.Join(tmpdir, "out.g"),
+	} {
+		fileInfo, err := os.Stat(outfile)
+		if os.IsNotExist(err) {
+			t.Fatalf("failed to export any event files: %v", err)
+		}
+		if fileInfo.Size() == 0 {
+			t.Errorf("failed to export content, filesize = 0. This could be due to db corruption when terminating client.")
+		}
 	}
 }

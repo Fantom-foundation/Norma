@@ -55,4 +55,15 @@ COPY genesis/example-genesis.json ./genesis.json
 COPY scripts/run_sonic_privatenet.sh ./run_sonic.sh
 COPY scripts/set_genesis.sh ./set_genesis.sh
 
+# TINI was added so that we can forward SIGINT to run_sonic.sh and gracefully terminates client
+# TINI (equivalent to docker run --init) replaces the default entry point "sh -c" and
+# forces the CMD script to start with PID 1 so that it can interact with SIGINT
+#
+# Add https://github.com/krallin/tini
+ENV TINI_VERSION=v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+# -g forwards SIGINT to child processes
+ENTRYPOINT ["/tini", "-g", "--"]
 CMD ["/bin/bash", "run_sonic.sh"]

@@ -68,6 +68,26 @@ type Node interface {
 	// Cleanup releases all underlying resources. After the cleanup no more
 	// operations on this node are expected to succeed.
 	Cleanup() error
+
+	// RegisterListener registers a listener to receive updates on node
+	// changes.
+	RegisterListener(NodeListener)
+
+	// UnregisterListener removes the given listener from this node.
+	UnregisterListener(NodeListener)
+
+	// ExportEvents exports event files.
+	ExportEvents(string) error
+
+	// ExportGenesis exports genesis files.
+	ExportGenesis(string) error
+}
+
+// NodeListener can be registered to the node to get callbacks whenever there
+// are changes to the node.
+type NodeListener interface {
+	// AfterNodeStop is called whenever a node is stopped.
+	AfterNodeStop()
 }
 
 // NodeID is a unique ID identifying each node. This identifier is used, for
