@@ -17,6 +17,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"sync/atomic"
@@ -24,7 +25,6 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -32,33 +32,20 @@ import (
 // NewCounterApplication deploys a Counter contract to the chain.
 // The Counter contract is a simple contract sustaining an integer value, to be incremented by sent txs.
 // It allows to easily test the tx generating, as reading the contract field provides the amount of applied contract calls.
-func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, numUsers int, feederId, appId uint32) (Application, error) {
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
+func NewCounterApplication(ctxt AppContext, feederId, appId uint32) (Application, error) {
+	client := ctxt.GetClient()
+	chainId, err := client.ChainID(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get chain ID; %w", err)
 	}
 
-	// Deploy the Counter contract to be used by tx generators
-	txOpts, err := bind.NewKeyedTransactorWithChainID(primaryAccount.privateKey, primaryAccount.chainID)
+	// Deploy the Counter contract to be used by this application.
+	_, receipt, err := DeployContract(ctxt, contract.DeployCounter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create txOpts for contract deploy; %v", err)
-	}
-	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(primaryAccount.getNextNonce()))
-	contractAddress, _, _, err := contract.DeployCounter(txOpts, rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to deploy Counter contract; %v", err)
+		return nil, fmt.Errorf("failed to deploy Counter contract; %w", err)
 	}
 
-	accountFactory, err := NewAccountFactory(primaryAccount.chainID, feederId, appId)
-	if err != nil {
-		return nil, err
-	}
-
-	// deploying too many generators from one account leads to excessive gasPrice growth - we
-	// need to spread the initialization in between multiple startingAccounts
-	startingAccounts, err := generateStartingAccounts(rpcClient, primaryAccount, accountFactory, numUsers, regularGasPrice)
+	accountFactory, err := NewAccountFactory(chainId, feederId, appId)
 	if err != nil {
 		return nil, err
 	}
@@ -69,17 +56,10 @@ func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 		return nil, err
 	}
 
-	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
-	err = WaitUntilAccountNonceIs(primaryAccount.address, primaryAccount.getCurrentNonce(), rpcClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait until the Counter contract is deployed; %v", err)
-	}
-
 	return &CounterApplication{
-		abi:              parsedAbi,
-		startingAccounts: startingAccounts,
-		contractAddress:  contractAddress,
-		accountFactory:   accountFactory,
+		abi:             parsedAbi,
+		contractAddress: receipt.ContractAddress,
+		accountFactory:  accountFactory,
 	}, nil
 }
 
@@ -87,49 +67,42 @@ func NewCounterApplication(rpcClient rpc.RpcClient, primaryAccount *Account, num
 // A factory represents one deployed Counter contract, incremented by all its generators.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type CounterApplication struct {
-	abi              *abi.ABI
-	startingAccounts []*Account
-	contractAddress  common.Address
-	accountFactory   *AccountFactory
+	abi             *abi.ABI
+	contractAddress common.Address
+	accountFactory  *AccountFactory
 }
 
-// CreateUser creates a new user for the app.
-func (f *CounterApplication) CreateUser(rpcClient rpc.RpcClient) (User, error) {
+// CreateUsers creates a list of new users for the app.
+func (f *CounterApplication) CreateUsers(appContext AppContext, numUsers int) ([]User, error) {
 
-	// get price of gas from the network
-	regularGasPrice, err := GetGasPrice(rpcClient)
-	if err != nil {
-		return nil, err
+	users := make([]User, numUsers)
+	addresses := make([]common.Address, numUsers)
+	for i := 0; i < numUsers; i++ {
+		// Generate a new account for each worker - avoid account nonces related bottlenecks
+		workerAccount, err := f.accountFactory.CreateAccount(appContext.GetClient())
+		if err != nil {
+			return nil, err
+		}
+		users[i] = &CounterUser{
+			abi:      f.abi,
+			sender:   workerAccount,
+			contract: f.contractAddress,
+		}
+		addresses[i] = workerAccount.address
 	}
 
-	// Generate a new account for each worker - avoid account nonces related bottlenecks
-	workerAccount, err := f.accountFactory.CreateAccount(rpcClient)
-	if err != nil {
-		return nil, err
-	}
-	startingAccount := f.startingAccounts[workerAccount.id%len(f.startingAccounts)]
-	err = workerAccount.Fund(startingAccount, rpcClient, regularGasPrice, 1000)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fund worker account %d; %v", workerAccount.id, err)
-	}
+	fundsPerUser := big.NewInt(1_000)
+	fundsPerUser = new(big.Int).Mul(fundsPerUser, big.NewInt(1_000_000_000_000_000_000)) // to wei
+	err := appContext.FundAccounts(addresses, fundsPerUser)
 
-	gen := &CounterUser{
-		abi:      f.abi,
-		sender:   workerAccount,
-		contract: f.contractAddress,
-	}
-	return gen, nil
-}
-
-func (f *CounterApplication) WaitUntilApplicationIsDeployed(rpcClient rpc.RpcClient) error {
-	return waitUntilAllSentTxsAreOnChain(f.startingAccounts, rpcClient)
+	return users, err
 }
 
 func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uint64, error) {
 	// get a representation of the deployed contract
 	counterContract, err := contract.NewCounter(f.contractAddress, rpcClient)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get Counter contract representation; %v", err)
+		return 0, fmt.Errorf("failed to get Counter contract representation; %w", err)
 	}
 	count, err := counterContract.GetCount(nil)
 	if err != nil {
@@ -144,25 +117,25 @@ type CounterUser struct {
 	abi      *abi.ABI
 	sender   *Account
 	contract common.Address
-	sentTxs  uint64
+	sentTxs  atomic.Uint64
 }
 
 func (g *CounterUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
 	// prepare tx data
 	data, err := g.abi.Pack("incrementCounter")
 	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %v", err)
+		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
 	}
 
 	// prepare tx
 	const gasLimit = 50000 // IncrementCounter method call takes 43426 of gas
 	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
 	if err == nil {
-		atomic.AddUint64(&g.sentTxs, 1)
+		g.sentTxs.Add(1)
 	}
 	return tx, err
 }
 
 func (g *CounterUser) GetSentTransactions() uint64 {
-	return atomic.LoadUint64(&g.sentTxs)
+	return g.sentTxs.Load()
 }

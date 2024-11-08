@@ -81,6 +81,9 @@ type LocalNetwork struct {
 	listenerMutex sync.Mutex
 
 	rpcWorkerPool *rpc.RpcWorkerPool
+
+	// a context for app management operations on the network
+	appContext app.AppContext
 }
 
 func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
@@ -136,13 +139,19 @@ func NewLocalNetwork(config *driver.NetworkConfig) (*LocalNetwork, error) {
 	wg.Wait()
 
 	// If starting the validators failed, the network startup should fail.
-	if errors.Join(errs...) != nil {
-		err := net.Shutdown()
-		if err != nil {
-			errs = append(errs, err)
-		}
-		return nil, errors.Join(errs...)
+	if err := errors.Join(errs...); err != nil {
+		return nil, errors.Join(err, net.Shutdown())
 	}
+
+	// Setup infrastructure for managing applications on the network.
+	appContext, err := app.NewContext(net, primaryAccount)
+	if err != nil {
+		return nil, errors.Join(
+			fmt.Errorf("failed to create app context; %w", err),
+			net.Shutdown(),
+		)
+	}
+	net.appContext = appContext
 
 	return net, nil
 }
@@ -388,7 +397,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 	defer rpcClient.Close()
 
 	appId := n.nextAppId.Add(1)
-	application, err := app.NewApplication(config.Type, rpcClient, n.primaryAccount, config.Users, 0, appId)
+	application, err := app.NewApplication(config.Type, n.appContext, 0, appId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize on-chain app; %v", err)
 	}
@@ -398,7 +407,7 @@ func (n *LocalNetwork) CreateApplication(config *driver.ApplicationConfig) (driv
 		return nil, fmt.Errorf("failed to parse shaper; %v", err)
 	}
 
-	appController, err := controller.NewAppController(application, sh, config.Users, rpcClient, n)
+	appController, err := controller.NewAppController(application, sh, config.Users, n.appContext, n)
 	if err != nil {
 		return nil, err
 	}
@@ -464,6 +473,10 @@ func (n *LocalNetwork) Shutdown() error {
 		}
 	}
 	n.apps = n.apps[:0]
+
+	if n.appContext != nil {
+		n.appContext.Close()
+	}
 
 	// Second, shut down the nodes.
 	for _, node := range n.nodes {

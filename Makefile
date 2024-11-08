@@ -32,7 +32,7 @@ pull-prometheus-image:
 build-sonic-docker-image:
 	DOCKER_BUILDKIT=1 docker build . -t sonic
 
-generate-abi: load/contracts/abi/Counter.abi load/contracts/abi/ERC20.abi load/contracts/abi/Store.abi load/contracts/abi/UniswapV2Pair.abi load/contracts/abi/UniswapRouter.abi # requires installed solc and Ethereum abigen - check README.md
+generate-abi: load/contracts/abi/Counter.abi load/contracts/abi/ERC20.abi load/contracts/abi/Store.abi load/contracts/abi/UniswapV2Pair.abi load/contracts/abi/UniswapRouter.abi load/contracts/abi/Helper.abi # requires installed solc and Ethereum abigen - check README.md
 
 load/contracts/abi/Counter.abi: load/contracts/Counter.sol
 	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/Counter.sol
@@ -53,6 +53,10 @@ load/contracts/abi/UniswapV2Pair.abi: load/contracts/UniswapV2Pair.sol
 load/contracts/abi/UniswapRouter.abi: load/contracts/UniswapRouter.sol
 	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/UniswapRouter.sol
 	abigen --type UniswapRouter --pkg abi --abi load/contracts/abi/UniswapRouter.abi --bin load/contracts/abi/UniswapRouter.bin --out load/contracts/abi/UniswapRouter.go
+
+load/contracts/abi/Helper.abi: load/contracts/Helper.sol
+	solc --evm-version london -o ./load/contracts/abi --overwrite --pretty-json --optimize --optimize-runs 200 --abi --bin ./load/contracts/Helper.sol
+	abigen --type Helper --pkg abi --abi load/contracts/abi/Helper.abi --bin load/contracts/abi/Helper.bin --out load/contracts/abi/Helper.go
 
 generate-mocks: # requires installed mockgen
 	go generate ./...

@@ -1,0 +1,15 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address payable[]",
+        "name": "receivers",
+        "type": "address[]"
+      }
+    ],
+    "name": "distribute",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+]

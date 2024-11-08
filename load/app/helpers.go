@@ -66,17 +66,6 @@ func WaitUntilAccountNonceIs(account common.Address, awaitedNonce uint64, rpcCli
 	return fmt.Errorf("nonce not achieved before timeout (awaited %d, current %d)", awaitedNonce, nonce)
 }
 
-// waitUntilAllSentTxsAreOnChain blocks until all txs sent from given accounts are on the chain (by account nonce)
-func waitUntilAllSentTxsAreOnChain(accounts []*Account, rpcClient rpc.RpcClient) error {
-	for i := 0; i < len(accounts); i++ {
-		err := WaitUntilAccountNonceIs(accounts[i].address, accounts[i].getCurrentNonce(), rpcClient)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // GetGasPrice obtains optimal gasPrice for regular transactions
 func GetGasPrice(rpcClient rpc.RpcClient) (*big.Int, error) {
 	gasPrice, err := rpcClient.SuggestGasPrice(context.Background())
@@ -92,22 +81,6 @@ func getPriorityGasPrice(regularGasPrice *big.Int) *big.Int {
 	var priorityPrice big.Int
 	priorityPrice.Mul(regularGasPrice, big.NewInt(2)) // greater gas price for init
 	return &priorityPrice
-}
-
-func generateStartingAccounts(rpcClient rpc.RpcClient, primaryAccount *Account, factory *AccountFactory, numAccounts int, regularGasPrice *big.Int) ([]*Account, error) {
-	var err error
-	startingAccounts := make([]*Account, numAccounts/500+1)
-	for i := 0; i < len(startingAccounts); i++ {
-		startingAccounts[i], err = factory.CreateAccount(rpcClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create starting account %d; %v", i, err)
-		}
-		err = startingAccounts[i].Fund(primaryAccount, rpcClient, regularGasPrice, 1_000_000)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fund starting account %d; %v", i, err)
-		}
-	}
-	return startingAccounts, nil
 }
 
 func reverseAddresses(in []common.Address) []common.Address {
