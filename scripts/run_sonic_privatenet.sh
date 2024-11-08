@@ -71,4 +71,5 @@ fi
     --nat=extip:${external_ip} \
     --metrics \
     --metrics.expensive \
-    --config config.toml
+    --config config.toml \
+    --datadir.minfreedisk 0
