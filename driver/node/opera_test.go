@@ -20,8 +20,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -245,15 +243,6 @@ func TestOperaNode_ExportArtifacts(t *testing.T) {
 
 	if err = node.Stop(); err != nil {
 		t.Fatalf("failed to stop Opera node: %v", err)
-	}
-
-	files, err := ioutil.ReadDir(tmpdir)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range files {
-		fmt.Println(file.Name(), file.IsDir())
 	}
 
 	// check if the artifact files are exported
