@@ -1,0 +1,34 @@
+# This scenario runs a 2-minute load test with three different
+# phases of load - a moderate load, a low load, and a high load.
+name: Stepped Load Test
+duration: 120
+
+# The number of static validators present from begin to end.
+num_validators: 4
+
+# Run three different applications consecutively producing different load
+applications: 
+
+  - name: load-M
+    type: counter
+    users: 100
+    start: 20
+    end: 50
+    rate:
+      constant: 20
+
+  - name: load-S
+    type: erc20
+    users: 100
+    start: 50
+    end: 80
+    rate:
+      constant: 1
+
+  - name: load-L
+    type: uniswap
+    users: 100
+    start: 80
+    end: 110
+    rate:
+      constant: 100
