@@ -31,6 +31,7 @@ var (
 	timestampReg      = regexp.MustCompile(`\[\S*\]`)
 	blockReg          = regexp.MustCompile(`index=\d*`)
 	gasReg            = regexp.MustCompile(`gas_used=\S*`)
+	gasRateReg        = regexp.MustCompile(`gas_rate=\d+(\.\d*)?`)
 	baseFeeReg        = regexp.MustCompile(`base_fee=\d+`)
 	txsReg            = regexp.MustCompile(`txs=\d+`)
 	processingTimeReg = regexp.MustCompile(`t=\S*`)
@@ -86,6 +87,7 @@ func parseBlock(line string) (block Block, err error) {
 	timestampStr := timestampReg.FindString(line)
 	blockNumberStr := strings.Split(blockReg.FindString(line), "=")[1]
 	gasUsedStr := strings.ReplaceAll(strings.Split(gasReg.FindString(line), "=")[1], ",", "")
+	gasRateStr := strings.Split(gasRateReg.FindString(line), "=")[1]
 	baseFeeStr := strings.Split(baseFeeReg.FindString(line), "=")[1]
 	txsStr := strings.Split(txsReg.FindString(line), "=")[1]
 	processingTimeStr := strings.Trim(strings.Split(processingTimeReg.FindString(line), "=")[1], "\"")
@@ -110,6 +112,11 @@ func parseBlock(line string) (block Block, err error) {
 		return block, err
 	}
 
+	gasRate, err := strconv.ParseFloat(gasRateStr, 64)
+	if err != nil {
+		return block, err
+	}
+
 	baseFeeUsed, err := strconv.Atoi(baseFeeStr)
 	if err != nil {
 		return block, err
@@ -127,6 +134,7 @@ func parseBlock(line string) (block Block, err error) {
 		Time:           timestamp,
 		ProcessingTime: processingTime,
 		GasBaseFee:     baseFeeUsed,
+		GasRate:        gasRate,
 	}, nil
 }
 
@@ -138,4 +146,5 @@ type Block struct {
 	GasUsed        int           // gas used in the block
 	ProcessingTime time.Duration // block processing time
 	GasBaseFee     int           // gas base fee in the block
+	GasRate        float64       // gas rate in gas/s in the block
 }

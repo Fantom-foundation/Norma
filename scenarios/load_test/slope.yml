@@ -1,0 +1,17 @@
+# This scenario runs a 2-minute load test with a gradual increase in load.
+name: Slope Load Test
+duration: 180
+
+# The number of static validators present from begin to end.
+num_validators: 1
+
+applications: 
+  - name: load
+    type: counter
+    users: 100
+    start: 10
+    end: 170
+    rate:
+      constant: 33
+#      slope:
+#        increment: 5

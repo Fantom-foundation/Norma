@@ -5,12 +5,13 @@ name: Baseline Check
 
 # The duration of the scenario's runtime, in seconds.
 duration: 60
-num_validators: 2
+num_validators: 1
 
 # In the network there is a single application producing constant load.
 applications:
   - name: load
     type: counter
+    users: 10
     start: 10          # start time
     end: 50            # termination time
     rate:

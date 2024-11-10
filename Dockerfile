@@ -11,8 +11,20 @@
 # The build is done in independent stages, to allow for
 # caching of the intermediate results.
 
+
+# Stage 0: build the client dependencies
+FROM golang:1.22 AS client-dependencies
+
+WORKDIR /client
+COPY client/go.mod ./go.mod
+RUN go mod download
+
+WORKDIR /
+COPY go.mod go.mod
+RUN go mod download
+
 # Stage 1: build the client
-FROM golang:1.22 AS client-build
+FROM client-dependencies AS client-build
 
 WORKDIR /client
 

@@ -58,7 +58,7 @@ func TestParseBlock(t *testing.T) {
 	for got := range blockReader {
 		want, exists := BlockHeight1TestMap[got.Height]
 		if !exists {
-			t.Errorf("unknow block: %d", got.Height)
+			t.Errorf("unknown block: %d", got.Height)
 		}
 
 		if want.Txs != got.Txs {
@@ -89,7 +89,7 @@ func TestParseLogStream(t *testing.T) {
 	for got := range blockReader {
 		want, err := BlockHeight1TestMap[got.Height]
 		if !err {
-			t.Errorf("unknow block: %d", got.Height)
+			t.Errorf("unknown block: %d", got.Height)
 		}
 
 		if want.Txs != got.Txs {
