@@ -92,6 +92,24 @@ ggplot(data = data) +
 ```
 
 
+### Gas Rate per Block
+The following chart shows the Gas Rate per block and a trend line showing long-term trends.
+
+```{r gas_rate_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
+data <- all_data %>%
+    dplyr::filter(metric == "BlockGasRate") %>%    # filter metric of interrest
+    mutate(value = as.numeric(value))              # convert value to int
+
+ggplot(data=data) +
+    geom_point(aes(x=block, y=value)) +               # the data points
+    geom_smooth(aes(x=block, y=value), se=FALSE) +    # a trend line
+    ggtitle("Gas Rate per Block") +                   # chart title
+    xlab("Block Height") +                            # x-axis title
+    ylab("Gas per Second") +                          # y-axis title
+    theme(plot.title = element_text(hjust = 0.5))     # center title
+```
+
+
 ### Gas Base-Fee per Block
 The following chart shows the Gas Base-Fee per block and a trend line showing long-term trends.
 

@@ -42,6 +42,12 @@ var (
 		Name:        "BlockGasBaseFee",
 		Description: "The base fee per gas used in a block",
 	}
+
+	// BlockGasRate is a metric capturing the Gas rate of each block.
+	BlockGasRate = monitoring.Metric[monitoring.Network, monitoring.Series[monitoring.BlockNumber, float64]]{
+		Name:        "BlockGasRate",
+		Description: "The gas rate in a block",
+	}
 )
 
 func init() {
@@ -54,6 +60,10 @@ func init() {
 	}
 
 	if err := monitoring.RegisterSource(BlockGasBaseFee, newGasBaseFeeSource); err != nil {
+		panic(fmt.Sprintf("failed to register metric source: %v", err))
+	}
+
+	if err := monitoring.RegisterSource(BlockGasRate, newGasRateSource); err != nil {
 		panic(fmt.Sprintf("failed to register metric source: %v", err))
 	}
 }
@@ -91,6 +101,14 @@ func NewGasBaseFeeSource(monitor *monitoring.Monitor) *BlockNetworkMetricSource[
 	return newBlockNetworkMetricsSource[int](monitor, f, BlockGasBaseFee)
 }
 
+// NewGasRateSource creates a metric capturing Gas used for each block of a network.
+func NewGasRateSource(monitor *monitoring.Monitor) *BlockNetworkMetricSource[float64] {
+	f := func(b monitoring.Block) float64 {
+		return b.GasRate
+	}
+	return newBlockNetworkMetricsSource[float64](monitor, f, BlockGasRate)
+}
+
 // newNumberOfTransactionsSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
 func newNumberOfTransactionsSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]] {
 	return NewNumberOfTransactionsSource(monitor)
@@ -104,6 +122,11 @@ func newGasUsedSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.
 // newGasBaseFeeSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
 func newGasBaseFeeSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, int]] {
 	return NewGasBaseFeeSource(monitor)
+}
+
+// newGasRateSource is the same as its public counterpart, it only returns the Source interface instead of the struct to be used in factories
+func newGasRateSource(monitor *monitoring.Monitor) monitoring.Source[monitoring.Network, monitoring.Series[monitoring.BlockNumber, float64]] {
+	return NewGasRateSource(monitor)
 }
 
 // newBlockNodeMetricsSource creates a new data source periodically collecting data from the Node log
