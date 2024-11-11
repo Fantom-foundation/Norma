@@ -7,6 +7,10 @@ name: Baseline Check
 duration: 60
 num_validators: 2
 
+nodes:
+  - name: observer
+    end: 30
+
 # In the network there is a single application producing constant load.
 applications:
   - name: load

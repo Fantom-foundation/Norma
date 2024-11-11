@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/monitoring"
+	mon "github.com/Fantom-foundation/Norma/driver/monitoring"
 	"github.com/Fantom-foundation/Norma/driver/monitoring/utils"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -52,6 +54,7 @@ type BlockNodeMetricSource[T any] struct {
 	*utils.SyncedSeriesSource[monitoring.Node, monitoring.BlockNumber, T]
 	getBlockProperty func(b monitoring.Block) T
 	monitor          *monitoring.Monitor
+	subjects         map[monitoring.Node]bool
 }
 
 // NewBlockTimeSource creates a metric capturing time of the block finalisation for each Node.
@@ -90,9 +93,14 @@ func newBlockNodeMetricsSource[T any](
 		SyncedSeriesSource: utils.NewSyncedSeriesSource(metric),
 		getBlockProperty:   getBlockProperty,
 		monitor:            monitor,
+		subjects:           make(map[monitoring.Node]bool, 10),
 	}
 
 	monitor.NodeLogProvider().RegisterLogListener(m)
+	monitor.Network().RegisterListener(m)
+	for _, node := range monitor.Network().GetActiveNodes() {
+		m.AfterNodeCreation(node)
+	}
 
 	return m
 }
@@ -107,4 +115,42 @@ func (s *BlockNodeMetricSource[T]) OnBlock(node monitoring.Node, block monitorin
 	if err := series.Append(monitoring.BlockNumber(block.Height), s.getBlockProperty(block)); err != nil {
 		log.Error("error to add to the series: %s", err)
 	}
+}
+
+// These are added so that BlockNodeMetricSource can track live nodes only
+// e.g. no longer display latest data for nodes that have already ended.
+// This is done without touching parents.data, which tracks all historical data.
+
+func (s *BlockNodeMetricSource[T]) AfterNodeCreation(node driver.Node) {
+	label := node.GetLabel()
+	s.AddSubject(mon.Node(label))
+}
+
+func (s *BlockNodeMetricSource[T]) AfterNodeRemoval(node driver.Node) {
+	label := node.GetLabel()
+	s.RemoveSubject(mon.Node(label))
+}
+
+func (s *BlockNodeMetricSource[T]) AfterApplicationCreation(driver.Application) {
+	//ignored
+}
+
+func (s *BlockNodeMetricSource[T]) GetSubjects() []monitoring.Node {
+	res := make([]monitoring.Node, 0, len(s.subjects))
+	for subject := range s.subjects {
+		res = append(res, subject)
+	}
+	return res
+}
+
+func (s *BlockNodeMetricSource[T]) AddSubject(node monitoring.Node) error {
+	s.subjects[node] = true
+	return nil
+}
+
+func (s *BlockNodeMetricSource[T]) RemoveSubject(node monitoring.Node) error {
+	if _, exists := s.subjects[node]; exists {
+		delete(s.subjects, node)
+	}
+	return nil
 }

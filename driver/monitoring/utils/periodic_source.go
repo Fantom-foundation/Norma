@@ -141,12 +141,20 @@ func (s *PeriodicDataSource[S, T]) AddSubject(subject S, sensor Sensor[T]) error
 	return nil
 }
 
+// GetSubjects returns only the "live" subjects.
+func (s *PeriodicDataSource[S, T]) GetSubjects() []S {
+	res := make([]S, 0, len(s.subjects))
+	for subject := range s.subjects {
+		res = append(res, subject)
+	}
+	return res
+}
+
 func (s *PeriodicDataSource[S, T]) RemoveSubject(subject S) error {
 	subjectStop, exists := s.subjects[subject]
 	if exists {
 		delete(s.subjects, subject)
 		return subjectStop.Stop()
 	}
-
 	return nil
 }
