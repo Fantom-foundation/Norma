@@ -126,7 +126,8 @@ func GetTransactOptions(client rpc.RpcClient, account *Account) (*bind.TransactO
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction options: %w", err)
 	}
-	txOpts.GasPrice = new(big.Int).Mul(gasPrice, big.NewInt(2))
+	txOpts.GasFeeCap = new(big.Int).Add(gasPrice, new(big.Int).Div(gasPrice, big.NewInt(4)))
+	txOpts.GasTipCap = big.NewInt(10)
 	txOpts.Nonce = big.NewInt(int64(nonce))
 	return txOpts, nil
 }
@@ -141,7 +142,7 @@ func GetReceipt(client rpc.RpcClient, txHash common.Hash) (*types.Receipt, error
 	// Wait for the response with some exponential backoff.
 	const maxDelay = 100 * time.Millisecond
 	begin := time.Now()
-	delay := time.Millisecond
+	delay := 10 * time.Millisecond
 	for time.Since(begin) < 10*time.Second {
 		receipt, err := client.TransactionReceipt(context.Background(), txHash)
 		if errors.Is(err, ethereum.NotFound) {
@@ -189,31 +190,39 @@ func Run(
 // FundAccounts transfers the given amount of funds from the treasure to each of the
 // given accounts.
 func (c *appContext) FundAccounts(accounts []common.Address, value *big.Int) error {
-	// Limit each update to 100 accounts to avoid running out of gas.
-	if len(accounts) > 100 {
-		for i := 0; i < len(accounts); i += 100 {
-			err := c.FundAccounts(accounts[i:min(i+100, len(accounts))], value)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+	// Group funding requests in batches to avoid making individual transactions
+	// to big fo a single block.
+	const batchSize = 128
+	batches := make([][]common.Address, 0)
+	for i := 0; i < len(accounts); i += batchSize {
+		batches = append(batches, accounts[i:min(i+batchSize, len(accounts))])
 	}
 
-	if len(accounts) == 0 {
-		return nil
-	}
-	// This function uses the helper-contract's "distribute" function to distribute funds
-	// to all receiver accounts in a single transaction.
-	receipt, err := c.Run(func(opts *bind.TransactOpts) (*types.Transaction, error) {
-		opts.Value = new(big.Int).Mul(value, big.NewInt(int64(len(accounts))))
-		return c.helper.Distribute(opts, accounts)
-	})
+	// Send one transaction per batch of accounts.
+	opts, err := c.GetTransactOptions(c.GetTreasure())
 	if err != nil {
-		return fmt.Errorf("failed to distribute funds: %w", err)
+		return fmt.Errorf("failed to get transaction options: %w", err)
 	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("failed to distribute funds: transaction reverted")
+	txs := make([]*types.Transaction, 0, len(batches))
+	for _, batch := range batches {
+		opts.Value = new(big.Int).Mul(value, big.NewInt(int64(len(batch))))
+		tx, err := c.helper.Distribute(opts, batch)
+		if err != nil {
+			return fmt.Errorf("failed to distribute funds: %w", err)
+		}
+		txs = append(txs, tx)
+		opts.Nonce.Add(opts.Nonce, big.NewInt(1))
+	}
+
+	// Wait for all the transactions to be completed.
+	for _, tx := range txs {
+		receipt, err := c.GetReceipt(tx.Hash())
+		if err != nil {
+			return fmt.Errorf("failed to get receipt: %w", err)
+		}
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return fmt.Errorf("failed to distribute funds: transaction reverted")
+		}
 	}
 	return nil
 }

@@ -20,12 +20,13 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"sync"
 	"sync/atomic"
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // NewCounterApplication deploys a Counter contract to the chain.
@@ -104,24 +105,35 @@ func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 // CounterUser represents a user sending txs to increment a trivial Counter contract value.
 // A generator is supposed to be used in a single thread.
 type CounterUser struct {
+	mu       sync.Mutex
 	sender   *Account
 	contract common.Address
 	sentTxs  atomic.Uint64
+	opts     *bind.TransactOpts
 }
 
 func (g *CounterUser) SendTransaction(rpcClient rpc.RpcClient) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
 	contract, err := contract.NewCounter(g.contract, rpcClient)
 	if err != nil {
 		return fmt.Errorf("failed to get Counter contract proxy; %w", err)
 	}
 
-	receipt, err := Run(rpcClient, g.sender, contract.IncrementCounter)
+	if g.opts == nil {
+		g.opts, err = GetTransactOptions(rpcClient, g.sender)
+		if err != nil {
+			return fmt.Errorf("failed to get transaction options; %w", err)
+		}
+		g.opts.GasLimit = 28036
+	}
+
+	_, err = contract.IncrementCounter(g.opts)
 	if err != nil {
-		return fmt.Errorf("failed to execute a transaction: %w", err)
+		return fmt.Errorf("failed to create transaction; %w", err)
 	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("transaction reverted")
-	}
+	g.opts.Nonce.Add(g.opts.Nonce, big.NewInt(1))
 	g.sentTxs.Add(1)
 	return nil
 }
