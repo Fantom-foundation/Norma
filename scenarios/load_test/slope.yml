@@ -12,6 +12,5 @@ applications:
     start: 10
     end: 170
     rate:
-      constant: 33
-#      slope:
-#        increment: 5
+      slope:
+        increment: 5

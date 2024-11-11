@@ -175,6 +175,17 @@ func (c *appContext) Run(
 // FundAccounts transfers the given amount of funds from the treasure to each of the
 // given accounts.
 func (c *appContext) FundAccounts(accounts []common.Address, value *big.Int) error {
+	// Limit each update to 100 accounts to avoid running out of gas.
+	if len(accounts) > 100 {
+		for i := 0; i < len(accounts); i += 100 {
+			err := c.FundAccounts(accounts[i:min(i+100, len(accounts))], value)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	if len(accounts) == 0 {
 		return nil
 	}
