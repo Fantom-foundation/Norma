@@ -104,7 +104,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		return nil, fmt.Errorf("invalid label for node: '%v'", config.Label)
 	}
 
-	shutdownTimeout := 1 * time.Second
+	shutdownTimeout := 10 * time.Second
 
 	validatorId := "0"
 	if config.ValidatorId != nil {
@@ -210,11 +210,13 @@ func (n *OperaNode) StreamLog() (io.ReadCloser, error) {
 
 func (n *OperaNode) Stop() error {
 	// Send ctrl+c to signal client termination
-	n.Interrupt()
+	//n.Interrupt()
+
+	err := n.host.Stop()
 
 	// Wait until client terminate
 	// if not enough, artifacts will be corrupted after export
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// Signal to listeners that client is terminated.
 	// All listener calls is expected to be blocking.
@@ -225,7 +227,7 @@ func (n *OperaNode) Stop() error {
 	n.listenerMutex.Unlock()
 
 	// After all blocking calls are done, stop the container
-	return n.host.Stop()
+	return err
 }
 
 func (n *OperaNode) Cleanup() error {
