@@ -25,7 +25,7 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -52,14 +52,7 @@ func NewStoreApplication(ctxt AppContext, feederId, appId uint32) (Application, 
 		return nil, err
 	}
 
-	// parse ABI for generating txs data
-	parsedAbi, err := contract.StoreMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
 	return &StoreApplication{
-		abi:             parsedAbi,
 		contractAddress: receipt.ContractAddress,
 		accountFactory:  accountFactory,
 	}, nil
@@ -68,7 +61,6 @@ func NewStoreApplication(ctxt AppContext, feederId, appId uint32) (Application, 
 // StoreApplication represents a simple on-chain user-private Key/Value store.
 // A instance represents one deployed Store contract as well as a set of users.
 type StoreApplication struct {
-	abi             *abi.ABI
 	contractAddress common.Address
 	accountFactory  *AccountFactory
 }
@@ -85,7 +77,6 @@ func (f *StoreApplication) CreateUsers(appContext AppContext, numUsers int) ([]U
 			return nil, err
 		}
 		users[i] = &StoreUser{
-			abi:      f.abi,
 			sender:   workerAccount,
 			contract: f.contractAddress,
 		}
@@ -114,14 +105,18 @@ func (f *StoreApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 // StoreUser represents a user sending txs to manipulate a user-private key/value store.
 // Instances are not thread safe.
 type StoreUser struct {
-	abi      *abi.ABI
 	sender   *Account
 	contract common.Address
 	sentTxs  atomic.Uint64
 }
 
-func (g *StoreUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
-	const updateSize = 260 // ~ 1 GB/minute new netto data at 1000 Tx/s
+func (g *StoreUser) SendTransaction(rpcClient rpc.RpcClient) error {
+	const updateSize = 260 // ~ 1 GB/minute new net data at 1000 Tx/s
+
+	contract, err := contract.NewStore(g.contract, rpcClient)
+	if err != nil {
+		return fmt.Errorf("failed to get Store contract proxy; %w", err)
+	}
 
 	// prepare tx data -- since as single put is rather cheap, we use the 'fill' operation
 	// to perform a number of updates at once. Each transaction is allocating updateSize
@@ -129,20 +124,19 @@ func (g *StoreUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, er
 	val := int64(g.sentTxs.Load()) + 1
 	from := val * updateSize
 	to := from + updateSize
-	data, err := g.abi.Pack("fill", big.NewInt(from), big.NewInt(to), big.NewInt(val))
-	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
+	receipt, err := Run(rpcClient, g.sender, func(opts *bind.TransactOpts) (*types.Transaction, error) {
+		return contract.Fill(opts, big.NewInt(from), big.NewInt(to), big.NewInt(val))
+	})
+	if err != nil {
+		return fmt.Errorf("failed to execute a transaction: %w", err)
 	}
-
-	// prepare tx
-	const gasLimit = 52000 + 25000*updateSize // wild guess ...
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
-	if err == nil {
-		g.sentTxs.Add(1)
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("transaction reverted")
 	}
-	return tx, err
+	g.sentTxs.Add(1)
+	return nil
 }
 
-func (g *StoreUser) GetSentTransactions() uint64 {
+func (g *StoreUser) GetTotalNumberOfSentTransactions() uint64 {
 	return g.sentTxs.Load()
 }

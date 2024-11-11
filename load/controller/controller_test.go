@@ -42,13 +42,12 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 	}
 
 	for _, rate := range rates {
-		t.Run(fmt.Sprintf("linear rate %v", rate), func(t *testing.T) {
+		t.Run(fmt.Sprintf("constant rate %v", rate), func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			net := driver.NewMockNetwork(ctrl)
 			rpcClient := rpc.NewMockRpcClient(ctrl)
 			application := app.NewMockApplication(ctrl)
 			user := app.NewMockUser(ctrl)
-			transaction := types.Transaction{}
 
 			treasure, err := app.NewAccount(0, PrivateKey, nil, FakeNetworkID)
 			if err != nil {
@@ -58,13 +57,10 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			check := NewRateCheck(float64(rate))
 			var count atomic.Int32
 			net.EXPECT().DialRandomRpc().AnyTimes().Return(rpcClient, nil)
-			net.EXPECT().SendTransaction(gomock.Any()).AnyTimes().Do(func(any) {
-				check.NewEvent()
-				count.Add(1)
-			})
 
 			rpcClient.EXPECT().ChainID(gomock.Any()).Return(big.NewInt(0), nil).AnyTimes()
 			rpcClient.EXPECT().NonceAt(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(uint64(0), nil)
+			rpcClient.EXPECT().SuggestGasPrice(gomock.Any()).AnyTimes().Return(big.NewInt(1), nil)
 			rpcClient.EXPECT().EstimateGas(gomock.Any(), gomock.Any()).AnyTimes().Return(uint64(100), nil)
 			rpcClient.EXPECT().SendTransaction(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 			rpcClient.EXPECT().TransactionReceipt(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Receipt{
@@ -78,8 +74,10 @@ func TestLoadGeneration_CanRealizeConstantTrafficShape(t *testing.T) {
 			}
 			application.EXPECT().CreateUsers(gomock.Any(), 100).AnyTimes().Return(users, nil)
 
-			rpcClient.EXPECT().SuggestGasPrice(gomock.Any()).AnyTimes().Return(big.NewInt(0), nil)
-			user.EXPECT().GenerateTx(gomock.Any()).AnyTimes().Return(&transaction, nil)
+			user.EXPECT().SendTransaction(rpcClient).AnyTimes().Do(func(any) {
+				check.NewEvent()
+				count.Add(1)
+			})
 
 			clientFactory := app.NewMockRpcClientFactory(ctrl)
 			clientFactory.EXPECT().DialRandomRpc().AnyTimes().Return(rpcClient, nil)

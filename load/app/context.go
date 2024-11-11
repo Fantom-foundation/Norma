@@ -102,8 +102,10 @@ func (c *appContext) GetTreasure() *Account {
 // The main purpose of this function is to provide a convenient way to collect all
 // the necessary information required to create a transaction in one place.
 func (c *appContext) GetTransactOptions(account *Account) (*bind.TransactOpts, error) {
-	client := c.rpcClient
+	return GetTransactOptions(c.rpcClient, account)
+}
 
+func GetTransactOptions(client rpc.RpcClient, account *Account) (*bind.TransactOpts, error) {
 	ctxt := context.Background()
 	chainId, err := client.ChainID(ctxt)
 	if err != nil {
@@ -132,8 +134,10 @@ func (c *appContext) GetTransactOptions(account *Account) (*bind.TransactOpts, e
 // GetReceipt waits for the receipt of the given transaction hash to be available.
 // The function times out after 10 seconds.
 func (c *appContext) GetReceipt(txHash common.Hash) (*types.Receipt, error) {
-	client := c.rpcClient
+	return GetReceipt(c.rpcClient, txHash)
+}
 
+func GetReceipt(client rpc.RpcClient, txHash common.Hash) (*types.Receipt, error) {
 	// Wait for the response with some exponential backoff.
 	const maxDelay = 100 * time.Millisecond
 	begin := time.Now()
@@ -161,7 +165,17 @@ func (c *appContext) GetReceipt(txHash common.Hash) (*types.Receipt, error) {
 func (c *appContext) Run(
 	operation func(*bind.TransactOpts) (*types.Transaction, error),
 ) (*types.Receipt, error) {
-	txOpts, err := c.GetTransactOptions(c.treasury)
+	return Run(c.rpcClient, c.treasury, operation)
+}
+
+// Run runs the given operation using the given sponsor account and waits for the
+// transaction to be processed. The resulting receipt is returned.
+func Run(
+	client rpc.RpcClient,
+	sponsor *Account,
+	operation func(*bind.TransactOpts) (*types.Transaction, error),
+) (*types.Receipt, error) {
+	txOpts, err := GetTransactOptions(client, sponsor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction options: %w", err)
 	}
@@ -169,7 +183,7 @@ func (c *appContext) Run(
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transaction: %w", err)
 	}
-	return c.GetReceipt(transaction.Hash())
+	return GetReceipt(client, transaction.Hash())
 }
 
 // FundAccounts transfers the given amount of funds from the treasure to each of the

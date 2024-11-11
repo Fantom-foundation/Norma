@@ -26,11 +26,9 @@
 package app
 
 import (
-	big "math/big"
 	reflect "reflect"
 
 	rpc "github.com/Fantom-foundation/Norma/driver/rpc"
-	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -110,31 +108,30 @@ func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
 }
 
-// GenerateTx mocks base method.
-func (m *MockUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
+// GetTotalNumberOfSentTransactions mocks base method.
+func (m *MockUser) GetTotalNumberOfSentTransactions() uint64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateTx", currentGasPrice)
-	ret0, _ := ret[0].(*types.Transaction)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GenerateTx indicates an expected call of GenerateTx.
-func (mr *MockUserMockRecorder) GenerateTx(currentGasPrice any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTx", reflect.TypeOf((*MockUser)(nil).GenerateTx), currentGasPrice)
-}
-
-// GetSentTransactions mocks base method.
-func (m *MockUser) GetSentTransactions() uint64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSentTransactions")
+	ret := m.ctrl.Call(m, "GetTotalNumberOfSentTransactions")
 	ret0, _ := ret[0].(uint64)
 	return ret0
 }
 
-// GetSentTransactions indicates an expected call of GetSentTransactions.
-func (mr *MockUserMockRecorder) GetSentTransactions() *gomock.Call {
+// GetTotalNumberOfSentTransactions indicates an expected call of GetTotalNumberOfSentTransactions.
+func (mr *MockUserMockRecorder) GetTotalNumberOfSentTransactions() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSentTransactions", reflect.TypeOf((*MockUser)(nil).GetSentTransactions))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalNumberOfSentTransactions", reflect.TypeOf((*MockUser)(nil).GetTotalNumberOfSentTransactions))
+}
+
+// SendTransaction mocks base method.
+func (m *MockUser) SendTransaction(rpcClient rpc.RpcClient) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendTransaction", rpcClient)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendTransaction indicates an expected call of SendTransaction.
+func (mr *MockUserMockRecorder) SendTransaction(rpcClient any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTransaction", reflect.TypeOf((*MockUser)(nil).SendTransaction), rpcClient)
 }

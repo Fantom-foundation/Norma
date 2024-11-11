@@ -24,7 +24,6 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -50,14 +49,7 @@ func NewCounterApplication(ctxt AppContext, feederId, appId uint32) (Application
 		return nil, err
 	}
 
-	// parse ABI for generating txs data
-	parsedAbi, err := contract.CounterMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
 	return &CounterApplication{
-		abi:             parsedAbi,
 		contractAddress: receipt.ContractAddress,
 		accountFactory:  accountFactory,
 	}, nil
@@ -67,7 +59,6 @@ func NewCounterApplication(ctxt AppContext, feederId, appId uint32) (Application
 // A factory represents one deployed Counter contract, incremented by all its generators.
 // While the factory is thread-safe, each created generator should be used in a single thread only.
 type CounterApplication struct {
-	abi             *abi.ABI
 	contractAddress common.Address
 	accountFactory  *AccountFactory
 }
@@ -84,7 +75,6 @@ func (f *CounterApplication) CreateUsers(appContext AppContext, numUsers int) ([
 			return nil, err
 		}
 		users[i] = &CounterUser{
-			abi:      f.abi,
 			sender:   workerAccount,
 			contract: f.contractAddress,
 		}
@@ -114,28 +104,28 @@ func (f *CounterApplication) GetReceivedTransactions(rpcClient rpc.RpcClient) (u
 // CounterUser represents a user sending txs to increment a trivial Counter contract value.
 // A generator is supposed to be used in a single thread.
 type CounterUser struct {
-	abi      *abi.ABI
 	sender   *Account
 	contract common.Address
 	sentTxs  atomic.Uint64
 }
 
-func (g *CounterUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
-	// prepare tx data
-	data, err := g.abi.Pack("incrementCounter")
-	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
+func (g *CounterUser) SendTransaction(rpcClient rpc.RpcClient) error {
+	contract, err := contract.NewCounter(g.contract, rpcClient)
+	if err != nil {
+		return fmt.Errorf("failed to get Counter contract proxy; %w", err)
 	}
 
-	// prepare tx
-	const gasLimit = 50000 // IncrementCounter method call takes 43426 of gas
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
-	if err == nil {
-		g.sentTxs.Add(1)
+	receipt, err := Run(rpcClient, g.sender, contract.IncrementCounter)
+	if err != nil {
+		return fmt.Errorf("failed to execute a transaction: %w", err)
 	}
-	return tx, err
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("transaction reverted")
+	}
+	g.sentTxs.Add(1)
+	return nil
 }
 
-func (g *CounterUser) GetSentTransactions() uint64 {
+func (g *CounterUser) GetTotalNumberOfSentTransactions() uint64 {
 	return g.sentTxs.Load()
 }

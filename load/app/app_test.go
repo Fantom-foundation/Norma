@@ -17,7 +17,6 @@
 package app_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -26,7 +25,6 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/network"
 	"github.com/Fantom-foundation/Norma/driver/network/local"
 	"github.com/Fantom-foundation/Norma/load/app"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 const PrivateKey = "163f5f0f9a621d72fedd85ffca3d08d131ab4e812181e0d30ffd1c885d20aac7" // Fakenet validator 1
@@ -92,34 +90,14 @@ func testGenerator(t *testing.T, app app.Application, ctxt app.AppContext) {
 
 	rpcClient := ctxt.GetClient()
 	numTransactions := 10
-	transactions := []*types.Transaction{}
 	for range numTransactions {
-		price, err := rpcClient.SuggestGasPrice(context.Background())
+		err := user.SendTransaction(rpcClient)
 		if err != nil {
-			return
-		}
-		tx, err := user.GenerateTx(price)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := rpcClient.SendTransaction(context.Background(), tx); err != nil {
-			t.Fatal(err)
-		}
-		transactions = append(transactions, tx)
-	}
-
-	// wait for the transactions to be processed
-	for _, tx := range transactions {
-		receipt, err := ctxt.GetReceipt(tx.Hash())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if receipt.Status != types.ReceiptStatusSuccessful {
-			t.Fatalf("transaction failed, receipt status: %v", receipt.Status)
+			t.Errorf("failed to send transaction: %v", err)
 		}
 	}
 
-	if got, want := user.GetSentTransactions(), numTransactions; got != uint64(want) {
+	if got, want := user.GetTotalNumberOfSentTransactions(), numTransactions; got != uint64(want) {
 		t.Errorf("invalid number of sent transactions reported, wanted %d, got %d", want, got)
 	}
 

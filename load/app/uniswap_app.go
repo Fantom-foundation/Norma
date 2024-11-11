@@ -35,8 +35,8 @@ const TokensInChain = 4
 const PairsInChain = TokensInChain - 1
 
 var AmountSwapped = big.NewInt(100) // swapped in one tx
-var WorkerInitialBalance = big.NewInt(0).Mul(big.NewInt(1_000_000_000), big.NewInt(1_000000000000000000))
-var PairLiquidity = big.NewInt(0).Mul(big.NewInt(1_000_000_000_000_000), big.NewInt(1_000000000000000000))
+var WorkerInitialBalance = new(big.Int).Mul(big.NewInt(1_000_000_000), big.NewInt(1_000000000000000000))
+var PairLiquidity = new(big.Int).Mul(big.NewInt(1_000_000_000_000_000), big.NewInt(1_000000000000000000))
 
 // NewUniswapApplication deploys a new Uniswap dapp to the chain.
 // Created Uniswap pairs allows to swap first ERC-20 token for second, second for third etc.
@@ -265,35 +265,42 @@ type UniswapUser struct {
 	pairsAddresses          []common.Address
 	tokensAddressesReversed []common.Address
 	pairsAddressesReversed  []common.Address
-	sentTxs                 uint64
+	sentTxs                 atomic.Uint64
 }
 
-func (g *UniswapUser) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
-	var data []byte
-	var err error
-
-	// prepare tx data
-	if rand.Intn(2) == 0 {
-		// swap token1 for tokenN (forward)
-		data, err = g.routerAbi.Pack("swapExactTokensForTokens", AmountSwapped, g.tokensAddresses, g.pairsAddresses)
-	} else {
-		// swap tokenN for token1 (backward)
-		data, err = g.routerAbi.Pack("swapExactTokensForTokens", AmountSwapped, g.tokensAddressesReversed, g.pairsAddressesReversed)
-	}
-	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
+func (g *UniswapUser) SendTransaction(rpcClient rpc.RpcClient) error {
+	contract, err := contract.NewUniswapRouter(g.routerAddress, rpcClient)
+	if err != nil {
+		return fmt.Errorf("failed to get UniswapRouter contract proxy; %w", err)
 	}
 
-	// prepare tx
 	// swapExactTokensForTokens consumes 157571 for 2 tokens + cca 94314 for each additional token
 	const gasLimit = 160_000 + (TokensInChain-2)*95000
-	tx, err := createTx(g.sender, g.routerAddress, big.NewInt(0), data, currentGasPrice, gasLimit)
-	if err == nil {
-		atomic.AddUint64(&g.sentTxs, 1)
+
+	var receipt *types.Receipt
+	if rand.Intn(2) == 0 {
+		// swap token1 for tokenN (forward)
+		receipt, err = Run(rpcClient, g.sender, func(opts *bind.TransactOpts) (*types.Transaction, error) {
+			opts.GasLimit = gasLimit
+			return contract.SwapExactTokensForTokens(opts, AmountSwapped, g.tokensAddresses, g.pairsAddresses)
+		})
+	} else {
+		// swap tokenN for token1 (backward)
+		receipt, err = Run(rpcClient, g.sender, func(opts *bind.TransactOpts) (*types.Transaction, error) {
+			opts.GasLimit = gasLimit
+			return contract.SwapExactTokensForTokens(opts, AmountSwapped, g.tokensAddressesReversed, g.pairsAddressesReversed)
+		})
 	}
-	return tx, err
+	if err != nil {
+		return fmt.Errorf("failed to execute a transaction: %w", err)
+	}
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("transaction reverted")
+	}
+	g.sentTxs.Add(1)
+	return nil
 }
 
-func (g *UniswapUser) GetSentTransactions() uint64 {
-	return atomic.LoadUint64(&g.sentTxs)
+func (g *UniswapUser) GetTotalNumberOfSentTransactions() uint64 {
+	return g.sentTxs.Load()
 }

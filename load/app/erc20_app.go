@@ -25,7 +25,6 @@ import (
 
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	contract "github.com/Fantom-foundation/Norma/load/contracts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -56,12 +55,6 @@ func NewERC20Application(ctxt AppContext, feederId, appId uint32) (Application, 
 		return nil, err
 	}
 
-	// parse ABI for generating txs data
-	parsedAbi, err := contract.ERC20MetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
 	// wait until the contract will be available on the chain (and will be possible to call CreateGenerator)
 	_, err = ctxt.GetReceipt(transaction.Hash())
 	if err != nil {
@@ -69,7 +62,6 @@ func NewERC20Application(ctxt AppContext, feederId, appId uint32) (Application, 
 	}
 
 	return &ERC20Application{
-		abi:             parsedAbi,
 		contractAddress: contractAddress,
 		recipients:      recipients,
 		accountFactory:  accountFactory,
@@ -90,7 +82,6 @@ func generateRecipientsAddresses() ([]common.Address, error) {
 // ERC20Application represents one application deployed to the network - an ERC-20 contract.
 // Each created app should be used in a single thread only.
 type ERC20Application struct {
-	abi             *abi.ABI
 	contractAddress common.Address
 	recipients      []common.Address
 	accountFactory  *AccountFactory
@@ -109,7 +100,6 @@ func (f *ERC20Application) CreateUsers(appContext AppContext, numUsers int) ([]U
 			return nil, err
 		}
 		users[i] = &ERC20User{
-			abi:        f.abi,
 			sender:     workerAccount,
 			contract:   f.contractAddress,
 			recipients: f.recipients,
@@ -162,32 +152,32 @@ func (f *ERC20Application) GetReceivedTransactions(rpcClient rpc.RpcClient) (uin
 // ERC20User represents a user sending txs to transfer ERC20 tokens.
 // A generator is supposed to be used in a single thread.
 type ERC20User struct {
-	abi        *abi.ABI
 	sender     *Account
 	contract   common.Address
 	recipients []common.Address
-	sentTxs    uint64
+	sentTxs    atomic.Uint64
 }
 
-func (g *ERC20User) GenerateTx(currentGasPrice *big.Int) (*types.Transaction, error) {
-	// choose random recipient
+func (g *ERC20User) SendTransaction(rpcClient rpc.RpcClient) error {
+	contract, err := contract.NewERC20(g.contract, rpcClient)
+	if err != nil {
+		return fmt.Errorf("failed to get ERC20 contract proxy; %w", err)
+	}
+
 	recipient := g.recipients[rand.Intn(len(g.recipients))]
-
-	// prepare tx data
-	data, err := g.abi.Pack("transfer", recipient, big.NewInt(1))
-	if err != nil || data == nil {
-		return nil, fmt.Errorf("failed to prepare tx data; %w", err)
+	receipt, err := Run(rpcClient, g.sender, func(opts *bind.TransactOpts) (*types.Transaction, error) {
+		return contract.Transfer(opts, recipient, big.NewInt(1))
+	})
+	if err != nil {
+		return fmt.Errorf("failed to execute a transaction: %w", err)
 	}
-
-	// prepare tx
-	const gasLimit = 52000 // Transfer method call takes 51349 of gas
-	tx, err := createTx(g.sender, g.contract, big.NewInt(0), data, currentGasPrice, gasLimit)
-	if err == nil {
-		atomic.AddUint64(&g.sentTxs, 1)
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return fmt.Errorf("transaction reverted")
 	}
-	return tx, err
+	g.sentTxs.Add(1)
+	return nil
 }
 
-func (g *ERC20User) GetSentTransactions() uint64 {
-	return atomic.LoadUint64(&g.sentTxs)
+func (g *ERC20User) GetTotalNumberOfSentTransactions() uint64 {
+	return g.sentTxs.Load()
 }

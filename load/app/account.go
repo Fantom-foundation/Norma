@@ -17,7 +17,6 @@
 package app
 
 import (
-	"context"
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
@@ -63,16 +62,10 @@ func (f *AccountFactory) CreateAccount(rpcClient rpc.RpcClient) (*Account, error
 	}
 	address := crypto.PubkeyToAddress(privateKey.PublicKey)
 
-	nonce, err := rpcClient.NonceAt(context.Background(), address, nil) // nonce at latest block
-	if err != nil {
-		return nil, fmt.Errorf("failed to get address nonce; %v", err)
-	}
-
 	return &Account{
 		privateKey: privateKey,
 		address:    address,
 		chainID:    f.chainID,
-		nonce:      nonce,
 	}, nil
 }
 
@@ -84,7 +77,6 @@ type Account struct {
 	privateKey *ecdsa.PrivateKey
 	address    common.Address
 	chainID    *big.Int
-	nonce      uint64
 	publicKey  []byte
 }
 
@@ -100,39 +92,8 @@ func NewAccount(id int, privateKeyHex string, publicKey []byte, chainID int64) (
 		privateKey: privateKey,
 		address:    address,
 		chainID:    big.NewInt(chainID),
-		nonce:      0,
 		publicKey:  publicKey,
 	}, nil
-}
-
-// Fund transfers finances to given account for covering txs fees if its balance is lower than required endowment
-func (a *Account) Fund(fundingAccount *Account, rpcClient rpc.RpcClient, regularGasPrice *big.Int, endowment int64) error {
-	balance, err := rpcClient.BalanceAt(context.Background(), a.address, nil)
-	if err != nil {
-		return fmt.Errorf("failed to get balance before funding; %v", err)
-	}
-
-	value := big.NewInt(0).Mul(big.NewInt(endowment), big.NewInt(1_000_000_000_000_000_000)) // FTM to wei
-	value.Sub(value, balance)
-	if value.Sign() <= 0 {
-		return nil // already funded
-	}
-
-	priorityGasPrice := getPriorityGasPrice(regularGasPrice)
-	if err := transferValue(rpcClient, fundingAccount, a.address, value, priorityGasPrice); err != nil {
-		return fmt.Errorf("failed to transfer (value: %s, gasPrice: %s): %v", value, priorityGasPrice, err)
-	}
-	return nil
-}
-
-// getNextNonce provides a nonce to be used for next transactions sent using this account
-func (a *Account) getNextNonce() uint64 {
-	current := atomic.AddUint64(&a.nonce, 1)
-	return current - 1
-}
-
-func (a *Account) getCurrentNonce() uint64 {
-	return atomic.LoadUint64(&a.nonce)
 }
 
 // CreateValidator creates non genesis validator trough createValidator sfc call
@@ -148,7 +109,6 @@ func (a *Account) CreateValidator(SFCContract *contract.SFC, rpcClient rpc.RpcCl
 		return nil, fmt.Errorf("failed to create txOpts; %v", err)
 	}
 	txOpts.GasPrice = getPriorityGasPrice(regularGasPrice)
-	txOpts.Nonce = big.NewInt(int64(a.getNextNonce()))
 	txOpts.Value = big.NewInt(0).Mul(big.NewInt(5_000_000), big.NewInt(1_000_000_000_000_000_000)) // 5_000_000 FTM
 	return SFCContract.CreateValidator(txOpts, a.publicKey)
 }

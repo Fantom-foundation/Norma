@@ -18,7 +18,6 @@ package controller
 
 import (
 	"context"
-	"math/big"
 	"testing"
 	"time"
 
@@ -26,7 +25,6 @@ import (
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/Fantom-foundation/Norma/load/app"
 	"github.com/Fantom-foundation/Norma/load/shaper"
-	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/mock/gomock"
 )
 
@@ -34,13 +32,10 @@ func TestMockedTrafficGenerating(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	var demoTx types.Transaction
-
 	numUsers := 2
 	mockUser := app.NewMockUser(mockCtrl)
 
 	mockedRpcClient := rpc.NewMockRpcClient(mockCtrl)
-	mockedRpcClient.EXPECT().SuggestGasPrice(gomock.Any()).Return(big.NewInt(0), nil)
 	mockedRpcClient.EXPECT().Close()
 
 	appContext := app.NewMockAppContext(mockCtrl)
@@ -54,10 +49,7 @@ func TestMockedTrafficGenerating(t *testing.T) {
 
 	// app should be called 10-times to generate 10 txs
 	mockedNetwork.EXPECT().DialRandomRpc().Return(mockedRpcClient, nil).MaxTimes(11)
-	mockedRpcClient.EXPECT().SuggestGasPrice(gomock.Any()).Return(big.NewInt(0), nil).MaxTimes(11)
-	mockUser.EXPECT().GenerateTx(gomock.Any()).Return(&demoTx, nil).MinTimes(5).MaxTimes(11)
-	// network should be called 10-times to send 10 txs
-	mockedNetwork.EXPECT().SendTransaction(&demoTx).MinTimes(5).MaxTimes(11)
+	mockUser.EXPECT().SendTransaction(mockedRpcClient).Return(nil).MinTimes(5).MaxTimes(11)
 
 	// use constant shaper
 	constantShaper := shaper.NewConstantShaper(100) // 100 txs/sec

@@ -115,7 +115,7 @@ func (ac *AppController) GetTransactionsSentBy(user int) (uint64, error) {
 	if user < 0 || user >= len(ac.users) {
 		return 0, nil
 	}
-	return ac.users[user].GetSentTransactions(), nil
+	return ac.users[user].GetTotalNumberOfSentTransactions(), nil
 }
 
 func (ac *AppController) GetSentTransactions() (uint64, error) {

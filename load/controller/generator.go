@@ -32,17 +32,9 @@ func runGeneratorLoop(user app.User, trigger <-chan struct{}, network driver.Net
 			log.Printf("generator loop; failed to dial random rpc; %v", err)
 			continue
 		}
-		currentRegularGasPrice, err := app.GetGasPrice(rpcClient)
-		if err != nil {
-			log.Printf("generator loop; failed to get gas price; %v", err)
+		if err := user.SendTransaction(rpcClient); err != nil {
+			log.Printf("generator loop: failed to send tx; %v", err)
 			continue
-		}
-
-		tx, err := user.GenerateTx(currentRegularGasPrice)
-		if err != nil {
-			log.Printf("failed to generate tx; %v", err)
-		} else {
-			network.SendTransaction(tx)
 		}
 	}
 }
