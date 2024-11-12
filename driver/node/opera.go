@@ -77,9 +77,6 @@ type OperaNode struct {
 type OperaNodeConfig struct {
 	// The label to be used to name this node. The label should not be empty.
 	Label string
-	// mount datadir, genesis to host if set.
-	MountDatadir *string
-	MountGenesis *string
 	// The ID of the validator, nil if the node should not be a validator.
 	ValidatorId *int
 	// The configuration of the network the configured node should be part of.
@@ -124,9 +121,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
 				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
 			},
-			Network:      dn,
-			MountDatadir: config.MountDatadir,
-			MountGenesis: config.MountGenesis,
+			Network: dn,
 		})
 	})
 	if err != nil {

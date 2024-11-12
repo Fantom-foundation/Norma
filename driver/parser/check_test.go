@@ -18,7 +18,6 @@ package parser
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 )
@@ -459,53 +458,4 @@ func TestScenario_CheatIssuesAreDetected(t *testing.T) {
 		fmt.Println(err)
 		t.Errorf("cheat issue was not detected")
 	}
-}
-
-func TestScenario_NodeGenesisImportIssuesAreDetected(t *testing.T) {
-	importFile := new(string)
-	*importFile = "/does/not/exist.g"
-
-	scenario := Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Nodes: []Node{
-			{Genesis: Genesis{ImportInitial: importFile}},
-		},
-	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file does not exist") {
-		t.Errorf("genesis does not exist but issue was not detected")
-	}
-
-	*importFile = "/does/not/exist.notg"
-	scenario = Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Nodes: []Node{
-			{Genesis: Genesis{ImportInitial: importFile}},
-		},
-	}
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided path is not a genesis file") {
-		t.Errorf("targeted file is not a genesis but issue was not detected")
-	}
-}
-
-func TestScenario_NodeGenesisExportIssuesAreDetected(t *testing.T) {
-	exportFile := new(string)
-	*exportFile = "file_exists.g"
-	f, _ := os.Create(*exportFile)
-
-	scenario := Scenario{
-		Name:     "Test",
-		Duration: 60,
-		Nodes: []Node{
-			{Genesis: Genesis{ExportFinal: exportFile}},
-		},
-	}
-
-	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "provided genesis file already exists") {
-		t.Errorf("genesis exists but issue was not detected")
-	}
-
-	f.Close()
-	_ = os.Remove("file_exists.g")
 }
