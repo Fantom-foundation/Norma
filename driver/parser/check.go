@@ -19,8 +19,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -94,18 +92,6 @@ func (n *Node) Check(scenario *Scenario) error {
 		n.Client.Type = "observer"
 	}
 
-	if n.Genesis.ImportInitial != nil {
-		if err := isGenesisFile(*n.Genesis.ImportInitial, true); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	if n.Genesis.ExportFinal != nil {
-		if err := isGenesisFile(*n.Genesis.ExportFinal, false); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
 	if err := checkTimeInterval(n.Start, n.End, scenario.Duration); err != nil {
 		errs = append(errs, err)
 	}
@@ -131,24 +117,6 @@ func isTypeValid(t string) error {
 		return nil
 	}
 	return fmt.Errorf("type of node must be observer, rpc or validator, was set to %s", t)
-}
-
-// isGenesisFile checks if a file exist at a given path and that it is a ".g" extension
-func isGenesisFile(path string, isImport bool) error {
-	errs := []error{}
-	_, err := os.Stat(path)
-
-	if errors.Is(err, os.ErrNotExist) && isImport {
-		errs = append(errs, fmt.Errorf("provided genesis file does not exist: %s", path))
-	} else if err == nil && !isImport {
-		errs = append(errs, fmt.Errorf("provided genesis file already exists: %s", path))
-	}
-
-	if ext := filepath.Ext(path); ext != ".g" {
-		errs = append(errs, fmt.Errorf("provided path is not a genesis file: %s", path))
-	}
-
-	return errors.Join(errs...)
 }
 
 // Check tests semantic constraints on the application configuration of a scenario.

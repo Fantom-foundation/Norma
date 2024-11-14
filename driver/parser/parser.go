@@ -84,8 +84,6 @@ type Node struct {
 	Instances *int       `yaml:",omitempty"` // nil is interpreted as 1
 	Start     *float32   `yaml:",omitempty"` // nil is interpreted as 0
 	End       *float32   `yaml:",omitempty"` // nil is interpreted as end-of-scenario
-	Genesis   Genesis    `yaml:",omitempty"`
-	Event     Event      `yaml:",omitempty"`
 	Client    ClientType `yaml:",omitempty"`
 	Mount     *string    `yaml:",omitempty"`
 }
@@ -120,30 +118,12 @@ func (n *Node) IsCheater() bool {
 	return false
 }
 
-// Genesis is an optional configuration for a node.
-// GenesisImport will stop the client and restart the client with the target
-// genesis file at the provided time.
-// GenesisExport will stop the client, export the genesis file and restart the client.
-type Genesis struct {
-	ImportInitial *string `yaml:",omitempty"`
-	ExportInitial *string `yaml:",omitempty"`
-	ExportFinal   *string `yaml:",omitempty"`
-}
-
 // ClientType is an optional configuration for Node.
 // ImageName can be used to specify the exact client version for the defined Node.
 // Type can be used to configure the launching command of the client
 type ClientType struct {
 	ImageName string `yaml:",omitempty"` // nil is interpreted as main
 	Type      string `yaml:",omitempty"` // nil is interpreted as observer
-}
-
-// Event is an optional configuration for a node.
-// Event.Import will stop the client, import events and restart the client.
-// Event.Export will stop the client, export events and restart the client.
-type Event struct {
-	Import *string `yaml:",omitempty"`
-	Export *string `yaml:",omitempty"`
 }
 
 // Application is a load generator in the simulated network. Each application defines

@@ -36,7 +36,7 @@ func TestExecutor_RunEmptyScenario(t *testing.T) {
 		Duration: 10,
 	}
 
-	if err := Run(clock, net, &scenario, "", nil); err != nil {
+	if err := Run(clock, net, &scenario, ""); err != nil {
 		t.Errorf("failed to run empty scenario: %v", err)
 	}
 	want := Seconds(10)
@@ -70,7 +70,7 @@ func TestExecutor_RunSingleNodeScenario(t *testing.T) {
 		node.EXPECT().Cleanup(),
 	)
 
-	if err := Run(clock, net, &scenario, "", nil); err != nil {
+	if err := Run(clock, net, &scenario, ""); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
 	}
 	want := Seconds(10)
@@ -112,7 +112,7 @@ func TestExecutor_RunMultipleNodeScenario(t *testing.T) {
 		node2.EXPECT().Cleanup(),
 	)
 
-	if err := Run(clock, net, &scenario, "", nil); err != nil {
+	if err := Run(clock, net, &scenario, ""); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
 	}
 	want := Seconds(10)
@@ -145,7 +145,7 @@ func TestExecutor_RunSingleApplicationScenario(t *testing.T) {
 	app.EXPECT().Start()
 	app.EXPECT().Stop()
 
-	if err := Run(clock, net, &scenario, "", nil); err != nil {
+	if err := Run(clock, net, &scenario, ""); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
 	}
 	want := Seconds(10)
@@ -183,7 +183,7 @@ func TestExecutor_RunMultipleApplicationScenario(t *testing.T) {
 	app2.EXPECT().Start()
 	app2.EXPECT().Stop()
 
-	if err := Run(clock, net, &scenario, "", nil); err != nil {
+	if err := Run(clock, net, &scenario, ""); err != nil {
 		t.Errorf("failed to run scenario: %v", err)
 	}
 	want := Seconds(10)
@@ -215,7 +215,7 @@ func TestExecutor_TestUserAbort(t *testing.T) {
 		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	}).Return(node, nil)
 
-	if err := Run(clock, net, &scenario, "", nil); err == nil {
+	if err := Run(clock, net, &scenario, ""); err == nil {
 		t.Errorf("a user interrupt error should be reported")
 	}
 	want := Seconds(1)

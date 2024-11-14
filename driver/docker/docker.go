@@ -29,7 +29,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -155,22 +154,6 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
-	mountConfig := []mount.Mount{}
-	if config.MountDatadir != nil {
-		mountConfig = append(mountConfig, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: *config.MountDatadir,
-			Target: "/datadir",
-		})
-	}
-	if config.MountGenesis != nil {
-		mountConfig = append(mountConfig, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: *config.MountGenesis,
-			Target: "/genesis",
-		})
-	}
-
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
 		Image:      config.ImageName,
 		Tty:        false,
@@ -181,7 +164,6 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		},
 	}, &container.HostConfig{
 		PortBindings: portMapping,
-		Mounts:       mountConfig,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
