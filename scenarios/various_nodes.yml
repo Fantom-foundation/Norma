@@ -17,34 +17,33 @@ nodes:
   # Gradually increase the number of nodes 
   - name: A
     start: 0          # start time
-    end: 600            # termination time
+    end: 100            # termination time
     instances: 0
 
   - name: B
     start: 120          # start time
-    end: 600            # termination time
-    instances: 4
+    end: 200            # termination time
+    instances: 3
 
   - name: C
     start: 240          # start time
-    end: 600            # termination time
-    instances: 5
+    end: 300            # termination time
+    instances: 3
 
   - name: D
     start: 360          # start time
-    end: 600            # termination time
-    instances: 10
+    end: 450            # termination time
+    instances: 4
 
   - name: E
     start: 480          # start time
     end: 600            # termination time
-    instances: 10
-
+    instances: 4
 
 # In the network there is a single application producing constant load.
 applications:
   - name: load
     type: counter
-    users: 200           # number of users using the app
+    users: 20           # number of users using the app
     rate:
-      constant: 2000     # Tx/s
+      constant: 2     # Tx/s
