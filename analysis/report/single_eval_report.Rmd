@@ -93,7 +93,7 @@ ggplot(data = data) +
 
 
 ### Gas Rate per Block
-The following chart shows the Gas Rate per block and a trend line showing long-term trends.
+The following chart shows the Gas Rate per block and a trend line.
 
 ```{r gas_rate_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
@@ -111,7 +111,7 @@ ggplot(data=data) +
 
 
 ### Gas Base-Fee per Block
-The following chart shows the Gas Base-Fee per block and a trend line showing long-term trends.
+The following chart shows the Gas Base-Fee per block and a trend line.
 
 ```{r gas_base_fee_per_block, echo=FALSE, message=FALSE, fig.dim = figure_dimensions}
 data <- all_data %>%
