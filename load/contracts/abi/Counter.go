@@ -42,12 +42,13 @@ var (
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
+	_ = abi.ConvertType
 )
 
 // CounterMetaData contains all meta data concerning the Counter contract.
 var CounterMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"decrementCounter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCount\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"incrementCounter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
-	Bin: "0x60806040526000805534801561001457600080fd5b50610120806100246000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c80635b34b966146041578063a87d942c146049578063f5c5ad8314605e575b600080fd5b60476064565b005b60005460405190815260200160405180910390f35b6047607b565b60016000808282546074919060a1565b9091555050565b60016000808282546074919060c6565b634e487b7160e01b600052601160045260246000fd5b808201828112600083128015821682158216171560be5760be608b565b505092915050565b818103600083128015838313168383128216171560e35760e3608b565b509291505056fea2646970667358221220133e897f7bd8452e123033f2bd5116036db1bfb1756cd4969259f449fa72905164736f6c63430008130033",
+	ABI: "[{\"inputs\":[],\"name\":\"getCount\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"incrementCounter\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	Bin: "0x60806040526001600055348015601457600080fd5b50610117806100246000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80635b34b966146037578063a87d942c14603f575b600080fd5b603d6057565b005b6045606e565b60405190815260200160405180910390f35b6001600080828254606791906098565b9091555050565b60006001600054607d919060bd565b905090565b634e487b7160e01b600052601160045260246000fd5b808201828112600083128015821682158216171560b55760b56082565b505092915050565b818103600083128015838313168383128216171560da5760da6082565b509291505056fea2646970667358221220e22c01578d13bae8b49fb249b8f9269803187e01f3e69b6166e2d7ffd414a8f964736f6c634300081c0033",
 }
 
 // CounterABI is the input ABI used to generate the binding from.
@@ -172,11 +173,11 @@ func NewCounterFilterer(address common.Address, filterer bind.ContractFilterer) 
 
 // bindCounter binds a generic wrapper to an already deployed contract.
 func bindCounter(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(CounterABI))
+	parsed, err := CounterMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -246,27 +247,6 @@ func (_Counter *CounterSession) GetCount() (*big.Int, error) {
 // Solidity: function getCount() view returns(int256)
 func (_Counter *CounterCallerSession) GetCount() (*big.Int, error) {
 	return _Counter.Contract.GetCount(&_Counter.CallOpts)
-}
-
-// DecrementCounter is a paid mutator transaction binding the contract method 0xf5c5ad83.
-//
-// Solidity: function decrementCounter() returns()
-func (_Counter *CounterTransactor) DecrementCounter(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Counter.contract.Transact(opts, "decrementCounter")
-}
-
-// DecrementCounter is a paid mutator transaction binding the contract method 0xf5c5ad83.
-//
-// Solidity: function decrementCounter() returns()
-func (_Counter *CounterSession) DecrementCounter() (*types.Transaction, error) {
-	return _Counter.Contract.DecrementCounter(&_Counter.TransactOpts)
-}
-
-// DecrementCounter is a paid mutator transaction binding the contract method 0xf5c5ad83.
-//
-// Solidity: function decrementCounter() returns()
-func (_Counter *CounterTransactorSession) DecrementCounter() (*types.Transaction, error) {
-	return _Counter.Contract.DecrementCounter(&_Counter.TransactOpts)
 }
 
 // IncrementCounter is a paid mutator transaction binding the contract method 0x5b34b966.
