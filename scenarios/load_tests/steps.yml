@@ -15,7 +15,7 @@ applications:
     start: 20
     end: 50
     rate:
-      constant: 20
+      constant: 200
 
   - name: load-S
     type: erc20
@@ -31,4 +31,4 @@ applications:
     start: 80
     end: 110
     rate:
-      constant: 100
+      constant: 150

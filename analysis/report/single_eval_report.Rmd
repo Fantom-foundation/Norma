@@ -80,7 +80,7 @@ data <- all_data %>%
 
 ggplot(data = data) +
     # a horizontal line marking the 1s target
-    geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+    geom_hline(yintercept = 0.6, linetype = "dashed", color = "red") +
     # the individual block delays
     geom_point(aes(x = block, y = delta / 1e9)) +
     # a interpolation line
@@ -88,6 +88,7 @@ ggplot(data = data) +
     ggtitle("Block Delay") +                           # chart title
     xlab("Block Height") +                             # x-axis title
     ylab("Delay [s]") +                                # y-axis title
+    coord_cartesian(ylim=c(0, 5)) +                    # limit y-axis to 5s
     theme(plot.title = element_text(hjust = 0.5))      # center title
 ```
 
@@ -106,6 +107,7 @@ ggplot(data=data) +
     ggtitle("Gas Rate per Block") +                   # chart title
     xlab("Block Height") +                            # x-axis title
     ylab("Gas per Second") +                          # y-axis title
+    coord_cartesian(ylim=c(0, 50e6)) +                # limit y-axis to 50 MGas/s
     theme(plot.title = element_text(hjust = 0.5))     # center title
 ```
 
