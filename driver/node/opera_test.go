@@ -182,3 +182,62 @@ func TestOperaNode_MetricsExposed(t *testing.T) {
 		t.Errorf("monitoring API has not been available")
 	}
 }
+
+func TestClient_Stop_Graceful(t *testing.T) {
+	t.Parallel()
+
+	client, err := docker.NewClient()
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+	defer func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("cannot close: %v", err)
+		}
+	}()
+
+	node, err := StartOperaDockerNode(client, nil, &OperaNodeConfig{
+		Label:         "test",
+		NetworkConfig: &driver.NetworkConfig{NumberOfValidators: 1},
+	})
+	if err != nil {
+		t.Fatalf("failed to create client node: %v", err)
+	}
+	defer func() {
+		if err := node.Cleanup(); err != nil {
+			t.Errorf("cannot cleanup: %v", err)
+		}
+	}()
+
+	reader, err := node.StreamLog()
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+	defer func() {
+		if err := reader.Close(); err != nil {
+			t.Errorf("cannot close: %v", err)
+		}
+	}()
+
+	done := make(chan bool)
+	go func() {
+		scanner := bufio.NewScanner(reader)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "State DB closed") {
+				done <- true
+			}
+		}
+	}()
+
+	if err := node.Stop(); err != nil {
+		t.Errorf("cannot stop client node: %v", err)
+	}
+
+	select {
+	case <-done:
+		// container stopped gracefully
+	case <-time.After(180 * time.Second):
+		t.Errorf("container did not stop gracefully")
+	}
+}

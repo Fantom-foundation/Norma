@@ -56,6 +56,7 @@ COPY --from=client-build /norma/build/normatool ./
 ENV STATE_DB_IMPL="geth"
 ENV VM_IMPL="geth"
 ENV LD_LIBRARY_PATH=./
+ENV TINI_KILL_PROCESS_GROUP=1
 
 EXPOSE 5050
 EXPOSE 6060
@@ -66,4 +67,4 @@ COPY genesis/example-genesis.json ./genesis.json
 COPY scripts/run_sonic_privatenet.sh ./run_sonic.sh
 COPY scripts/set_genesis.sh ./set_genesis.sh
 
-CMD ["/bin/bash", "run_sonic.sh"]
+CMD ["./run_sonic.sh"]

@@ -17,8 +17,11 @@
 package local
 
 import (
+	"bufio"
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
 	"go.uber.org/mock/gomock"
@@ -152,6 +155,67 @@ func TestLocalNetwork_CanPerformNetworkShutdown(t *testing.T) {
 
 	if err := net.Shutdown(); err != nil {
 		t.Errorf("failed to shut down network: %v", err)
+	}
+}
+
+func TestLocalNetwork_Shutdown_Graceful(t *testing.T) {
+	t.Parallel()
+	N := 3
+	config := driver.NetworkConfig{NumberOfValidators: 1}
+
+	net, err := NewLocalNetwork(&config)
+	if err != nil {
+		t.Fatalf("failed to create new local network: %v", err)
+	}
+
+	done := make(chan bool, N)
+
+	ctrl := gomock.NewController(t)
+	listener := driver.NewMockNetworkListener(ctrl)
+	listener.EXPECT().AfterNodeCreation(gomock.Any()).DoAndReturn(func(node driver.Node) {
+		reader, err := node.StreamLog()
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+		t.Cleanup(func() {
+			if err := reader.Close(); err != nil {
+				t.Errorf("cannot close: %v", err)
+			}
+		})
+
+		go func() {
+			scanner := bufio.NewScanner(reader)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.Contains(line, "State DB closed") {
+					done <- true
+				}
+			}
+		}()
+	}).Times(N)
+	net.RegisterListener(listener)
+
+	for i := 0; i < N; i++ {
+		_, err := net.CreateNode(&driver.NodeConfig{
+			Name: fmt.Sprintf("T-%d", i),
+		})
+		if err != nil {
+			t.Errorf("failed to create node: %v", err)
+		}
+	}
+
+	if err := net.Shutdown(); err != nil {
+		t.Errorf("failed to shut down network: %v", err)
+	}
+
+	// N containers must stop gracefully
+	for i := 0; i < N; i++ {
+		select {
+		case <-done:
+			// one container done successfully
+		case <-time.After(180 * time.Second):
+			t.Errorf("container did not stop gracefully")
+		}
 	}
 }
 
