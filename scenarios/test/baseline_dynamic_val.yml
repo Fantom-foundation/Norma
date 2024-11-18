@@ -1,0 +1,29 @@
+# This scenario simulates a minimal network including two nodes
+# and a single application producing constant, low-throughput load.
+# This is to be used as a base-line check for Norma's stability.
+name: Baseline Check for Dynamic Validator
+
+# The duration of the scenario's runtime, in seconds.
+duration: 12000
+num_validators: 2
+
+# Ensure that epoch sealing happens
+genesis_gas_limit:
+  max_block_gas: 38750000
+  max_epoch_gas: 187500000
+
+nodes:
+  - name: validator
+    start: 30
+    end: 5970
+    client:
+      type: validator
+
+# In the network there is a single application producing constant load.
+#applications:
+#  - name: load
+#    type: counter
+#    start: 10          # start time
+#    end: 5900            # termination time
+#    rate:
+#      constant: 20    # Tx/s
