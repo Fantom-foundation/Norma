@@ -95,7 +95,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 		return nil, fmt.Errorf("invalid label for node: '%v'", config.Label)
 	}
 
-	shutdownTimeout := 1 * time.Second
+	shutdownTimeout := 180 * time.Second
 
 	validatorId := "0"
 	if config.ValidatorId != nil {

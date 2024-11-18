@@ -42,6 +42,8 @@ type Signal string
 // SigHup is the SIGHUP signal.
 var SigHup Signal = "SIGHUP"
 var SigKill Signal = "SIGKILL"
+var SigInt Signal = "SIGINT"
+var Sigterm Signal = "SIGTERM"
 
 // Client provides means to spawn Docker containers capable of hosting
 // services like the go-opera client.
@@ -154,6 +156,8 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		}}
 	}
 
+	init := true
+	stopTimeout := int(config.ShutdownTimeout.Seconds())
 	resp, err := c.cli.ContainerCreate(context.Background(), &container.Config{
 		Image:      config.ImageName,
 		Tty:        false,
@@ -162,8 +166,10 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 		Labels: map[string]string{
 			objectsLabel: "true",
 		},
+		StopTimeout: &stopTimeout,
 	}, &container.HostConfig{
 		PortBindings: portMapping,
+		Init:         &init,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
@@ -233,7 +239,8 @@ func (c *Container) Stop() error {
 	}
 	c.stopped = true
 	timeout := int(c.config.ShutdownTimeout.Seconds())
-	return c.client.cli.ContainerStop(context.Background(), c.id, container.StopOptions{Timeout: &timeout})
+	return c.client.cli.ContainerStop(context.Background(), c.id, container.StopOptions{
+		Signal: string(SigInt), Timeout: &timeout})
 }
 
 // Cleanup stops the container (unless it is already stopped) and frees any
