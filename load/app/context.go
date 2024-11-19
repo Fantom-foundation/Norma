@@ -176,7 +176,7 @@ func (c *appContext) Run(
 // given accounts.
 func (c *appContext) FundAccounts(accounts []common.Address, value *big.Int) error {
 	// Group funding requests in batches to avoid making individual transactions
-	// to big fo a single block.
+	// too big for a single block.
 	const batchSize = 128
 	batches := make([][]common.Address, 0)
 	for i := 0; i < len(accounts); i += batchSize {
