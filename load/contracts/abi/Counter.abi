@@ -1,16 +1,8 @@
 [
   {
     "inputs": [],
-    "name": "decrementCounter",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "getCount",
-    "outputs":
-    [
+    "outputs": [
       {
         "internalType": "int256",
         "name": "",
