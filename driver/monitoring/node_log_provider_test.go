@@ -110,6 +110,7 @@ type testBlockNodeListener struct {
 }
 
 func blockEqual(t *testing.T, node Node, got, want []Block) {
+	t.Helper()
 	if len(got) != len(want) {
 		t.Errorf("wrong blocks collected for Node %v: %v != %v", node, got, want)
 	}
