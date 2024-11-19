@@ -11,24 +11,24 @@ applications:
 
   - name: load-M
     type: counter
-    users: 100
+    users: 400
     start: 20
     end: 50
     rate:
       constant: 200
 
   - name: load-S
-    type: erc20
-    users: 100
+    type: counter
+    users: 10
     start: 50
     end: 80
     rate:
       constant: 1
 
   - name: load-L
-    type: uniswap
-    users: 100
+    type: counter
+    users: 1000
     start: 80
     end: 110
     rate:
-      constant: 150
+      constant: 500

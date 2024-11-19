@@ -1,0 +1,20 @@
+# This scenario runs a 2-minute load test with a
+# wave-like load pattern above and below the target
+# throughput.
+name: Wavy Load Test
+duration: 120
+
+# The number of static validators present from begin to end.
+num_validators: 4
+
+applications: 
+  - name: load
+    type: counter
+    users: 1000
+    start: 20
+    end: 110
+    rate:
+      wave:
+        min: 200
+        max: 600
+        period: 30

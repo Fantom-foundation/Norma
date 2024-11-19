@@ -1,0 +1,17 @@
+# This scenario runs a 2-minute load test with a gradual 
+# minor increase in load send by a single user.
+name: Single User Load Test
+duration: 120
+
+# The number of static validators present from begin to end.
+num_validators: 4
+
+applications: 
+  - name: load
+    type: counter
+    users: 1
+    start: 20
+    end: 110
+    rate:
+      slope:
+        increment: 1
