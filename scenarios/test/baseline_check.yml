@@ -11,6 +11,7 @@ num_validators: 2
 applications:
   - name: load
     type: counter
+    users: 50
     start: 10          # start time
     end: 50            # termination time
     rate:
