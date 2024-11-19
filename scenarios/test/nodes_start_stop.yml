@@ -19,7 +19,7 @@ nodes:
     start: 20
     end: 120
     instances: 2
-    features: [ validator, RPC ]
+    features: [ validator ]
 
   - name: validator-B
     start: 40
@@ -32,13 +32,12 @@ nodes:
     end: 180
     instances: 2
 
-  - name: rpc-A
+  - name: observer-B
     start: 100
     end: 160
     instances: 1
-    features: [ RPC ]
 
-  - name: observer-B
+  - name: observer-C
     start: 190
     end: 230
     instances: 2
@@ -47,7 +46,7 @@ nodes:
     start: 140
     end: 200
     instances: 2
-    features: [ validator, RPC ]
+    features: [ validator ]
 
 
 # In the network, there is a single application producing a constant load.
