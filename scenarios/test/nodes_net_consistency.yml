@@ -1,0 +1,71 @@
+# This scenario simulates a network with the various number of nodes.
+# It starts and stopes nodes at different times.
+# It makes sure that many nodes run till the end of the scenario
+# to allow for the consistency check to see many nodes.
+# The nodes include validators and non-validator nodes.
+# It deploys one application and sends a decent number of transactions.
+
+# The name of the scenario
+name: Network Consistency
+
+# The duration of the scenario's runtime, in seconds.
+duration: 240
+
+# The number of validator nodes in the network.
+num_validators: 2
+
+# The network scenario to exercise. 
+nodes:
+  # Change the number of nodes during the scenario.
+  - name: validator-A
+    start: 20
+    end: 120
+    instances: 2
+    features: [ validator ]
+
+  - name: validator-B
+    start: 40
+    end: 80
+    instances: 1
+    features: [ validator ]
+
+  - name: observer-A
+    start: 90
+    end: 180
+    instances: 2
+
+  - name: observer-B
+    start: 100    # This node will run till the end of the scenario
+    instances: 1
+
+  - name: observer-C
+    start: 190      # This node will run till the end of the scenario
+    instances: 2
+
+  - name: validator-C
+    start: 140         # This node will run till the end of the scenario
+    instances: 2
+    features: [ validator ]
+
+
+# In the network, there is a single application producing a constant load.
+applications:
+  - name: counter
+    type: counter
+    users: 20           # number of users using the app
+    rate:
+      constant: 10     # Tx/s
+
+  - name: erc20
+    type: erc20
+    start: 60
+    users: 20           # number of users using the app
+    rate:
+      constant: 10     # Tx/s
+
+  - name: uniswap
+    type: uniswap
+    start: 80
+    users: 20           # number of users using the app
+    rate:
+      constant: 10     # Tx/s

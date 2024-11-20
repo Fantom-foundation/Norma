@@ -30,6 +30,7 @@ type BlockHeightChecker struct {
 
 func (*BlockHeightChecker) Check(net driver.Network) error {
 	nodes := net.GetActiveNodes()
+	fmt.Printf("checking block heights for %d nodes\n", len(nodes))
 	heights := make([]int64, len(nodes))
 	maxHeight := int64(0)
 	for i, n := range nodes {
