@@ -175,20 +175,39 @@ func (c *appContext) Run(
 // FundAccounts transfers the given amount of funds from the treasure to each of the
 // given accounts.
 func (c *appContext) FundAccounts(accounts []common.Address, value *big.Int) error {
-	if len(accounts) == 0 {
-		return nil
+	// Group funding requests in batches to avoid making individual transactions
+	// too big for a single block.
+	const batchSize = 128
+	batches := make([][]common.Address, 0)
+	for i := 0; i < len(accounts); i += batchSize {
+		batches = append(batches, accounts[i:min(i+batchSize, len(accounts))])
 	}
-	// This function uses the helper-contract's "distribute" function to distribute funds
-	// to all receiver accounts in a single transaction.
-	receipt, err := c.Run(func(opts *bind.TransactOpts) (*types.Transaction, error) {
-		opts.Value = new(big.Int).Mul(value, big.NewInt(int64(len(accounts))))
-		return c.helper.Distribute(opts, accounts)
-	})
+
+	// Send one transaction per batch of accounts.
+	opts, err := c.GetTransactOptions(c.GetTreasure())
 	if err != nil {
-		return fmt.Errorf("failed to distribute funds: %w", err)
+		return fmt.Errorf("failed to get transaction options: %w", err)
 	}
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return fmt.Errorf("failed to distribute funds: transaction reverted")
+	txs := make([]*types.Transaction, 0, len(batches))
+	for _, batch := range batches {
+		opts.Value = new(big.Int).Mul(value, big.NewInt(int64(len(batch))))
+		tx, err := c.helper.Distribute(opts, batch)
+		if err != nil {
+			return fmt.Errorf("failed to distribute funds: %w", err)
+		}
+		txs = append(txs, tx)
+		opts.Nonce.Add(opts.Nonce, big.NewInt(1))
+	}
+
+	// Wait for all the transactions to be completed.
+	for _, tx := range txs {
+		receipt, err := c.GetReceipt(tx.Hash())
+		if err != nil {
+			return fmt.Errorf("failed to get receipt: %w", err)
+		}
+		if receipt.Status != types.ReceiptStatusSuccessful {
+			return fmt.Errorf("failed to distribute funds: transaction reverted")
+		}
 	}
 	return nil
 }
