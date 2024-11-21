@@ -1,0 +1,58 @@
+# This scenario simulates a network with the various number of nodes.
+# It starts and stopes nodes at different times.
+# The nodes include validators and non-validator nodes.
+# It deploys one application and sends a decent number of transactions.
+
+# The name of the scenario
+name: Various Number of Nodes
+
+# The duration of the scenario's runtime, in seconds.
+duration: 240
+
+# The number of validator nodes in the network.
+num_validators: 1
+
+# The network scenario to exercise. 
+nodes:
+  # Change the number of nodes during the scenario.
+  - name: validator-A
+    start: 20
+    end: 120
+    instances: 2
+    features: [ validator ]
+
+  - name: validator-B
+    start: 40
+    end: 80
+    instances: 1
+    features: [ validator ]
+
+  - name: observer-A
+    start: 80
+    end: 180
+    instances: 2
+
+  - name: observer-B
+    start: 100
+    end: 160
+    instances: 1
+
+  - name: observer-C
+    start: 190
+    end: 230
+    instances: 2
+
+  - name: validator-C
+    start: 140
+    end: 200
+    instances: 2
+    features: [ validator ]
+
+
+# In the network, there is a single application producing a constant load.
+applications:
+  - name: load
+    type: counter
+    users: 20           # number of users using the app
+    rate:
+      constant: 10     # Tx/s
