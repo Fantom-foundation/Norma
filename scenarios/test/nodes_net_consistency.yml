@@ -21,13 +21,15 @@ nodes:
     start: 20
     end: 120
     instances: 2
-    features: [ validator ]
+    client:
+      type: validator
 
   - name: validator-B
     start: 40
     end: 80
     instances: 1
-    features: [ validator ]
+    client:
+      type: validator
 
   - name: observer-A
     start: 90
@@ -45,7 +47,8 @@ nodes:
   - name: validator-C
     start: 140         # This node will run till the end of the scenario
     instances: 2
-    features: [ validator ]
+    client:
+      type: validator
 
 
 # In the network, there is a single application producing a constant load.
