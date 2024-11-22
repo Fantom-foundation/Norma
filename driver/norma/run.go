@@ -24,8 +24,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Fantom-foundation/Norma/driver/checking"
-
 	"github.com/Fantom-foundation/Norma/analysis/report"
 	"github.com/Fantom-foundation/Norma/driver"
 	"github.com/Fantom-foundation/Norma/driver/executor"
@@ -249,22 +247,11 @@ func runScenario(path, outputDir, label string, keepPrometheusRunning, skipCheck
 	fmt.Printf("Running '%s' ...\n", path)
 	logger := startProgressLogger(monitor, net)
 	defer logger.shutdown()
-	err = executor.Run(clock, net, &scenario, outputDir)
+	err = executor.Run(clock, net, &scenario, skipChecks)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Execution completed successfully!\n")
-
-	if !skipChecks {
-		fmt.Printf("Checking network consistency ...\n")
-		err = checking.CheckNetworkConsistency(net)
-		if err != nil {
-			return fmt.Errorf("checking the network consistency failed: %v", err)
-		}
-		fmt.Printf("Network checks succeed.\n")
-	} else {
-		fmt.Printf("Network checks skipped\n")
-	}
 
 	return nil
 }
