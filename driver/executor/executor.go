@@ -18,6 +18,7 @@ package executor
 
 import (
 	"fmt"
+	"github.com/Fantom-foundation/Norma/driver/checking"
 	"log"
 	"os"
 	"os/signal"
@@ -31,7 +32,7 @@ import (
 // Run executes the given scenario on the given network using the provided clock
 // as a time source. Execution will fail (fast) if the scenario is not valid (see
 // Scenario's Check() function).
-func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputDir string) error {
+func Run(clock Clock, network driver.Network, scenario *parser.Scenario, skipConsistencyCheck bool) error {
 	if err := scenario.Check(); err != nil {
 		return err
 	}
@@ -44,9 +45,19 @@ func Run(clock Clock, network driver.Network, scenario *parser.Scenario, outputD
 		return nil
 	}))
 
+	// schedule network consistency just before the end of simulation
+	if !skipConsistencyCheck {
+		queue.add(toSingleEvent(endTime-1, "consistency check", func() error {
+			log.Printf("Checking network consistency ...\n")
+			return checking.CheckNetworkConsistency(network)
+		}))
+	} else {
+		fmt.Printf("Network checks skipped\n")
+	}
+
 	// Schedule all operations listed in the scenario.
 	for _, node := range scenario.Nodes {
-		scheduleNodeEvents(&node, queue, network, endTime, outputDir)
+		scheduleNodeEvents(&node, queue, network, endTime)
 	}
 	for _, app := range scenario.Applications {
 		if err := scheduleApplicationEvents(&app, queue, network, endTime); err != nil {
@@ -177,7 +188,7 @@ func toSingleEvent(time Time, name string, action func() error) event {
 // nodes during the scenario execution. The nature of the scheduled nodes is taken from the
 // given node description, and actions are applied to the given network.
 // Node Lifecycle: create -> timer sim events {start, end, kill, restart} -> remove
-func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time, outputDir string) {
+func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network, end Time) {
 	instances := 1
 	if node.Instances != nil {
 		instances = *node.Instances
@@ -223,6 +234,7 @@ func scheduleNodeEvents(node *parser.Node, queue *eventQueue, net driver.Network
 				if instance == nil {
 					return nil
 				}
+
 				if err := net.RemoveNode(*instance); err != nil {
 					return err
 				}
