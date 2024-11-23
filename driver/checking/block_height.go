@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Fantom-foundation/Norma/driver"
 )
@@ -33,8 +34,20 @@ func (*BlockHeightChecker) Check(net driver.Network) error {
 	fmt.Printf("checking block heights for %d nodes\n", len(nodes))
 	heights := make([]int64, len(nodes))
 	maxHeight := int64(0)
+
+	errors := make([]error, len(nodes))
+	var wg sync.WaitGroup
+	wg.Add(len(nodes))
+	for i := range nodes {
+		go func(i int) {
+			defer wg.Done()
+			heights[i], errors[i] = getBlockHeight(nodes[i])
+		}(i)
+	}
+	wg.Wait()
+
 	for i, n := range nodes {
-		height, err := getBlockHeight(n)
+		height, err := heights[i], errors[i]
 		if err != nil {
 			return fmt.Errorf("failed to get block height of node %s; %v", n.GetLabel(), err)
 		}

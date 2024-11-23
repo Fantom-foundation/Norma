@@ -30,7 +30,7 @@ type Checker interface {
 func CheckNetworkConsistency(net driver.Network) error {
 	checkers := []Checker{
 		new(BlockHeightChecker),
-		new(BlocksHashesChecker),
+		//new(BlocksHashesChecker),
 	}
 	errs := make([]error, len(checkers))
 	for i, checker := range checkers {

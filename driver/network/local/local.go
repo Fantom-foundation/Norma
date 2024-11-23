@@ -62,6 +62,8 @@ type LocalNetwork struct {
 	// validator nodes created during startup.
 	nodes map[driver.NodeID]*node.OperaNode
 
+	nodeList []*node.OperaNode
+
 	// nodesMutex synchronizes access to the list of nodes.
 	nodesMutex sync.Mutex
 
@@ -166,15 +168,27 @@ func (n *LocalNetwork) StartNode(nd driver.Node) (driver.Node, error) {
 }
 
 func (n *LocalNetwork) startNode(node *node.OperaNode) (*node.OperaNode, error) {
+	const linear = true
 	n.nodesMutex.Lock()
 	id, err := node.GetNodeID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get node id; %v", err)
 	}
-	for _, other := range n.nodes {
-		if err = other.AddPeer(id); err != nil {
-			n.nodesMutex.Unlock()
-			return nil, fmt.Errorf("failed to add peer; %v", err)
+	if linear {
+		if len(n.nodeList) > 0 {
+			other := n.nodeList[len(n.nodeList)-1]
+			if err = other.AddPeer(id); err != nil {
+				n.nodesMutex.Unlock()
+				return nil, fmt.Errorf("failed to add peer; %v", err)
+			}
+		}
+		n.nodeList = append(n.nodeList, node)
+	} else {
+		for _, other := range n.nodes {
+			if err = other.AddPeer(id); err != nil {
+				n.nodesMutex.Unlock()
+				return nil, fmt.Errorf("failed to add peer; %v", err)
+			}
 		}
 	}
 	n.nodes[id] = node

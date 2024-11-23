@@ -1,5 +1,6 @@
-# This scenario runs a 2-minute load test with a gradual increase in load.
-name: Slope Load Test
+# This scenario runs a 2-minute load of 2000 transactions per
+# second. The individual transactions are small.
+name: High Number of Transactions
 duration: 120
 
 # The number of static validators present from begin to end.
@@ -8,9 +9,8 @@ num_validators: 2
 applications: 
   - name: load
     type: counter
-    users: 8000
+    users: 1
     start: 20
     end: 110
     rate:
-      slope:
-        increment: 20
+      constant: 1

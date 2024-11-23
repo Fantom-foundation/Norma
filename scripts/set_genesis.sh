@@ -24,10 +24,7 @@ else
   MaxEpochGas=$DEFAULT_MAX_EPOCH_GAS
 fi
 
-echo "MaxBlockGas=${MaxBlockGas}"
-echo "MaxEpochGas=${MaxEpochGas}"
-
-rules="{ \"networkName\": \"norma-privatenet\", \"networkId\": 4003, \"MaxBlockGas\": $MaxBlockGas, \"MaxEventGas\": 10028000000, \"MaxEpochGas\": $MaxEpochGas, \"ShortGasAllocPerSec\": 5600000000000, \"LongGasAllocPerSec\": 2800000000000 }"
+rules="{ \"networkName\": \"norma-privatenet\", \"networkId\": 4003}"
 sed -i 's|GENESIS_RULES_PLACEHOLDER|'"$rules"'|g' "$GENESIS_PATH"
 
 # Set genesis validator accounts

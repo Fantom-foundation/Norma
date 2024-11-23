@@ -138,7 +138,7 @@ func (c *appContext) GetReceipt(txHash common.Hash) (*types.Receipt, error) {
 	const maxDelay = 100 * time.Millisecond
 	begin := time.Now()
 	delay := time.Millisecond
-	for time.Since(begin) < 10*time.Second {
+	for time.Since(begin) < 100*time.Second {
 		receipt, err := client.TransactionReceipt(context.Background(), txHash)
 		if errors.Is(err, ethereum.NotFound) {
 			time.Sleep(delay)

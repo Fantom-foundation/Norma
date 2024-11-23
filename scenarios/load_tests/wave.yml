@@ -10,11 +10,11 @@ num_validators: 4
 applications: 
   - name: load
     type: counter
-    users: 1000
+    users: 2000
     start: 20
     end: 110
     rate:
       wave:
         min: 200
-        max: 600
+        max: 1000
         period: 30

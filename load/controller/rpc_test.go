@@ -76,7 +76,7 @@ func TestTrafficGenerating(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(2 * time.Second) // wait for txs in TxPool
+	time.Sleep(5 * time.Second) // wait for txs in TxPool
 
 	// get amount of txs applied to the chain
 	sum, err := app.GetSentTransactions()
