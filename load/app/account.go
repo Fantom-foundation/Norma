@@ -36,8 +36,9 @@ import (
 // Any factory using the same mnemonic, feederId and appId produce the same sequence of accounts,
 // which can be used to reuse existing accounts from previous runs.
 type AccountFactory struct {
-	chainID     *big.Int
-	numAccounts int64
+	chainID         *big.Int
+	numAccounts     int64
+	feederId, appId uint32
 }
 
 // NewAccountFactory creates a new AccountFactory, generating accounts for given feeder and app.
@@ -46,6 +47,8 @@ func NewAccountFactory(chainID *big.Int, feederId, appId uint32) (*AccountFactor
 	return &AccountFactory{
 		chainID:     chainID,
 		numAccounts: 0,
+		feederId:    feederId,
+		appId:       appId,
 	}, nil
 }
 
@@ -54,6 +57,8 @@ func (f *AccountFactory) CreateAccount(rpcClient rpc.RpcClient) (*Account, error
 	id := atomic.AddInt64(&f.numAccounts, 1)
 	d := make([]byte, 32)
 	binary.BigEndian.PutUint64(d[:24], uint64(id))
+	binary.BigEndian.PutUint32(d[24:], f.feederId)
+	binary.BigEndian.PutUint32(d[28:], f.appId)
 	privateKey, err := crypto.ToECDSA(d)
 	if err != nil {
 		return nil, err
