@@ -103,8 +103,8 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	if fileInfo.IsDir() {
-		// List all YAML files in the directory
-		err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+		// List all YAML files in the directory and run each
+		return filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -112,14 +112,11 @@ func run(ctx *cli.Context) (err error) {
 				// Call runScenario for each YAML file
 				label := fmt.Sprintf("eval_%d", time.Now().Unix())
 				if err := runScenario(p, outputDir, label, keepPrometheusRunning, skipChecks, skipReportRendering); err != nil {
-					return err
+					return fmt.Errorf("failed to run: %s: %w", p, err)
 				}
 			}
 			return nil
 		})
-		if err != nil {
-			return fmt.Errorf("failed to list YAML files: %w", err)
-		}
 	} else {
 		// Call runScenario for the single file
 		label := ctx.String(evalLabel.Name)
@@ -129,8 +126,6 @@ func run(ctx *cli.Context) (err error) {
 
 		return runScenario(path, outputDir, label, keepPrometheusRunning, skipChecks, skipReportRendering)
 	}
-
-	return nil
 }
 
 func runScenario(path, outputDir, label string, keepPrometheusRunning, skipChecks, skipReportRendering bool) error {
