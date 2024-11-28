@@ -12,15 +12,15 @@ name: Network Consistency
 duration: 240
 
 # The number of validator nodes in the network.
-num_validators: 2
+num_validators: 3
 
 # The network scenario to exercise. 
 nodes:
   # Change the number of nodes during the scenario.
   - name: validator-A
     start: 20
-    end: 120
-    instances: 2
+    end: 220
+    instances: 1
     client:
       type: validator
 
