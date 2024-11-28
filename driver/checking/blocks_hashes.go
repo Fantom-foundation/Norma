@@ -31,6 +31,7 @@ type BlocksHashesChecker struct {
 
 func (*BlocksHashesChecker) Check(net driver.Network) (err error) {
 	nodes := net.GetActiveNodes()
+	fmt.Printf("checking hashes for %d nodes\n", len(nodes))
 	rpcClients := make([]rpc.RpcClient, len(nodes))
 	for i, n := range nodes {
 		rpcClients[i], err = n.DialRpc()

@@ -18,12 +18,11 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/Fantom-foundation/Norma/driver/checking"
 
 	"github.com/Fantom-foundation/Norma/analysis/report"
 	"github.com/Fantom-foundation/Norma/driver"
@@ -85,21 +84,58 @@ var (
 )
 
 func run(ctx *cli.Context) (err error) {
-	if num := ctx.Int(numValidators.Name); num != 0 {
-		fmt.Printf("[DEPRECATED] --num-validator flag has been deprecated along with NumValidator configuration in scenarios.\n --num-validator %d will not have any effect when running the provided scenarios.", num)
-	}
-
-	label := ctx.String(evalLabel.Name)
-	if label == "" {
-		label = fmt.Sprintf("eval_%d", time.Now().Unix())
-	}
-
 	args := ctx.Args()
 	if args.Len() < 1 {
 		return fmt.Errorf("requires scenario file as an argument")
 	}
 
+	outputDir := ctx.String(outputDirectory.Name)
+	keepPrometheusRunning := ctx.Bool(keepPrometheusRunning.Name)
+	skipChecks := ctx.Bool(skipChecks.Name)
+	skipReportRendering := ctx.Bool(skipReportRendering.Name)
+
 	path := args.First()
+
+	// Check if the path is a directory
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	if fileInfo.IsDir() {
+		// List all YAML files in the directory and run each
+		return filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !d.IsDir() && (filepath.Ext(d.Name()) == ".yaml" || filepath.Ext(d.Name()) == ".yml") {
+				// Call runScenario for each YAML file
+				label := fmt.Sprintf("eval_%d", time.Now().Unix())
+				if err := runScenario(p, outputDir, label, keepPrometheusRunning, skipChecks, skipReportRendering); err != nil {
+					return fmt.Errorf("failed to run: %s: %w", p, err)
+				}
+			}
+			return nil
+		})
+	} else {
+		// Call runScenario for the single file
+		label := ctx.String(evalLabel.Name)
+		if label == "" {
+			label = fmt.Sprintf("eval_%d", time.Now().Unix())
+		}
+
+		return runScenario(path, outputDir, label, keepPrometheusRunning, skipChecks, skipReportRendering)
+	}
+}
+
+func runScenario(path, outputDir, label string, keepPrometheusRunning, skipChecks, skipReportRendering bool) error {
+
+	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
+	outputDir, err := os.MkdirTemp(outputDir, fmt.Sprintf("norma_data_%s_", label))
+	if err != nil {
+		return fmt.Errorf("couldn't create temp dir for output; %w", err)
+	}
+
 	fmt.Printf("Reading '%s' ...\n", path)
 	scenario, err := parser.ParseFile(path)
 	if err != nil {
@@ -111,12 +147,6 @@ func run(ctx *cli.Context) (err error) {
 	}
 
 	fmt.Printf("Starting evaluation %s\n", label)
-
-	// if not configured, default to /tmp/norma_data_<label>_<timestamp> else /configured/path/norma_data_<l>_<t>
-	outputDir, err := os.MkdirTemp(ctx.String(outputDirectory.Name), fmt.Sprintf("norma_data_%s_", label))
-	if err != nil {
-		return fmt.Errorf("Couldn't create temp dir for output; %w", err)
-	}
 
 	// create symlink as qol (_latest => _####) where #### is the randomly generated name
 	symlink := filepath.Join(filepath.Dir(outputDir), fmt.Sprintf("norma_data_%s_latest", label))
@@ -175,7 +205,7 @@ func run(ctx *cli.Context) (err error) {
 		fmt.Printf("Monitoring data was written to %v\n", outputDir)
 		fmt.Printf("Raw data was exported to %s\n", monitor.GetMeasurementFileName())
 
-		if !ctx.Bool(skipReportRendering.Name) {
+		if !skipReportRendering {
 			fmt.Printf("Rendering summary report (may take a few minutes the first time if R packages need to be installed) ...\n")
 			if file, err := report.SingleEvalReport.Render(monitor.GetMeasurementFileName(), outputDir); err != nil {
 				fmt.Printf("Report generation failed:\n%v\n", err)
@@ -183,7 +213,7 @@ func run(ctx *cli.Context) (err error) {
 				fmt.Printf("Summary report was exported to file://%s/%s\n", outputDir, file)
 			}
 		} else {
-			fmt.Printf("Report rendering skipped (--%s)\n", skipReportRendering.Name)
+			fmt.Printf("Report rendering skipped\n")
 			fmt.Printf("To render report run `norma render %s`\n", monitor.GetMeasurementFileName())
 		}
 	}()
@@ -200,7 +230,7 @@ func run(ctx *cli.Context) (err error) {
 		fmt.Printf("error starting Prometheus:\n%v", err)
 	}
 	defer func() {
-		if !ctx.Bool(keepPrometheusRunning.Name) && prom != nil {
+		if !keepPrometheusRunning && prom != nil {
 			fmt.Printf("Shutting down Prometheus ...\n")
 			if err := prom.Shutdown(); err != nil {
 				fmt.Printf("error during Prometheus shutdown:\n%v", err)
@@ -212,22 +242,11 @@ func run(ctx *cli.Context) (err error) {
 	fmt.Printf("Running '%s' ...\n", path)
 	logger := startProgressLogger(monitor, net)
 	defer logger.shutdown()
-	err = executor.Run(clock, net, &scenario, outputDir)
+	err = executor.Run(clock, net, &scenario, skipChecks)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("Execution completed successfully!\n")
-
-	if !ctx.Bool(skipChecks.Name) {
-		fmt.Printf("Checking network consistency ...\n")
-		err = checking.CheckNetworkConsistency(net)
-		if err != nil {
-			return fmt.Errorf("checking the network consistency failed: %v", err)
-		}
-		fmt.Printf("Network checks succeed.\n")
-	} else {
-		fmt.Printf("Network checks skipped (--%s)\n", skipChecks.Name)
-	}
 
 	return nil
 }
