@@ -221,7 +221,7 @@ func GetReceipt(txHash common.Hash, rpcClient rpc.RpcClient) (*types.Receipt, er
 	const maxDelay = 100 * time.Millisecond
 	begin := time.Now()
 	delay := time.Millisecond
-	for time.Since(begin) < 10*time.Second {
+	for time.Since(begin) < 20*time.Second {
 		receipt, err := rpcClient.TransactionReceipt(context.Background(), txHash)
 		if errors.Is(err, ethereum.NotFound) {
 			time.Sleep(delay)
