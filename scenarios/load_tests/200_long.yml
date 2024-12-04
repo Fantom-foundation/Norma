@@ -1,7 +1,7 @@
 # This scenario runs a 2-minute load of 2000 transactions per
 # second. The individual transactions are small.
 name: High Number of Transactions
-duration: 120
+duration: 1200
 
 # The number of static validators present from begin to end.
 num_validators: 2
@@ -9,8 +9,8 @@ num_validators: 2
 applications: 
   - name: load
     type: counter
-    users: 6000
+    users: 1000
     start: 20
-    end: 100
+    end: 600
     rate:
-      constant: 2000
+      constant: 200

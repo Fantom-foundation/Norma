@@ -9,8 +9,8 @@ num_validators: 2
 applications: 
   - name: load
     type: counter
-    users: 6000
+    users: 9000
     start: 20
     end: 100
     rate:
-      constant: 2000
+      constant: 2100

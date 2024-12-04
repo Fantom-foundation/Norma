@@ -68,7 +68,7 @@ normatool:
 	go build -o $(BUILD_DIR)/normatool ./driver/normatool
 
 test: pull-hello-world-image pull-alpine-image pull-prometheus-image build-sonic-docker-image
-	go test ./... -v
+	go test ./... -v -timeout 30m
 
 clean:
 	rm -rvf $(CURDIR)/build

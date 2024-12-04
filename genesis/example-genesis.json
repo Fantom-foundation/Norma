@@ -1,6 +1,7 @@
 {
   "_": "This is a sample JSON genesis file. Opera can run a network defined by it when enabled by --jsongenesis parameter.",
   "rules": GENESIS_RULES_PLACEHOLDER,
+  "blockZeroTime": "2024-11-01T00:00:00+01:00",
   "accounts": [
     {
       "name": "Network initializer",
