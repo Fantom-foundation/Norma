@@ -6,6 +6,7 @@ name: Baseline Check
 # The duration of the scenario's runtime, in seconds.
 duration: 60
 num_validators: 2
+round_trip_time: "200ms"
 
 # In the network there is a single application producing constant load.
 applications:

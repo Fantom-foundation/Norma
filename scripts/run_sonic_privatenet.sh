@@ -60,6 +60,18 @@ else
   echo DoublesignProtection = 5000000000 >> config.toml
 fi
 
+# Add network latency between nodes. The following command delays
+# each out-going package by the given latency. To get a given
+# round-trip time, the one-way latency has to be half of it.
+# To check, run `docker exec <src-container-id> ping <dst-container-id>` on host.
+echo "NETWORK_LATENCY=${NETWORK_LATENCY}"
+if [[ -n "${NETWORK_LATENCY}" ]]; then
+  echo "Adding network latency .."
+  tc qdisc add dev eth0 root netem delay $NETWORK_LATENCY
+  tc qdisc add dev eth1 root netem delay $NETWORK_LATENCY
+fi
+
+
 # Start sonic as part of a fake net with RPC service.
 ./sonicd \
     --datadir=${datadir} \

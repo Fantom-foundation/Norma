@@ -170,6 +170,7 @@ func (c *Client) Start(config *ContainerConfig) (*Container, error) {
 	}, &container.HostConfig{
 		PortBindings: portMapping,
 		Init:         &init,
+		CapAdd:       []string{"NET_ADMIN"},
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
