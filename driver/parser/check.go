@@ -41,6 +41,9 @@ func (s *Scenario) Check() error {
 	if err := s.checkValidatorConstraints(); err != nil {
 		errs = append(errs, err)
 	}
+	if s.RoundTripTime != nil && *s.RoundTripTime < 0 {
+		errs = append(errs, fmt.Errorf("round trip time must be >= 0, is %v", *s.RoundTripTime))
+	}
 
 	names := map[string]bool{}
 	for _, node := range s.Nodes {

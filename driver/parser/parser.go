@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -36,11 +37,12 @@ const (
 type Scenario struct {
 	Name             string
 	Duration         float32
-	NumValidators    *int          `yaml:"num_validators,omitempty"` // nil == 1
-	GenesisGasLimits GasLimits     `yaml:"genesis_gas_limit,omitempty"`
-	Nodes            []Node        `yaml:",omitempty"`
-	Applications     []Application `yaml:",omitempty"`
-	Cheats           []Cheat       `yaml:",omitempty"`
+	NumValidators    *int           `yaml:"num_validators,omitempty"`  // nil == 1
+	RoundTripTime    *time.Duration `yaml:"round_trip_time,omitempty"` // nil == 0
+	GenesisGasLimits GasLimits      `yaml:"genesis_gas_limit,omitempty"`
+	Nodes            []Node         `yaml:",omitempty"`
+	Applications     []Application  `yaml:",omitempty"`
+	Cheats           []Cheat        `yaml:",omitempty"`
 }
 
 // GasLimits is a configuration group for gas limit rules
@@ -72,6 +74,13 @@ func (s *Scenario) GetNumValidators() int {
 		return *s.NumValidators
 	}
 	return 1
+}
+
+func (s *Scenario) GetRoundTripTime() time.Duration {
+	if s.RoundTripTime != nil {
+		return *s.RoundTripTime
+	}
+	return 0
 }
 
 // Node is a configuration for a group of nodes with similar properties.

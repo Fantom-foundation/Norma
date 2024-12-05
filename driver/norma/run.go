@@ -173,11 +173,13 @@ func runScenario(path, outputDir, label string, keepPrometheusRunning, skipCheck
 	fmt.Printf("Creating network with: \n")
 	fmt.Printf("    Network max block gas: %d\n", scenario.GetMaxBlockGas())
 	fmt.Printf("    Network max epoch gas: %d\n", scenario.GetMaxEpochGas())
+	fmt.Printf("    Network RoundTripTime: %v\n", scenario.GetRoundTripTime())
 
 	net, err := local.NewLocalNetwork(&driver.NetworkConfig{
 		NumberOfValidators: scenario.GetNumValidators(),
 		MaxBlockGas:        scenario.GetMaxBlockGas(),
 		MaxEpochGas:        scenario.GetMaxEpochGas(),
+		RoundTripTime:      scenario.GetRoundTripTime(),
 	})
 	if err != nil {
 		return err

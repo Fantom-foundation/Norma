@@ -17,6 +17,8 @@
 package driver
 
 import (
+	"time"
+
 	"github.com/Fantom-foundation/Norma/driver/parser"
 	"github.com/Fantom-foundation/Norma/driver/rpc"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -73,6 +75,8 @@ type NetworkConfig struct {
 	MaxBlockGas uint64
 	// MaxEpochGas is the maximum gas limit for an epoch in the network.
 	MaxEpochGas uint64
+	// RoundTripTime is the average round trip time between nodes in the network.
+	RoundTripTime time.Duration
 }
 
 // NetworkListener can be registered to networks to get callbacks whenever there

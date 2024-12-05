@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/Fantom-foundation/Norma/driver"
+	"github.com/Fantom-foundation/Norma/driver/node"
 	"go.uber.org/mock/gomock"
 )
 
@@ -74,7 +75,44 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 	}
 }
 
-func TestLocalNetwork_CanStartApplicatonsAndShutThemDown(t *testing.T) {
+func TestLocalNetwork_CanEnforceNetworkLatency(t *testing.T) {
+	t.Parallel()
+	for _, rtt := range []time.Duration{0, 100 * time.Millisecond, 200 * time.Millisecond} {
+		rtt := rtt
+		t.Run(fmt.Sprintf("rtt=%v", rtt), func(t *testing.T) {
+			t.Parallel()
+			config := driver.NetworkConfig{
+				NumberOfValidators: 2,
+				RoundTripTime:      rtt,
+			}
+			net, err := NewLocalNetwork(&config)
+			if err != nil {
+				t.Fatalf("failed to create new local network: %v", err)
+			}
+			t.Cleanup(func() {
+				_ = net.Shutdown()
+			})
+
+			// measure latency between nodes
+			nodes := net.GetActiveNodes()
+			if got, want := len(nodes), 2; got != want {
+				t.Fatalf("invalid number of active nodes, got %d, want %d", got, want)
+			}
+			got, err := nodes[0].(*node.OperaNode).GetRoundTripTime(nodes[1].Hostname())
+			if err != nil {
+				t.Errorf("failed to measure network delay: %v", err)
+			}
+			if got < rtt-10*time.Millisecond {
+				t.Errorf("network RTT is too low: %v < %v", got, rtt)
+			}
+			if got > rtt+10*time.Millisecond {
+				t.Errorf("network RTT is too high: %v > %v", got, rtt)
+			}
+		})
+	}
+}
+
+func TestLocalNetwork_CanStartApplicationsAndShutThemDown(t *testing.T) {
 	t.Parallel()
 	config := driver.NetworkConfig{NumberOfValidators: 1}
 	for _, N := range []int{1, 3} {

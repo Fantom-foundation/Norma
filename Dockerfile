@@ -50,6 +50,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build make normatool
 # > docker run -e VALIDATOR_NUMBER=2 -e VALIDATORS_COUNT=5 -i -t sonic
 #
 FROM debian:bookworm
+
+RUN apt-get update && \
+    apt-get install iproute2 iputils-ping -y
+
 COPY --from=client-build /client/build/sonicd /client/build/sonictool ./
 COPY --from=client-build /norma/build/normatool ./
 

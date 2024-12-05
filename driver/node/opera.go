@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"time"
 
 	rpcdriver "github.com/Fantom-foundation/Norma/driver/rpc"
@@ -120,6 +121,7 @@ func StartOperaDockerNode(client *docker.Client, dn *docker.Network, config *Ope
 				"VALIDATORS_COUNT": fmt.Sprintf("%d", config.NetworkConfig.NumberOfValidators),
 				"MAX_BLOCK_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxBlockGas),
 				"MAX_EPOCH_GAS":    fmt.Sprintf("%d", config.NetworkConfig.MaxEpochGas),
+				"NETWORK_LATENCY":  fmt.Sprintf("%v", config.NetworkConfig.RoundTripTime/2),
 			},
 			Network: dn,
 		})
@@ -247,4 +249,25 @@ func (n *OperaNode) RemovePeer(id driver.NodeID) error {
 // Kill sends a SigKill singal to node.
 func (n *OperaNode) Kill() error {
 	return n.container.SendSignal(docker.SigKill)
+}
+
+// GetRoundTripTime returns the median network round-trip time to the given host.
+func (n *OperaNode) GetRoundTripTime(host string) (time.Duration, error) {
+	output, err := n.container.Exec([]string{"ping", "-c", "5", host})
+	if err != nil {
+		return 0, err
+	}
+	regex := regexp.MustCompile("time=([0-9.]+) ms")
+	matches := regex.FindAllStringSubmatch(string(output), -1)
+
+	durations := make([]time.Duration, 0, len(matches))
+	for _, match := range matches {
+		duration, err := time.ParseDuration(match[1] + "ms")
+		if err != nil {
+			return 0, err
+		}
+		durations = append(durations, duration)
+	}
+	slices.Sort(durations)
+	return durations[len(durations)/2], nil
 }

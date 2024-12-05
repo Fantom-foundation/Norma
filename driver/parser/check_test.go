@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestTimeRange_UnconstraintInputIsAccepted(t *testing.T) {
@@ -388,6 +389,15 @@ func TestScenario_NegativeNumberOfValidatorsIsDetected(t *testing.T) {
 	*scenario.NumValidators = -5
 	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "invalid number of validators: -5 < 1") {
 		t.Errorf("negative number of validators was not detected")
+	}
+}
+
+func TestScenario_NegativeRoundTripTimeIsDetected(t *testing.T) {
+	scenario := Scenario{Name: "Test"}
+	scenario.RoundTripTime = new(time.Duration)
+	*scenario.RoundTripTime = -5
+	if err := scenario.Check(); err == nil || !strings.Contains(err.Error(), "round trip time must be >= 0") {
+		t.Errorf("negative round-trip time was not detected")
 	}
 }
 
