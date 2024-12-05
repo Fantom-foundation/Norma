@@ -251,8 +251,8 @@ func (n *OperaNode) Kill() error {
 	return n.container.SendSignal(docker.SigKill)
 }
 
-// GetNetworkDelayTo returns the median network delay to the given host.
-func (n *OperaNode) GetNetworkDelayTo(host string) (time.Duration, error) {
+// GetRoundTripTime returns the median network round-trip time to the given host.
+func (n *OperaNode) GetRoundTripTime(host string) (time.Duration, error) {
 	output, err := n.container.Exec([]string{"ping", "-c", "5", host})
 	if err != nil {
 		return 0, err

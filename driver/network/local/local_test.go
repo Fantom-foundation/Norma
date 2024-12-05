@@ -77,13 +77,13 @@ func TestLocalNetwork_CanStartNodesAndShutThemDown(t *testing.T) {
 
 func TestLocalNetwork_CanEnforceNetworkLatency(t *testing.T) {
 	t.Parallel()
-	for _, latency := range []time.Duration{0, 100 * time.Millisecond, 200 * time.Millisecond} {
-		latency := latency
-		t.Run(fmt.Sprintf("rtt=%v", latency), func(t *testing.T) {
+	for _, rtt := range []time.Duration{0, 100 * time.Millisecond, 200 * time.Millisecond} {
+		rtt := rtt
+		t.Run(fmt.Sprintf("rtt=%v", rtt), func(t *testing.T) {
 			t.Parallel()
 			config := driver.NetworkConfig{
 				NumberOfValidators: 2,
-				RoundTripTime:      latency,
+				RoundTripTime:      rtt,
 			}
 			net, err := NewLocalNetwork(&config)
 			if err != nil {
@@ -98,15 +98,15 @@ func TestLocalNetwork_CanEnforceNetworkLatency(t *testing.T) {
 			if got, want := len(nodes), 2; got != want {
 				t.Fatalf("invalid number of active nodes, got %d, want %d", got, want)
 			}
-			delay, err := nodes[0].(*node.OperaNode).GetNetworkDelayTo(nodes[1].Hostname())
+			got, err := nodes[0].(*node.OperaNode).GetRoundTripTime(nodes[1].Hostname())
 			if err != nil {
 				t.Errorf("failed to measure network delay: %v", err)
 			}
-			if delay < latency-10*time.Millisecond {
-				t.Errorf("network latency is too low: %v < %v", delay, latency)
+			if got < rtt-10*time.Millisecond {
+				t.Errorf("network RTT is too low: %v < %v", got, rtt)
 			}
-			if delay > latency+10*time.Millisecond {
-				t.Errorf("network latency is too high: %v > %v", delay, latency)
+			if got > rtt+10*time.Millisecond {
+				t.Errorf("network RTT is too high: %v > %v", got, rtt)
 			}
 		})
 	}
